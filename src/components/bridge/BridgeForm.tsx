@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { ArrowRight, ArrowLeftRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,13 +26,13 @@ export const BridgeForm = () => {
     setOrderType,
     createBridgeTransaction,
     availableCurrencies,
-    isLoadingCurrencies
+    isLoadingCurrencies,
   } = useBridge();
 
   const handleBridgeAssets = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (isSubmitting) return;
 
     setIsSubmitting(true);
@@ -50,29 +49,35 @@ export const BridgeForm = () => {
   };
 
   // Find the selected currencies in the availableCurrencies array
-  const fromCurrencyObj = availableCurrencies.find(c => c.code === fromCurrency) || null;
-  const toCurrencyObj = availableCurrencies.find(c => c.code === toCurrency) || null;
+  const fromCurrencyObj =
+    availableCurrencies.find((c) => c.code === fromCurrency) || null;
+  const toCurrencyObj =
+    availableCurrencies.find((c) => c.code === toCurrency) || null;
 
   // Function to swap the from and to currencies
   const handleSwapCurrencies = () => {
     // Make sure both currencies have the proper send/receive capabilities before swapping
-    const newFromCurrency = availableCurrencies.find(c => c.code === toCurrency && c.send === 1);
-    const newToCurrency = availableCurrencies.find(c => c.code === fromCurrency && c.recv === 1);
-    
+    const newFromCurrency = availableCurrencies.find(
+      (c) => c.code === toCurrency && c.send === 1
+    );
+    const newToCurrency = availableCurrencies.find(
+      (c) => c.code === fromCurrency && c.recv === 1
+    );
+
     if (newFromCurrency && newToCurrency) {
       // Only swap if both currencies can be used in their new positions
       setFromCurrency(toCurrency);
       setToCurrency(fromCurrency);
-      setAmount(''); // Reset amount since exchange rate will be different
+      setAmount(""); // Reset amount since exchange rate will be different
     }
   };
 
   const isFormValid = Boolean(
     fromCurrency &&
-    toCurrency &&
-    amount &&
-    parseFloat(amount) > 0 &&
-    destinationAddress
+      toCurrency &&
+      amount &&
+      parseFloat(amount) > 0 &&
+      destinationAddress
   );
 
   return (
@@ -88,20 +93,18 @@ export const BridgeForm = () => {
           isLoadingCurrencies={isLoadingCurrencies}
           borderColor={fromCurrencyObj?.color}
         />
-        
+
         <div className="flex flex-col items-center justify-center">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 rounded-full bg-secondary/50 hover:bg-secondary my-1"
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full bg-secondary/50 hover:bg-secondary my-1 mt-8"
             onClick={handleSwapCurrencies}
           >
             <ArrowLeftRight className="h-4 w-4 text-[#0FA0CE]" />
           </Button>
-          <ArrowRight className="hidden sm:block w-6 h-6 text-[#0FA0CE]" />
-          <ArrowRight className="block sm:hidden w-6 h-6 rotate-90 mx-auto text-[#0FA0CE]" />
         </div>
-        
+
         <CurrencySelector
           label="Receive"
           value={toCurrency}
@@ -122,12 +125,9 @@ export const BridgeForm = () => {
           onChange={setDestinationAddress}
         />
 
-        <OrderTypeSelector
-          value={orderType}
-          onChange={setOrderType}
-        />
+        <OrderTypeSelector value={orderType} onChange={setOrderType} />
 
-        <Button 
+        <Button
           className="w-full h-[3.5rem] sm:h-[4.5rem] text-base sm:text-lg font-medium bg-[#0FA0CE] hover:bg-[#0FA0CE]/90 disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleBridgeAssets}
           disabled={!isFormValid || isSubmitting}
