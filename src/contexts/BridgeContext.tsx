@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -16,6 +17,7 @@ import { BridgeContextType, TimerConfig, Currency, PriceResponse } from "@/types
 const TIMER_CONFIG: TimerConfig = {
   QUOTE_VALIDITY_MS: 120000, // 120 seconds (2 minutes)
   TIMER_UPDATE_INTERVAL_MS: 50, // 50ms update interval for smooth countdown
+  RECALCULATION_THROTTLE_MS: 120000, // 120 seconds (2 minutes) between recalculations
 };
 
 const BridgeContext = createContext<BridgeContextType | undefined>(undefined);
