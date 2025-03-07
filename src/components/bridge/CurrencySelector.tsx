@@ -42,25 +42,33 @@ export const CurrencySelector = ({
     }
   };
 
+  // Filter currencies based on whether they're for send or receive
+  const filteredCurrencies = availableCurrencies.filter(currency => 
+    isReceiveSide ? currency.recv === 1 : currency.send === 1
+  );
+
   useEffect(() => {
     // If currencies are loaded and we don't have a value selected yet, set the first one
-    if (availableCurrencies.length > 0 && !value && !isReceiveSide) {
-      // Find BTC or another high priority currency
-      const btc = availableCurrencies.find(c => c.symbol === 'BTC');
-      const eth = availableCurrencies.find(c => c.symbol === 'ETH');
-      const highPriorityCurrency = availableCurrencies.sort((a, b) => (b.priority || 0) - (a.priority || 0))[0];
-      
-      onChange(btc?.symbol || eth?.symbol || highPriorityCurrency?.symbol || availableCurrencies[0].symbol);
-    } else if (availableCurrencies.length > 0 && !value && isReceiveSide) {
-      // For receive side, prefer stablecoins or ETH if no currency is selected
-      const usdt = availableCurrencies.find(c => c.symbol.includes('USDT'));
-      const usdc = availableCurrencies.find(c => c.symbol.includes('USDC'));
-      const eth = availableCurrencies.find(c => c.symbol === 'ETH');
-      const highPriorityCurrency = availableCurrencies.sort((a, b) => (b.priority || 0) - (a.priority || 0))[0];
-      
-      onChange(usdt?.symbol || usdc?.symbol || eth?.symbol || highPriorityCurrency?.symbol || availableCurrencies[0].symbol);
+    if (filteredCurrencies.length > 0 && !value) {
+      // Find currencies by priority or defaults
+      if (!isReceiveSide) {
+        // For send side, prefer BTC, ETH or high priority currencies
+        const btc = filteredCurrencies.find(c => c.code === 'BTC');
+        const eth = filteredCurrencies.find(c => c.code === 'ETH');
+        const highPriorityCurrency = filteredCurrencies.sort((a, b) => (b.priority || 0) - (a.priority || 0))[0];
+        
+        onChange(btc?.code || eth?.code || highPriorityCurrency?.code || filteredCurrencies[0].code || '');
+      } else {
+        // For receive side, prefer stablecoins or ETH if no currency is selected
+        const usdt = filteredCurrencies.find(c => c.code?.includes('USDT'));
+        const usdc = filteredCurrencies.find(c => c.code?.includes('USDC'));
+        const eth = filteredCurrencies.find(c => c.code === 'ETH');
+        const highPriorityCurrency = filteredCurrencies.sort((a, b) => (b.priority || 0) - (a.priority || 0))[0];
+        
+        onChange(usdt?.code || usdc?.code || eth?.code || highPriorityCurrency?.code || filteredCurrencies[0].code || '');
+      }
     }
-  }, [availableCurrencies, value, onChange, isReceiveSide]);
+  }, [filteredCurrencies, value, onChange, isReceiveSide]);
 
   return (
     <div className="flex-1">
@@ -115,27 +123,32 @@ export const CurrencySelector = ({
           <SelectContent className="bg-[#141413] border border-white/10 max-h-[300px]">
             {isLoadingCurrencies ? (
               <SelectItem value="loading" disabled>Loading currencies...</SelectItem>
-            ) : availableCurrencies.length === 0 ? (
+            ) : filteredCurrencies.length === 0 ? (
               <SelectItem value="none" disabled>No currencies available</SelectItem>
             ) : (
-              availableCurrencies
+              filteredCurrencies
                 .sort((a, b) => (b.priority || 0) - (a.priority || 0))
                 .map((currency) => (
-                <SelectItem key={currency.symbol} value={currency.symbol}>
+                <SelectItem key={currency.code} value={currency.code || ''}>
                   <div className="flex items-center gap-2">
-                    {currency.image ? (
-                      <img src={currency.image} alt={currency.name} className="w-5 h-5 sm:w-6 sm:h-6 rounded-full" />
+                    {currency.logo ? (
+                      <img src={currency.logo} alt={currency.name} className="w-5 h-5 sm:w-6 sm:h-6 rounded-full" />
                     ) : (
-                      <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-600 flex items-center justify-center text-xs font-bold text-white">
-                        {currency.symbol.substring(0, 1).toUpperCase()}
+                      <div 
+                        className="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                        style={{ backgroundColor: currency.color || '#888' }}
+                      >
+                        {currency.coin?.substring(0, 1).toUpperCase() || currency.code?.substring(0, 1).toUpperCase()}
                       </div>
                     )}
-                    {currency.name} ({currency.coin?.toUpperCase() || currency.symbol?.toUpperCase()})
-                    {currency.network && currency.network !== currency.coin && (
-                      <span className="text-xs text-gray-400">
-                        [{currency.network}]
-                      </span>
-                    )}
+                    <span>
+                      {currency.name}
+                      {currency.network && currency.network !== currency.coin && (
+                        <span className="text-xs text-gray-400 ml-1">
+                          [{currency.network}]
+                        </span>
+                      )}
+                    </span>
                   </div>
                 </SelectItem>
               ))

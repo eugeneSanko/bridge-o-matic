@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { API_CONFIG } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -14,7 +15,10 @@ const MOCK_CURRENCIES: Currency[] = [
     network: "Bitcoin",
     available: true,
     color: "#F7931A",
-    coin: "btc"
+    coin: "btc",
+    code: "BTC",
+    send: 1,
+    recv: 1
   },
   {
     symbol: "ETH",
@@ -23,7 +27,10 @@ const MOCK_CURRENCIES: Currency[] = [
     network: "Ethereum",
     available: true,
     color: "#627EEA",
-    coin: "eth"
+    coin: "eth",
+    code: "ETH",
+    send: 1,
+    recv: 1
   },
   {
     symbol: "USDT",
@@ -32,7 +39,10 @@ const MOCK_CURRENCIES: Currency[] = [
     network: "Ethereum",
     available: true,
     color: "#26A17B",
-    coin: "usdt"
+    coin: "usdt",
+    code: "USDTETH",
+    send: 1,
+    recv: 1
   },
   {
     symbol: "USDC",
@@ -41,7 +51,10 @@ const MOCK_CURRENCIES: Currency[] = [
     network: "Ethereum",
     available: true,
     color: "#2775CA",
-    coin: "usdc"
+    coin: "usdc",
+    code: "USDCETH",
+    send: 1,
+    recv: 1
   },
   {
     symbol: "SOL",
@@ -50,7 +63,10 @@ const MOCK_CURRENCIES: Currency[] = [
     network: "Solana",
     available: true,
     color: "#00ffbd",
-    coin: "sol"
+    coin: "sol",
+    code: "SOL",
+    send: 1,
+    recv: 1
   }
 ];
 
@@ -88,22 +104,27 @@ export function useBridgeService() {
       console.log('Edge function response:', data);
       
       // If the API response is successful and contains currencies
-      if (data.code === 0 && data.ccies) {
-        // Transform the currencies data from object to array with the right shape
-        const currenciesArray: Currency[] = Object.entries(data.ccies).map(([symbol, details]: [string, any]) => ({
-          symbol,
-          name: details.name || symbol,
-          image: details.image || null,
-          network: details.network || null,
-          available: details.available !== false,
-          color: details.color || null,
-          coin: symbol.toLowerCase(),
-          priority: details.priority || 0
+      if (data.code === 0 && data.data && Array.isArray(data.data)) {
+        // Transform the currencies from the API response to our format
+        const currenciesArray: Currency[] = data.data.map((currency: any) => ({
+          symbol: currency.code,  // Use code as symbol for compatibility
+          name: currency.name || '',
+          image: currency.logo || null,
+          network: currency.network || null,
+          available: (currency.send === 1 || currency.recv === 1),
+          color: currency.color || null,
+          coin: currency.coin?.toLowerCase() || '',
+          code: currency.code || '',
+          logo: currency.logo || null,
+          recv: currency.recv || 0,
+          send: currency.send || 0,
+          tag: currency.tag || null,
+          priority: currency.priority || 0
         }));
         
         return currenciesArray;
       } else {
-        console.error('API returned an error:', data);
+        console.error('API returned an error or unexpected format:', data);
         throw new Error(data.msg || 'Unknown API error');
       }
     } catch (error) {

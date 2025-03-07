@@ -54,13 +54,37 @@ serve(async (req) => {
     console.log(`FixedFloat API response status: ${response.status}`);
     
     // Get the response data
-    const data = await response.json();
+    const rawData = await response.json();
     
-    // Log summarized response data for debugging
-    console.log(`FixedFloat API response: code=${data.code}, msg=${data.msg}, currencies count=${data.ccies ? Object.keys(data.ccies).length : 0}`);
+    // Transform the data structure for our frontend
+    if (rawData && rawData.code === 0 && rawData.ccies) {
+      console.log("Converting FixedFloat response to our format");
+      
+      // Create a formatted data array from the currencies object
+      const formattedData = Object.values(rawData.ccies).map((currency: any) => ({
+        code: currency.code || "",
+        coin: currency.coin || "",
+        network: currency.network || "",
+        priority: currency.priority || 0,
+        name: currency.name || "",
+        recv: currency.recv || 0,
+        send: currency.send || 0,
+        tag: currency.tag,
+        logo: currency.logo || null,
+        color: currency.color || "#ffffff"
+      }));
+      
+      return new Response(JSON.stringify({
+        code: 0,
+        msg: "OK",
+        data: formattedData
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
     
-    // Return the complete response to the client
-    return new Response(JSON.stringify(data), {
+    // If raw data doesn't have the expected structure, pass it through
+    return new Response(JSON.stringify(rawData), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   } catch (error) {

@@ -1,7 +1,8 @@
+
 export interface Currency {
-  symbol: string;
+  symbol?: string;
   name: string;
-  image: string | null;
+  image?: string | null;
   network?: string | null;
   available?: boolean;
   min?: string;
@@ -10,6 +11,10 @@ export interface Currency {
   coin?: string;
   tag?: string | null;
   priority?: number;
+  code?: string;
+  logo?: string;
+  recv?: number;
+  send?: number;
 }
 
 export interface BridgeContextType {
