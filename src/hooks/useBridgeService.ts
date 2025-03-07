@@ -10,7 +10,10 @@ export function useBridgeService() {
   const fetchCurrencies = useCallback(async () => {
     try {
       console.log('Fetching available currencies...');
-      const data = await invokeFunctionWithRetry(API_CONFIG.FF_CURRENCIES);
+      // Empty body is fine for this endpoint
+      const data = await invokeFunctionWithRetry(API_CONFIG.FF_CURRENCIES, {
+        body: {}
+      });
       
       if (data.code === 0) {
         // Transform the raw data from FixedFloat API to our expected format
@@ -57,13 +60,15 @@ export function useBridgeService() {
     }
 
     try {
+      const body = {
+        fromCurrency,
+        toCurrency,
+        amount,
+        type: orderType
+      };
+      
       const data = await invokeFunctionWithRetry(API_CONFIG.FF_PRICE, {
-        body: {
-          fromCurrency,
-          toCurrency,
-          amount,
-          type: orderType
-        }
+        body
       });
       
       if (data.code !== 0) {
@@ -103,15 +108,17 @@ export function useBridgeService() {
     initialRate: string
   ) => {
     try {
+      const body = {
+        fromCurrency,
+        toCurrency,
+        amount,
+        destination,
+        type: orderType,
+        initialRate
+      };
+      
       const data = await invokeFunctionWithRetry(API_CONFIG.FF_ORDER, {
-        body: {
-          fromCurrency,
-          toCurrency,
-          amount,
-          destination,
-          type: orderType,
-          initialRate
-        }
+        body
       });
       
       if (data.code !== 0) {
@@ -133,8 +140,10 @@ export function useBridgeService() {
 
   const checkOrderStatus = useCallback(async (orderId: string) => {
     try {
+      const body = { orderId };
+      
       const data = await invokeFunctionWithRetry(API_CONFIG.FF_STATUS, {
-        body: { orderId }
+        body
       });
 
       if (data.code !== 0) {

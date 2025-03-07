@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Beaker } from "lucide-react";
 import { useState } from "react";
@@ -18,7 +19,9 @@ export const BridgeHeader = () => {
       });
 
       console.log("Calling API endpoint:", API_CONFIG.FF_TEST);
-      const result = await invokeFunctionWithRetry(API_CONFIG.FF_TEST);
+      const result = await invokeFunctionWithRetry(API_CONFIG.FF_TEST, {
+        body: {} // Ensure we send an empty body object to generate proper signature
+      });
       console.log("API test results:", result);
 
       if (result.success) {
@@ -56,9 +59,6 @@ export const BridgeHeader = () => {
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
           Tradenly Bridge
         </h1>
-        <div className="px-3 py-1 bg-[#ea384c] text-white text-sm font-medium rounded-full animate-pulse-subtle">
-          Coming Soon
-        </div>
 
         <div className="ml-auto">
           <Button
