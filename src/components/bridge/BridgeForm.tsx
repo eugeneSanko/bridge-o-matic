@@ -26,6 +26,7 @@ export const BridgeForm = () => {
     setAmount,
     setDestinationAddress,
     setOrderType,
+    calculateReceiveAmount,
     createBridgeTransaction,
     availableCurrencies,
     isLoadingCurrencies,
@@ -36,6 +37,7 @@ export const BridgeForm = () => {
   const [fromExchangeRate, setFromExchangeRate] = useState<{rate: string; usdValue: string;} | null>(null);
   const [toExchangeRate, setToExchangeRate] = useState<{rate: string; usdValue: string;} | null>(null);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
+  const [manualRefreshEnabled, setManualRefreshEnabled] = useState<boolean>(true);
 
   // Update exchange rates when price data changes
   useEffect(() => {
@@ -62,6 +64,14 @@ export const BridgeForm = () => {
       setToExchangeRate(null);
     }
   }, [lastPriceData]);
+  
+  // Call the API once when currencies and amount are set
+  useEffect(() => {
+    if (fromCurrency && toCurrency && amount && parseFloat(amount) > 0 && !lastPriceData && !isCalculating) {
+      // Only fetch once when we have all required data and no existing price data
+      calculateReceiveAmount();
+    }
+  }, [fromCurrency, toCurrency, amount, lastPriceData, isCalculating, calculateReceiveAmount]);
 
   const handleBridgeAssets = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -79,6 +89,16 @@ export const BridgeForm = () => {
       console.error("Bridge transaction failed:", error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Function to manually refresh rate
+  const handleRefreshRate = () => {
+    if (manualRefreshEnabled) {
+      calculateReceiveAmount();
+      setManualRefreshEnabled(false);
+      // Re-enable refresh after 2 minutes
+      setTimeout(() => setManualRefreshEnabled(true), 120000);
     }
   };
 
@@ -169,6 +189,14 @@ export const BridgeForm = () => {
           {timeRemaining && (
             <span className="ml-2 text-[#0FA0CE]">(valid for {timeRemaining}s)</span>
           )}
+          <Button 
+            variant="link" 
+            className="text-xs text-[#0FA0CE] ml-2 p-0 h-auto" 
+            onClick={handleRefreshRate}
+            disabled={!manualRefreshEnabled}
+          >
+            {manualRefreshEnabled ? "Refresh" : "Wait 2m to refresh"}
+          </Button>
         </div>
       )}
 

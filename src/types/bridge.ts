@@ -92,6 +92,8 @@ export interface TimerConfig {
   QUOTE_VALIDITY_MS: number;
   /** Update frequency for the timer in milliseconds */
   TIMER_UPDATE_INTERVAL_MS: number;
+  /** Minimum time between recalculations in milliseconds */
+  RECALCULATION_THROTTLE_MS: number;
 }
 
 /**
