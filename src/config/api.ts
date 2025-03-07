@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import * as crypto from 'crypto';
+import { toast } from "@/hooks/use-toast";
 
 // Base URL for Supabase functions
 // Instead of trying to access the protected 'url' property directly,
@@ -7,34 +8,24 @@ import * as crypto from 'crypto';
 const SUPABASE_URL = "https://loqpepftcimqjkiinuwv.supabase.co";
 const FUNCTIONS_BASE_URL = `${SUPABASE_URL}/functions/v1`;
 
-// FixedFloat API credentials
-const FF_API_KEY = "bzplvDU0N2Pa5crmQTbqteew6WJyuSGX9BEBPclU";
-const FF_API_SECRET = "qIk7Vd6b5M3wqOmD3cnqRGQ6k3dGTDss47fvdng4";
-
+// FixedFloat API Configuration
 export const API_CONFIG = {
-  // Edge function endpoints
-  FF_CURRENCIES: "ff-currencies",
-  FF_PRICE: "ff-price",
-  FF_ORDER: "ff-order",
-  FF_STATUS: "ff-status",
-  FF_TEST: "ff-test",
-  BRIDGE_ORDER: "bridge-order",
-
-  // Default timeout in milliseconds
-  TIMEOUT: 60000, // Increased from 45000 to give more time for API responses
-
-  // Number of retries for failed requests
-  MAX_RETRIES: 5, // Increased from 3 to 5 for more resilience
-
-  // RETRY_DELAY: 2000, // Base delay before applying exponential backoff
-  RETRY_DELAY: 2000, // Base delay before applying exponential backoff
+  // API endpoints
+  FF_CURRENCIES: "/api/currencies",
+  FF_PRICE: "/api/price",
+  FF_ORDER: "/api/order",
+  FF_STATUS: "/api/status",
   
-  // FixedFloat API credentials (for frontend reference only)
-  FF_API_KEY,
-  FF_API_SECRET,
+  // Direct API URL for frontend requests
+  FF_API_URL: "https://ff.io/api/v2",
   
-  // Direct API URL (only for testing or when edge functions are not available)
-  FF_DIRECT_API_URL: "https://ff.io/api/v2"
+  // API credentials
+  FF_API_KEY: "bzplvDU0N2Pa5crmQTbqteew6WJyuSGX9BEBPclU",
+  FF_API_SECRET: "qIk7Vd6b5M3wqOmD3cnqRGQ6k3dGTDss47fvdng4",
+  
+  // Maximum retries for API calls
+  MAX_RETRIES: 3,
+  RETRY_DELAY: 1000
 };
 
 /**
@@ -47,7 +38,7 @@ export function generateFixedFloatSignature(body: any): string {
   const bodyStr = body ? JSON.stringify(body) : '{}';
   
   // Create HMAC signature
-  const hmac = crypto.createHmac('sha256', FF_API_SECRET);
+  const hmac = crypto.createHmac('sha256', API_CONFIG.FF_API_SECRET);
   hmac.update(bodyStr);
   
   // Return the signature as a hex string
@@ -72,7 +63,7 @@ export async function invokeFunctionWithRetry(
     // Add FixedFloat API headers to the request
     invokeOptions.headers = {
       ...invokeOptions.headers,
-      'X-API-KEY': FF_API_KEY,
+      'X-API-KEY': API_CONFIG.FF_API_KEY,
       'X-API-SIGN': signature
     };
     

@@ -1,32 +1,49 @@
 
 import { useState, useCallback } from 'react';
-import { API_CONFIG, invokeFunctionWithRetry, generateFixedFloatSignature } from "@/config/api";
+import { API_CONFIG, invokeFunctionWithRetry } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
 import { PriceResponse, BridgeError, Currency } from "@/types/bridge";
+import CryptoJS from 'crypto-js';
 
 export function useBridgeService() {
   const [lastPriceCheck, setLastPriceCheck] = useState<PriceResponse | null>(null);
   
+  const generateApiSignature = (body: any = {}) => {
+    // Convert the body to a string if it's not empty, or use an empty string
+    const bodyString = Object.keys(body).length ? JSON.stringify(body) : '{}';
+    
+    // Generate HMAC SHA256 signature with the API secret
+    const signature = CryptoJS.HmacSHA256(bodyString, API_CONFIG.FF_API_SECRET).toString();
+    
+    console.log('Generated API signature:', signature);
+    return signature;
+  };
+  
   const fetchCurrencies = useCallback(async () => {
     try {
-      console.log('Fetching available currencies...');
+      console.log('Fetching available currencies from FixedFloat API...');
       
-      // Create an empty body for the request - this is required for signature generation
-      const body = {};
+      // Generate signature with empty body
+      const signature = generateApiSignature();
       
-      // Generate the API signature for the empty body
-      const signature = generateFixedFloatSignature(body);
-      
-      console.log('Generated signature for currency request:', signature);
-      
-      // Make the request to the API
-      const data = await invokeFunctionWithRetry(API_CONFIG.FF_CURRENCIES, {
-        body: body, // Send empty body for proper signature
+      // Make direct fetch request to the API
+      const response = await fetch('https://ff.io/api/v2/ccies', {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'X-API-KEY': API_CONFIG.FF_API_KEY,
           'X-API-SIGN': signature
-        }
+        },
+        body: '{}' // Empty JSON object as string
       });
+      
+      if (!response.ok) {
+        throw new Error(`API request failed with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Currency API response:', data);
       
       if (data.code === 0) {
         // Transform the raw data from FixedFloat API to our expected format
