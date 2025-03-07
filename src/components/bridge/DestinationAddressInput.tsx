@@ -1,7 +1,8 @@
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { QrCode, Copy, Clipboard } from "lucide-react";
-import { toast } from "sonner"; // Assuming you're using a toast library for notifications
+import { toast } from "sonner";
 
 interface DestinationAddressInputProps {
   value: string;
@@ -36,12 +37,12 @@ export const DestinationAddressInput = ({
   return (
     <div>
       <label className="block text-sm font-medium mb-2 text-gray-300">
-        Destination Address
+        Destination Wallet Address (Receiving Network)
       </label>
       <div className="relative">
         <Input
           type="text"
-          placeholder="Enter destination address"
+          placeholder="Enter receiving wallet address"
           className="h-[3.5rem] sm:h-[4.5rem] px-3 sm:px-4 bg-secondary/30 pr-24 sm:pr-32 text-sm sm:text-base"
           value={value}
           onChange={(e) => onChange(e.target.value)}

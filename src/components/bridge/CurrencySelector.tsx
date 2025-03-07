@@ -25,7 +25,7 @@ interface CurrencySelectorProps {
   availableCurrencies: Currency[];
   isLoadingCurrencies: boolean;
   isReceiveSide?: boolean;
-  borderColor?: string; // New prop for currency color
+  borderColor?: string;
 }
 
 export const CurrencySelector = ({
@@ -51,7 +51,7 @@ export const CurrencySelector = ({
     }
   };
 
-  // Filter currencies based on whether they're for send or receive
+  // Filter currencies based on whether they're for send or receive capability
   const filteredCurrencies = availableCurrencies.filter((currency) =>
     isReceiveSide ? currency.recv === 1 : currency.send === 1
   );
@@ -170,7 +170,7 @@ export const CurrencySelector = ({
               </div>
             </div>
           </SelectTrigger>
-          <SelectContent className=" border border-white/10 max-h-[300px] glass-card">
+          <SelectContent className="border border-white/10 max-h-[300px] glass-card">
             {isLoadingCurrencies ? (
               <SelectItem value="loading" disabled>
                 <Icon icon="eos-icons:three-dots-loading" />
@@ -204,7 +204,7 @@ export const CurrencySelector = ({
                         {currency.name}
                         {currency.network &&
                           currency.network !== currency.coin && (
-                            <span className="text-xs  ml-1 text-muted-foreground">
+                            <span className="text-xs ml-1 text-muted-foreground">
                               [{currency.network}]
                             </span>
                           )}
