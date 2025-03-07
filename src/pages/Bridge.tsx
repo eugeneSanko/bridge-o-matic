@@ -24,6 +24,7 @@ const BridgeContent = () => {
     // Log currencies when they're loaded
     if (availableCurrencies.length > 0) {
       console.log("Currencies loaded:", availableCurrencies.length);
+      console.log("Currency data:", JSON.stringify(availableCurrencies, null, 2));
     }
   }, [availableCurrencies]);
 
@@ -33,7 +34,14 @@ const BridgeContent = () => {
       const currencies = await bridgeService.fetchCurrencies();
       
       if (currencies && currencies.length > 0) {
-        setApiResponse(`Success! Loaded ${currencies.length} currencies (mock data for development).`);
+        // Format the mock API response to display in the UI
+        const mockResponse = {
+          code: 0,
+          msg: "OK",
+          ccies: currencies
+        };
+        
+        setApiResponse(JSON.stringify(mockResponse, null, 2));
       } else {
         setApiResponse("API request succeeded but no currencies were returned.");
       }
@@ -82,8 +90,8 @@ const BridgeContent = () => {
           </Button>
           
           {apiResponse && (
-            <div className="mt-2 p-3 bg-[#111] rounded text-sm text-white">
-              <p>{apiResponse}</p>
+            <div className="mt-2 p-3 bg-[#111] rounded text-sm text-white overflow-auto max-h-96">
+              <pre className="whitespace-pre-wrap">{apiResponse}</pre>
             </div>
           )}
         </div>

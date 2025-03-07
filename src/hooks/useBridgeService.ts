@@ -80,6 +80,14 @@ export function useBridgeService() {
       console.log('Using mock currency data due to CORS restrictions');
       console.log('In production, this should be handled by a backend service that can make the API call');
       
+      // Log what the actual API response would look like (mock data)
+      console.log('Mock API Response (similar to what the real API would return):');
+      console.log(JSON.stringify({
+        code: 0,
+        msg: "OK",
+        ccies: MOCK_CURRENCIES
+      }, null, 2));
+      
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
