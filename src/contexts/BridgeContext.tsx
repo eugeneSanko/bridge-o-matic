@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -61,6 +62,9 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
   
   // Debounce timer ref to prevent multiple rapid calls
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Flag to track if a calculation is already scheduled
+  const isCalculationScheduledRef = useRef(false);
 
   const {
     fetchCurrencies,
@@ -274,23 +278,21 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
 
     // Only calculate if we need to check the price or inputs have changed
     if (!shouldCheckPrice && !inputsHaveChanged && !isPriceCalculationNeededRef.current) {
+      console.log("Skipping price calculation - no change detected or recently calculated");
       return;
-    }
-
-    // Cancel any pending debounce timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = null;
     }
 
     // Update the ref with current values
     lastInputValuesRef.current = { ...currentInputValues };
     isPriceCalculationNeededRef.current = false;
+    isCalculationScheduledRef.current = false;
     
     // Update the last check time
     lastPriceCheckTimeRef.current = now;
 
     setIsCalculating(true);
+    console.log("Starting price calculation");
+    
     try {
       // Get fresh price data
       const data = await calculatePrice(
@@ -327,6 +329,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       });
     } finally {
       setIsCalculating(false);
+      console.log("Price calculation complete");
     }
   }, [
     amount,
@@ -392,16 +395,28 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       // Set the flag to indicate a calculation is needed
       isPriceCalculationNeededRef.current = true;
       
+      // Prevent scheduling multiple calculations
+      if (isCalculationScheduledRef.current) {
+        return;
+      }
+      
       // Clear any existing debounce timer
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
       
+      isCalculationScheduledRef.current = true;
+      
       // Add a longer delay to prevent rapid re-calculation
       debounceTimerRef.current = setTimeout(() => {
         // Check if any price calculation is already in progress
         if (!isCalculating) {
+          console.log("Triggering debounced price calculation");
           calculateReceiveAmount();
+        } else {
+          console.log("Skipping calculation - another calculation is in progress");
+          isPriceCalculationNeededRef.current = true;
+          isCalculationScheduledRef.current = false;
         }
         debounceTimerRef.current = null;
       }, 1000); // 1-second debounce
@@ -410,6 +425,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
         if (debounceTimerRef.current) {
           clearTimeout(debounceTimerRef.current);
           debounceTimerRef.current = null;
+          isCalculationScheduledRef.current = false;
         }
       };
     } else {
