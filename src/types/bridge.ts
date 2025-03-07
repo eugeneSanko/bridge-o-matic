@@ -30,6 +30,7 @@ export interface BridgeContextType {
   createBridgeTransaction: () => Promise<{ orderId: string } | null>;
   availableCurrencies: Currency[];
   isLoadingCurrencies: boolean;
+  refreshCurrencies: () => Promise<void>;
 }
 
 export interface BridgeError extends Error {

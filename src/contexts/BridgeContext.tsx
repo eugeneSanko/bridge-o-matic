@@ -55,6 +55,33 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
   } = useBridgeService();
 
   /**
+   * Function to refresh available currencies
+   */
+  const refreshCurrencies = useCallback(async () => {
+    setIsLoadingCurrencies(true);
+    try {
+      const currencies = await fetchCurrencies();
+      if (Array.isArray(currencies) && currencies.length > 0) {
+        setAvailableCurrencies(currencies);
+        console.log(`Loaded ${currencies.length} currencies`);
+      } else {
+        console.warn("No currencies received from API");
+        setAvailableCurrencies([]);
+      }
+    } catch (error) {
+      console.error("Failed to load currencies:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load available currencies",
+        variant: "destructive",
+      });
+      setAvailableCurrencies([]);
+    } finally {
+      setIsLoadingCurrencies(false);
+    }
+  }, [fetchCurrencies]);
+
+  /**
    * Load available currencies on component mount
    */
   useEffect(() => {
@@ -393,6 +420,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
     createBridgeTransaction,
     availableCurrencies,
     isLoadingCurrencies,
+    refreshCurrencies,
   };
 
   return (
