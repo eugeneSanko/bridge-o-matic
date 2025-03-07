@@ -91,7 +91,7 @@ serve(async (req) => {
     
     // Add timestamp and expiry time (60 seconds)
     const timestamp = Math.floor(Date.now() / 1000);
-    const expiresAt = timestamp + 60;
+    const expiresAt = timestamp + 60; // 60 seconds expiration
     
     // Ensure rate is properly included in response
     if (data.code === 0 && data.data) {

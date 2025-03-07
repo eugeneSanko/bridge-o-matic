@@ -15,7 +15,7 @@ import { BridgeContextType, TimerConfig, Currency, PriceResponse } from "@/types
  * Configuration for timers used in the bridge process
  */
 const TIMER_CONFIG: TimerConfig = {
-  QUOTE_VALIDITY_MS: 10000, // 10 seconds
+  QUOTE_VALIDITY_MS: 60000, // 60 seconds (1 minute)
   TIMER_UPDATE_INTERVAL_MS: 50, // 50ms update interval for smooth countdown
 };
 
@@ -46,12 +46,16 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
   // Use refs for timers to prevent issues with cleanup and closures
   const timeRemainingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const quoteExpiryTimeRef = useRef<number | null>(null);
+  const statusCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastInputValuesRef = useRef({
     fromCurrency: "",
     toCurrency: "",
     amount: "",
     orderType: "fixed" as "fixed" | "float",
   });
+  
+  // Last time a price calculation was made
+  const lastPriceCheckTimeRef = useRef<number>(0);
   
   // Flag to prevent redundant price calculations
   const isPriceCalculationNeededRef = useRef(false);
@@ -246,6 +250,11 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // Check if a minute has passed since the last price check
+    const now = Date.now();
+    const timeSinceLastCheck = now - lastPriceCheckTimeRef.current;
+    const shouldCheckPrice = timeSinceLastCheck >= TIMER_CONFIG.QUOTE_VALIDITY_MS || !lastPriceData;
+
     // Make sure the inputs have actually changed
     const currentInputValues = {
       fromCurrency,
@@ -261,13 +270,16 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       previousInputValues.amount !== currentInputValues.amount ||
       previousInputValues.orderType !== currentInputValues.orderType;
 
-    if (!inputsHaveChanged && !isPriceCalculationNeededRef.current) {
+    if (!shouldCheckPrice && !inputsHaveChanged && !isPriceCalculationNeededRef.current) {
       return;
     }
 
     // Update the ref with current values
     lastInputValuesRef.current = { ...currentInputValues };
     isPriceCalculationNeededRef.current = false;
+    
+    // Update the last check time
+    lastPriceCheckTimeRef.current = now;
 
     setIsCalculating(true);
     try {
@@ -314,6 +326,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
     orderType,
     calculatePrice,
     validateAmount,
+    lastPriceData,
   ]);
 
   /**
@@ -373,7 +386,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       // Add a small delay to prevent rapid re-calculation
       const timerId = setTimeout(() => {
         calculateReceiveAmount();
-      }, 300);
+      }, 500);
       
       return () => clearTimeout(timerId);
     } else {
@@ -409,7 +422,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       validateBridgeTransaction();
 
       // Verify exchange rate is still valid
-      const now = new Date().getTime();
+      const now = new Date().getTime() / 1000; // Convert to seconds
       if (!lastPriceData || lastPriceData.expiresAt < now) {
         await calculateReceiveAmount();
         throw new Error("Exchange rate has expired. Please try again.");
