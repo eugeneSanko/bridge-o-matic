@@ -1,3 +1,4 @@
+
 #root {
   max-width: 100%;
   margin: 0 auto;
@@ -43,3 +44,11 @@
 }
 
 /* Responsive design for dex hunter tools */
+.glass-card {
+  transition: all 0.3s ease;
+}
+
+/* Border color transition */
+[class*="radix-select-trigger"] {
+  transition: border-color 0.3s ease, border-width 0.2s ease;
+}

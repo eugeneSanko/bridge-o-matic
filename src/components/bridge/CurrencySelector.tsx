@@ -1,3 +1,4 @@
+
 import {
   Select,
   SelectContent,
@@ -24,6 +25,7 @@ interface CurrencySelectorProps {
   availableCurrencies: Currency[];
   isLoadingCurrencies: boolean;
   isReceiveSide?: boolean;
+  borderColor?: string; // New prop for currency color
 }
 
 export const CurrencySelector = ({
@@ -38,6 +40,7 @@ export const CurrencySelector = ({
   availableCurrencies,
   isLoadingCurrencies,
   isReceiveSide = false,
+  borderColor,
 }: CurrencySelectorProps) => {
   const handleAmountChange = (value: string) => {
     if (!onAmountChange) return;
@@ -93,6 +96,12 @@ export const CurrencySelector = ({
     }
   }, [filteredCurrencies, value, onChange, isReceiveSide]);
 
+  // Create a style object for the border color
+  const borderStyle = borderColor ? {
+    borderColor: borderColor,
+    borderWidth: '2px',
+  } : {};
+
   return (
     <div className="flex-1">
       <label className="block text-sm font-medium mb-2 text-gray-300 text-center sm:text-left">
@@ -104,7 +113,10 @@ export const CurrencySelector = ({
           onValueChange={onChange}
           disabled={isLoadingCurrencies}
         >
-          <SelectTrigger className="h-[3.5rem] sm:h-[4.5rem] px-3 sm:px-4 bg-secondary/30 text-sm sm:text-base">
+          <SelectTrigger 
+            className="h-[3.5rem] sm:h-[4.5rem] px-3 sm:px-4 bg-secondary/30 text-sm sm:text-base transition-all duration-200" 
+            style={borderStyle}
+          >
             <div className="flex flex-col w-full">
               <div className="pointer-events-none flex items-center w-full h-10">
                 <SelectValue
