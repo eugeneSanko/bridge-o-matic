@@ -3,6 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { AddressPlaceholder } from "@/components/bridge/AddressPlaceholder";
 import { Clock } from "lucide-react";
+import { Currency } from "@/types/bridge";
 
 interface CurrencySelectorProps {
   label: string;
@@ -13,7 +14,7 @@ interface CurrencySelectorProps {
   estimatedAmount?: string;
   isCalculating?: boolean;
   timeRemaining?: string | null;
-  availableCurrencies: any[];
+  availableCurrencies: Currency[];
   isLoadingCurrencies: boolean;
   isReceiveSide?: boolean;
 }
@@ -93,8 +94,12 @@ export const CurrencySelector = ({
           <SelectContent className="bg-[#141413] border border-white/10 max-h-[300px]">
             {isLoadingCurrencies ? (
               <SelectItem value="loading" disabled>Loading currencies...</SelectItem>
+            ) : availableCurrencies.length === 0 ? (
+              <SelectItem value="none" disabled>No currencies available</SelectItem>
             ) : (
-              availableCurrencies.map((currency: any) => (
+              availableCurrencies
+                .sort((a, b) => (b.priority || 0) - (a.priority || 0))
+                .map((currency) => (
                 <SelectItem key={currency.symbol} value={currency.symbol}>
                   <div className="flex items-center gap-2">
                     {currency.image ? (
@@ -104,7 +109,12 @@ export const CurrencySelector = ({
                         {currency.symbol.substring(0, 1).toUpperCase()}
                       </div>
                     )}
-                    {currency.name} ({currency.symbol.toUpperCase()})
+                    {currency.name} ({currency.coin?.toUpperCase() || currency.symbol?.toUpperCase()})
+                    {currency.network && currency.network !== currency.coin && (
+                      <span className="text-xs text-gray-400">
+                        [{currency.network}]
+                      </span>
+                    )}
                   </div>
                 </SelectItem>
               ))

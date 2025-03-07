@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { API_CONFIG, invokeFunctionWithRetry } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
-import { PriceResponse, BridgeError } from "@/types/bridge";
+import { PriceResponse, BridgeError, Currency } from "@/types/bridge";
 
 export function useBridgeService() {
   const [lastPriceCheck, setLastPriceCheck] = useState<PriceResponse | null>(null);
@@ -14,17 +14,19 @@ export function useBridgeService() {
       
       if (data.code === 0) {
         // Transform the raw data from FixedFloat API to our expected format
-        const currencies = Object.entries(data.data || {}).map(([symbol, currencyData]: [string, any]) => {
+        const currencies = data.data.map((currency: any) => {
           return {
-            symbol: symbol,
-            name: currencyData.name || symbol.toUpperCase(),
-            image: currencyData.image || null,
-            network: currencyData.network || null,
-            available: currencyData.available !== false, // Default to true if not specified
-            min: currencyData.min || "0",
-            max: currencyData.max || "0",
+            symbol: currency.code,
+            name: currency.name,
+            image: currency.logo || null,
+            network: currency.network || null,
+            available: (currency.recv === 1 && currency.send === 1),
+            color: currency.color || "#ffffff",
+            coin: currency.coin || "",
+            tag: currency.tag || null,
+            priority: currency.priority || 0
           };
-        }).filter(currency => currency.available); // Only include available currencies
+        }).filter((currency: Currency) => currency.available); // Only include available currencies
         
         console.log('Successfully loaded currencies:', currencies.length);
         return currencies;

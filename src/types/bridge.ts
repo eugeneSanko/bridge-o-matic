@@ -1,4 +1,3 @@
-
 export interface Currency {
   symbol: string;
   name: string;
@@ -7,6 +6,10 @@ export interface Currency {
   available?: boolean;
   min?: string;
   max?: string;
+  color?: string;
+  coin?: string;
+  tag?: string | null;
+  priority?: number;
 }
 
 export interface BridgeContextType {
