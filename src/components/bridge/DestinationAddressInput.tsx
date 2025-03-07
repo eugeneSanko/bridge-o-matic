@@ -7,11 +7,15 @@ import { toast } from "sonner";
 interface DestinationAddressInputProps {
   value: string;
   onChange: (value: string) => void;
+  borderColor?: string;
+  receivingCurrency?: string;
 }
 
 export const DestinationAddressInput = ({
   value,
   onChange,
+  borderColor,
+  receivingCurrency = "",
 }: DestinationAddressInputProps) => {
   const handleCopy = async () => {
     try {
@@ -34,6 +38,17 @@ export const DestinationAddressInput = ({
     }
   };
 
+  // Create a style object for the border color
+  const borderStyle = borderColor ? {
+    borderColor: borderColor,
+    borderWidth: '2px',
+  } : {};
+
+  // Create dynamic placeholder based on receiving currency
+  const placeholder = receivingCurrency 
+    ? `Enter ${receivingCurrency} wallet address` 
+    : "Enter receiving wallet address";
+
   return (
     <div>
       <label className="block text-sm font-medium mb-2 text-gray-300">
@@ -42,10 +57,11 @@ export const DestinationAddressInput = ({
       <div className="relative">
         <Input
           type="text"
-          placeholder="Enter receiving wallet address"
-          className="h-[3.5rem] sm:h-[4.5rem] px-3 sm:px-4 bg-secondary/30 pr-24 sm:pr-32 text-sm sm:text-base"
+          placeholder={placeholder}
+          className="h-[3.5rem] sm:h-[4.5rem] px-3 sm:px-4 bg-secondary/30 pr-24 sm:pr-32 text-sm sm:text-base transition-all duration-200"
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          style={borderStyle}
         />
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1 sm:gap-2">
           <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8">

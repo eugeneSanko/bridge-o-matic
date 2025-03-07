@@ -124,6 +124,8 @@ export const BridgeForm = () => {
         <DestinationAddressInput
           value={destinationAddress}
           onChange={setDestinationAddress}
+          borderColor={toCurrencyObj?.color}
+          receivingCurrency={toCurrency}
         />
 
         <OrderTypeSelector value={orderType} onChange={setOrderType} />
