@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -28,7 +29,7 @@ const BridgeContext = createContext<BridgeContextType | undefined>(undefined);
 export function BridgeProvider({ children }: { children: React.ReactNode }) {
   const [fromCurrency, setFromCurrency] = useState<string>("");
   const [toCurrency, setToCurrency] = useState<string>("");
-  const [amount, setAmount] = useState<string>("");
+  const [amount, setAmount] = useState<string>("50"); // Set default amount to 50
   const [estimatedReceiveAmount, setEstimatedReceiveAmount] =
     useState<string>("");
   const [destinationAddress, setDestinationAddress] = useState<string>("");
@@ -40,12 +41,20 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
   const [isLoadingCurrencies, setIsLoadingCurrencies] = useState<boolean>(true);
   const [timeRemaining, setTimeRemaining] = useState<string | null>(null);
   const [lastPriceData, setLastPriceData] = useState<PriceResponse | null>(null);
+  const [amountError, setAmountError] = useState<string | null>(null);
 
   // Use refs for timers to prevent issues with cleanup and closures
-  const priceCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const statusCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
   const timeRemainingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const quoteExpiryTimeRef = useRef<number | null>(null);
+  const lastInputValuesRef = useRef({
+    fromCurrency: "",
+    toCurrency: "",
+    amount: "",
+    orderType: "fixed" as "fixed" | "float",
+  });
+  
+  // Flag to prevent redundant price calculations
+  const isPriceCalculationNeededRef = useRef(false);
 
   const {
     fetchCurrencies,
@@ -72,6 +81,15 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       if (Array.isArray(currencies) && currencies.length > 0) {
         setAvailableCurrencies(currencies);
         console.log(`Loaded ${currencies.length} currencies`);
+        
+        // Set default from currency (USDT) and to currency (BTC) after loading
+        const usdtCurrency = currencies.find(c => c.code?.includes("USDT") && c.send === 1);
+        const btcCurrency = currencies.find(c => c.code === "BTC" && c.recv === 1);
+        
+        if (usdtCurrency && btcCurrency) {
+          setFromCurrency(usdtCurrency.code || "");
+          setToCurrency(btcCurrency.code || "");
+        }
       } else {
         console.warn("No currencies received from API");
         setAvailableCurrencies([]);
@@ -100,6 +118,15 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
         if (Array.isArray(currencies) && currencies.length > 0) {
           setAvailableCurrencies(currencies);
           console.log(`Loaded ${currencies.length} currencies`);
+          
+          // Set default from currency (USDT) and to currency (BTC) after loading
+          const usdtCurrency = currencies.find(c => c.code?.includes("USDT") && c.send === 1);
+          const btcCurrency = currencies.find(c => c.code === "BTC" && c.recv === 1);
+          
+          if (usdtCurrency && btcCurrency) {
+            setFromCurrency(usdtCurrency.code || "");
+            setToCurrency(btcCurrency.code || "");
+          }
         } else {
           console.warn("No currencies received from API");
           setAvailableCurrencies([]);
@@ -182,15 +209,36 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
   }, [estimatedReceiveAmount, isCalculating]);
 
   /**
+   * Validate amount against min/max from price data
+   */
+  const validateAmount = useCallback(() => {
+    if (!lastPriceData || !amount) {
+      setAmountError(null);
+      return true;
+    }
+
+    const currentAmount = parseFloat(amount);
+    const minAmount = parseFloat(lastPriceData.data.from.min);
+    const maxAmount = parseFloat(lastPriceData.data.from.max);
+
+    if (currentAmount < minAmount) {
+      setAmountError(`Minimum amount is ${minAmount} ${fromCurrency}`);
+      return false;
+    }
+
+    if (currentAmount > maxAmount) {
+      setAmountError(`Maximum amount is ${maxAmount} ${fromCurrency}`);
+      return false;
+    }
+
+    setAmountError(null);
+    return true;
+  }, [amount, lastPriceData, fromCurrency]);
+
+  /**
    * Calculate the estimated receive amount based on current input values
    */
   const calculateReceiveAmount = useCallback(async () => {
-    // Clear any existing price check timer
-    if (priceCheckTimerRef.current) {
-      clearTimeout(priceCheckTimerRef.current);
-      priceCheckTimerRef.current = null;
-    }
-
     // Validate required inputs
     if (!fromCurrency || !toCurrency || !amount || parseFloat(amount) <= 0) {
       setEstimatedReceiveAmount("");
@@ -198,52 +246,52 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // Make sure the inputs have actually changed
+    const currentInputValues = {
+      fromCurrency,
+      toCurrency,
+      amount,
+      orderType,
+    };
+
+    const previousInputValues = lastInputValuesRef.current;
+    const inputsHaveChanged = 
+      previousInputValues.fromCurrency !== currentInputValues.fromCurrency ||
+      previousInputValues.toCurrency !== currentInputValues.toCurrency ||
+      previousInputValues.amount !== currentInputValues.amount ||
+      previousInputValues.orderType !== currentInputValues.orderType;
+
+    if (!inputsHaveChanged && !isPriceCalculationNeededRef.current) {
+      return;
+    }
+
+    // Update the ref with current values
+    lastInputValuesRef.current = { ...currentInputValues };
+    isPriceCalculationNeededRef.current = false;
+
     setIsCalculating(true);
     try {
-      const now = new Date().getTime();
+      // Get fresh price data
+      const data = await calculatePrice(
+        fromCurrency,
+        toCurrency,
+        amount,
+        orderType
+      );
 
-      // Use cached price check if it's still valid
-      if (
-        lastPriceCheck &&
-        lastPriceCheck.data.from.currency === fromCurrency &&
-        lastPriceCheck.data.to.currency === toCurrency &&
-        lastPriceCheck.expiresAt > now
-      ) {
-        const receiveAmount = lastPriceCheck.data.to.amount;
-        setEstimatedReceiveAmount(receiveAmount);
-        setLastPriceData(lastPriceCheck);
-
-        // Reset quote expiry time when using a cached quote
-        quoteExpiryTimeRef.current =
-          Date.now() + TIMER_CONFIG.QUOTE_VALIDITY_MS;
-      } else {
-        // Get fresh price data
-        const data = await calculatePrice(
-          fromCurrency,
-          toCurrency,
-          amount,
-          orderType
-        );
-
-        if (!data) {
-          setEstimatedReceiveAmount("0");
-          setLastPriceData(null);
-          setIsCalculating(false);
-          return;
-        }
-
-        setEstimatedReceiveAmount(data.data.to.amount);
-        setLastPriceData(data);
-
-        // Calculate when to refresh the price
-        const timeToExpiry = data.expiresAt - now;
-        const refreshTime = Math.max(timeToExpiry - 5000, 0);
-
-        // Schedule a refresh before the price expires
-        priceCheckTimerRef.current = setTimeout(() => {
-          calculateReceiveAmount();
-        }, refreshTime);
+      if (!data) {
+        setEstimatedReceiveAmount("0");
+        setLastPriceData(null);
+        setIsCalculating(false);
+        return;
       }
+
+      setEstimatedReceiveAmount(data.data.to.amount);
+      setLastPriceData(data);
+      
+      // Validate amount after getting price data
+      validateAmount();
+      
     } catch (error) {
       console.error("Error calculating amount:", error);
       setEstimatedReceiveAmount("0");
@@ -264,8 +312,8 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
     fromCurrency,
     toCurrency,
     orderType,
-    lastPriceCheck,
     calculatePrice,
+    validateAmount,
   ]);
 
   /**
@@ -317,28 +365,21 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
    * Update estimated receive amount when inputs change
    */
   useEffect(() => {
+    // Only calculate if we have all required inputs
     if (amount && fromCurrency && toCurrency) {
-      calculateReceiveAmount();
+      // Set the flag to indicate a calculation is needed
+      isPriceCalculationNeededRef.current = true;
+      
+      // Add a small delay to prevent rapid re-calculation
+      const timerId = setTimeout(() => {
+        calculateReceiveAmount();
+      }, 300);
+      
+      return () => clearTimeout(timerId);
     } else {
       setEstimatedReceiveAmount("");
       setLastPriceData(null);
     }
-
-    // Cleanup all timers when component unmounts or when key dependencies change
-    return () => {
-      if (priceCheckTimerRef.current) {
-        clearTimeout(priceCheckTimerRef.current);
-        priceCheckTimerRef.current = null;
-      }
-      if (statusCheckTimerRef.current) {
-        clearInterval(statusCheckTimerRef.current);
-        statusCheckTimerRef.current = null;
-      }
-      if (timeRemainingTimerRef.current) {
-        clearInterval(timeRemainingTimerRef.current);
-        timeRemainingTimerRef.current = null;
-      }
-    };
   }, [amount, fromCurrency, toCurrency, orderType, calculateReceiveAmount]);
 
   /**
@@ -353,18 +394,8 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       throw new Error("Valid amount is required");
     if (!destinationAddress) throw new Error("Destination address is required");
 
-    if (lastPriceCheck) {
-      const minAmount = parseFloat(lastPriceCheck.data.from.min);
-      const maxAmount = parseFloat(lastPriceCheck.data.from.max);
-      const currentAmount = parseFloat(amount);
-
-      if (currentAmount < minAmount) {
-        throw new Error(`Minimum amount is ${minAmount} ${fromCurrency}`);
-      }
-
-      if (currentAmount > maxAmount) {
-        throw new Error(`Maximum amount is ${maxAmount} ${fromCurrency}`);
-      }
+    if (!validateAmount()) {
+      throw new Error(amountError || "Invalid amount");
     }
   };
 
@@ -379,7 +410,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
 
       // Verify exchange rate is still valid
       const now = new Date().getTime();
-      if (!lastPriceCheck || lastPriceCheck.expiresAt < now) {
+      if (!lastPriceData || lastPriceData.expiresAt < now) {
         await calculateReceiveAmount();
         throw new Error("Exchange rate has expired. Please try again.");
       }
@@ -391,7 +422,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
         amount,
         destinationAddress,
         orderType,
-        lastPriceCheck.data.rate
+        lastPriceData.data.rate
       );
 
       if (result) {
@@ -436,6 +467,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
     isLoadingCurrencies,
     refreshCurrencies,
     lastPriceData,
+    amountError,
   };
 
   return (

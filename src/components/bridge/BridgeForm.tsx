@@ -1,12 +1,13 @@
 
 import { useState, useEffect } from "react";
-import { ArrowRight, ArrowLeftRight } from "lucide-react";
+import { ArrowRight, ArrowLeftRight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CurrencySelector } from "./CurrencySelector";
 import { DestinationAddressInput } from "./DestinationAddressInput";
 import { OrderTypeSelector } from "./OrderTypeSelector";
 import { useBridge } from "@/contexts/BridgeContext";
 import { useNavigate } from "react-router-dom";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const BridgeForm = () => {
   const navigate = useNavigate();
@@ -28,7 +29,8 @@ export const BridgeForm = () => {
     createBridgeTransaction,
     availableCurrencies,
     isLoadingCurrencies,
-    lastPriceData
+    lastPriceData,
+    amountError
   } = useBridge();
   
   const [fromExchangeRate, setFromExchangeRate] = useState<{rate: string; usdValue: string;} | null>(null);
@@ -42,12 +44,12 @@ export const BridgeForm = () => {
       // Calculate and format exchange rates
       if (from && to) {
         // From currency exchange rate
-        const fromRate = parseFloat(from.rate).toFixed(8);
+        const fromRate = parseFloat(from.rate?.toString() || "0").toFixed(8);
         const fromUsdValue = from.usd ? parseFloat(from.usd.toString()).toFixed(2) : "0.00";
         setFromExchangeRate({ rate: fromRate, usdValue: fromUsdValue });
         
         // To currency exchange rate
-        const toRate = parseFloat(to.rate).toFixed(8);
+        const toRate = parseFloat(to.rate?.toString() || "0").toFixed(8);
         const toUsdValue = to.usd ? parseFloat(to.usd.toString()).toFixed(2) : "0.00";
         setToExchangeRate({ rate: toRate, usdValue: toUsdValue });
       }
@@ -105,7 +107,8 @@ export const BridgeForm = () => {
       toCurrency &&
       amount &&
       parseFloat(amount) > 0 &&
-      destinationAddress
+      destinationAddress &&
+      !amountError
   );
 
   return (
@@ -148,6 +151,13 @@ export const BridgeForm = () => {
           exchangeRate={toExchangeRate}
         />
       </div>
+
+      {amountError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{amountError}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="space-y-4 sm:space-y-6">
         <DestinationAddressInput

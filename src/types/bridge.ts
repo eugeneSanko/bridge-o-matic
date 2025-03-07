@@ -37,6 +37,7 @@ export interface BridgeContextType {
   isLoadingCurrencies: boolean;
   refreshCurrencies: () => Promise<void>;
   lastPriceData: PriceResponse | null;
+  amountError: string | null;
 }
 
 export interface BridgeError extends Error {

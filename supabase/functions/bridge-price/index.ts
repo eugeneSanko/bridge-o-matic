@@ -93,6 +93,18 @@ serve(async (req) => {
     const timestamp = Math.floor(Date.now() / 1000);
     const expiresAt = timestamp + 60;
     
+    // Ensure rate is properly included in response
+    if (data.code === 0 && data.data) {
+      // If there's no explicit rate field in the response, calculate it
+      if (!data.data.rate && data.data.from && data.data.to) {
+        const fromAmount = parseFloat(data.data.from.amount);
+        const toAmount = parseFloat(data.data.to.amount);
+        if (fromAmount > 0 && toAmount > 0) {
+          data.data.rate = (toAmount / fromAmount).toString();
+        }
+      }
+    }
+    
     return new Response(
       JSON.stringify({
         ...data,
