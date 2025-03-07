@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ArrowRight, ArrowLeftRight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,7 +34,6 @@ export const BridgeForm = () => {
   
   const [fromExchangeRate, setFromExchangeRate] = useState<{rate: string; usdValue: string;} | null>(null);
   const [toExchangeRate, setToExchangeRate] = useState<{rate: string; usdValue: string;} | null>(null);
-  const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
 
   // Update exchange rates when price data changes
   useEffect(() => {
@@ -53,9 +51,6 @@ export const BridgeForm = () => {
         const toRate = parseFloat(to.rate?.toString() || "0").toFixed(8);
         const toUsdValue = to.usd ? parseFloat(to.usd.toString()).toFixed(2) : "0.00";
         setToExchangeRate({ rate: toRate, usdValue: toUsdValue });
-        
-        // Set the last update time
-        setLastUpdateTime(new Date());
       }
     } else {
       setFromExchangeRate(null);
@@ -161,15 +156,6 @@ export const BridgeForm = () => {
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{amountError}</AlertDescription>
         </Alert>
-      )}
-
-      {lastUpdateTime && (
-        <div className="text-xs text-center text-gray-400 mb-4">
-          Rates last updated: {lastUpdateTime.toLocaleTimeString()} 
-          {timeRemaining && (
-            <span className="ml-2 text-[#0FA0CE]">(valid for {timeRemaining}s)</span>
-          )}
-        </div>
       )}
 
       <div className="space-y-4 sm:space-y-6">
