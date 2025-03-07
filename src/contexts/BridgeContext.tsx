@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -17,6 +16,7 @@ import { BridgeContextType, TimerConfig, Currency, PriceResponse } from "@/types
 const TIMER_CONFIG: TimerConfig = {
   QUOTE_VALIDITY_MS: 120000, // 120 seconds (2 minutes)
   TIMER_UPDATE_INTERVAL_MS: 50, // 50ms update interval for smooth countdown
+  RECALCULATION_THROTTLE_MS: 120000, // 120 seconds (2 minutes) for price recalculation
 };
 
 const BridgeContext = createContext<BridgeContextType | undefined>(undefined);
@@ -259,7 +259,9 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
     // Check if 2 minutes have passed since the last price check
     const now = Date.now();
     const timeSinceLastCheck = now - lastPriceCheckTimeRef.current;
-    const shouldCheckPrice = timeSinceLastCheck >= TIMER_CONFIG.QUOTE_VALIDITY_MS || !lastPriceData;
+    
+    // Only allow calculation once every 2 minutes
+    const shouldCheckPrice = timeSinceLastCheck >= TIMER_CONFIG.RECALCULATION_THROTTLE_MS || !lastPriceData;
 
     // Make sure the inputs have actually changed
     const currentInputValues = {
@@ -278,7 +280,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
 
     // Only calculate if we need to check the price or inputs have changed
     if (!shouldCheckPrice && !inputsHaveChanged && !isPriceCalculationNeededRef.current) {
-      console.log("Skipping price calculation - no change detected or recently calculated");
+      console.log("Skipping price calculation - no change detected or time threshold not met");
       return;
     }
 
@@ -291,7 +293,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
     lastPriceCheckTimeRef.current = now;
 
     setIsCalculating(true);
-    console.log("Starting price calculation");
+    console.log(`Starting price calculation at ${new Date().toISOString()}`);
     
     try {
       // Get fresh price data
@@ -329,7 +331,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       });
     } finally {
       setIsCalculating(false);
-      console.log("Price calculation complete");
+      console.log(`Price calculation complete at ${new Date().toISOString()}, next calculation allowed at ${new Date(lastPriceCheckTimeRef.current + TIMER_CONFIG.RECALCULATION_THROTTLE_MS).toISOString()}`);
     }
   }, [
     amount,
@@ -343,9 +345,6 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
 
   /**
    * Start periodic status checking for an order
-   *
-   * @param orderId - The ID of the order to monitor
-   * @returns Cleanup function
    */
   const startStatusChecking = useCallback(
     (orderId: string) => {
@@ -407,11 +406,21 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       
       isCalculationScheduledRef.current = true;
       
-      // Add a longer delay to prevent rapid re-calculation
+      // Add a delay to prevent rapid re-calculation
+      // But make it long enough (no shorter than 2 minutes for repeated updates)
+      const now = Date.now();
+      const timeSinceLastCheck = now - lastPriceCheckTimeRef.current;
+      const timeToWait = Math.max(
+        1000, // At least 1 second delay for initial check
+        TIMER_CONFIG.RECALCULATION_THROTTLE_MS - timeSinceLastCheck // Wait for the remainder of the 2-minute period
+      );
+      
+      console.log(`Scheduling price calculation in ${timeToWait/1000} seconds`);
+      
       debounceTimerRef.current = setTimeout(() => {
         // Check if any price calculation is already in progress
         if (!isCalculating) {
-          console.log("Triggering debounced price calculation");
+          console.log("Triggering scheduled price calculation");
           calculateReceiveAmount();
         } else {
           console.log("Skipping calculation - another calculation is in progress");
@@ -419,7 +428,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
           isCalculationScheduledRef.current = false;
         }
         debounceTimerRef.current = null;
-      }, 1000); // 1-second debounce
+      }, timeToWait);
       
       return () => {
         if (debounceTimerRef.current) {
@@ -436,8 +445,6 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
 
   /**
    * Validates all inputs required for a bridge transaction
-   *
-   * @throws Error with description if validation fails
    */
   const validateBridgeTransaction = () => {
     if (!fromCurrency) throw new Error("Source currency is required");
@@ -453,8 +460,6 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
 
   /**
    * Creates a bridge transaction with the current input values
-   *
-   * @returns Object containing orderId if successful, null otherwise
    */
   const createBridgeTransaction = async () => {
     try {
@@ -529,9 +534,6 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
 
 /**
  * Hook to access the bridge context
- *
- * @returns Bridge context
- * @throws Error if used outside of BridgeProvider
  */
 export function useBridge() {
   const context = useContext(BridgeContext);
