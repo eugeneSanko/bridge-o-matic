@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { API_CONFIG } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -96,9 +97,26 @@ export function useBridgeService() {
         type: orderType
       };
       
-      const data = await invokeFunctionWithRetry(API_CONFIG.FF_PRICE, {
-        body
+      // Generate signature for the request body
+      const signature = generateApiSignature(body);
+      
+      // Make direct API call to FixedFloat
+      const response = await fetch(`${API_CONFIG.FF_API_URL}/price`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-API-KEY': API_CONFIG.FF_API_KEY,
+          'X-API-SIGN': signature
+        },
+        body: JSON.stringify(body)
       });
+      
+      if (!response.ok) {
+        throw new Error(`API request failed with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
       
       if (data.code !== 0) {
         throw new Error(data.msg || 'Failed to calculate price');
@@ -146,9 +164,26 @@ export function useBridgeService() {
         initialRate
       };
       
-      const data = await invokeFunctionWithRetry(API_CONFIG.FF_ORDER, {
-        body
+      // Generate signature for the request body
+      const signature = generateApiSignature(body);
+      
+      // Make direct API call to FixedFloat
+      const response = await fetch(`${API_CONFIG.FF_API_URL}/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-API-KEY': API_CONFIG.FF_API_KEY,
+          'X-API-SIGN': signature
+        },
+        body: JSON.stringify(body)
       });
+      
+      if (!response.ok) {
+        throw new Error(`API request failed with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
       
       if (data.code !== 0) {
         throw new Error(data.msg || 'Failed to create bridge transaction');
@@ -171,9 +206,26 @@ export function useBridgeService() {
     try {
       const body = { orderId };
       
-      const data = await invokeFunctionWithRetry(API_CONFIG.FF_STATUS, {
-        body
+      // Generate signature for the request body
+      const signature = generateApiSignature(body);
+      
+      // Make direct API call to FixedFloat
+      const response = await fetch(`${API_CONFIG.FF_API_URL}/status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-API-KEY': API_CONFIG.FF_API_KEY,
+          'X-API-SIGN': signature
+        },
+        body: JSON.stringify(body)
       });
+      
+      if (!response.ok) {
+        throw new Error(`API request failed with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
 
       if (data.code !== 0) {
         throw new Error(data.msg || 'Failed to fetch order status');

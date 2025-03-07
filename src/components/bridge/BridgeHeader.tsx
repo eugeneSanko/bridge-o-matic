@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Beaker } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
-import { API_CONFIG, invokeFunctionWithRetry, generateFixedFloatSignature } from "@/config/api";
+import { API_CONFIG } from "@/config/api";
+import CryptoJS from 'crypto-js';
 
 export const BridgeHeader = () => {
   const [isTestingApi, setIsTestingApi] = useState(false);
@@ -19,20 +20,30 @@ export const BridgeHeader = () => {
       });
 
       // Generate signature for empty body
-      const signature = generateFixedFloatSignature({});
+      const bodyString = '{}';
+      const signature = CryptoJS.HmacSHA256(bodyString, API_CONFIG.FF_API_SECRET).toString();
       console.log("Generated API signature:", signature);
       
-      console.log("Calling API endpoint:", API_CONFIG.FF_TEST);
-      const result = await invokeFunctionWithRetry(API_CONFIG.FF_TEST, {
-        body: {}, // Ensure we send an empty body object to generate proper signature
+      // Make direct API call to test endpoint
+      const response = await fetch(`${API_CONFIG.FF_API_URL}/ccies`, {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'X-API-KEY': API_CONFIG.FF_API_KEY,
           'X-API-SIGN': signature
-        }
+        },
+        body: bodyString
       });
+      
+      if (!response.ok) {
+        throw new Error(`API request failed with status: ${response.status}`);
+      }
+      
+      const result = await response.json();
       console.log("API test results:", result);
 
-      if (result.success) {
+      if (result.code === 0) {
         toast({
           title: "API Test Successful",
           description: "Connection to FixedFloat API is working properly",
@@ -42,7 +53,7 @@ export const BridgeHeader = () => {
         toast({
           title: "API Test Failed",
           description:
-            result.message || "There was an issue connecting to FixedFloat API",
+            result.msg || "There was an issue connecting to FixedFloat API",
           variant: "destructive",
         });
       }
