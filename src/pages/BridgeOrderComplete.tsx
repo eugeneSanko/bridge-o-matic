@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Check } from "lucide-react";
@@ -64,9 +63,9 @@ const BridgeOrderComplete = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-bridge-dark pt-24 px-8 pb-24 flex items-center justify-center">
+      <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-bridge-accent mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0FA0CE] mx-auto mb-4"></div>
           <p className="text-gray-300">Loading order details...</p>
         </div>
       </div>
@@ -75,12 +74,12 @@ const BridgeOrderComplete = () => {
 
   if (error || !orderDetails) {
     return (
-      <div className="min-h-screen bg-bridge-dark pt-24 px-8 pb-24 flex items-center justify-center">
+      <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24 flex items-center justify-center">
         <div className="max-w-md w-full glass-card p-8 rounded-xl">
           <h2 className="text-xl font-bold text-red-500 mb-4">Error</h2>
           <p className="text-gray-300 mb-6">{error || "Order not found"}</p>
           <button 
-            className="w-full bg-bridge-accent hover:bg-bridge-accent/90 text-white py-2 px-4 rounded"
+            className="w-full bg-[#0FA0CE] hover:bg-[#0FA0CE]/90 text-white py-2 px-4 rounded"
             onClick={() => window.location.href = "/bridge"}
           >
             Return to Bridge
@@ -91,8 +90,8 @@ const BridgeOrderComplete = () => {
   }
 
   return (
-    <div className="min-h-screen bg-bridge-dark pt-24 px-8 pb-24">
-      <div className="max-w-6xl mx-auto animate-slideUp">
+    <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
+      <div className="max-w-6xl mx-auto">
         <TransactionSummary 
           fromCurrency={orderDetails.from_currency}
           toCurrency={orderDetails.to_currency}
@@ -129,7 +128,7 @@ const BridgeOrderComplete = () => {
 
         <div className="flex justify-center">
           <button 
-            className="bg-bridge-accent hover:bg-bridge-accent/90 text-white py-2 px-8 rounded-lg"
+            className="bg-[#0FA0CE] hover:bg-[#0FA0CE]/90 text-white py-2 px-8 rounded-lg"
             onClick={() => window.location.href = "/bridge"}
           >
             Start New Transaction

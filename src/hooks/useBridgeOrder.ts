@@ -1,88 +1,159 @@
 
 import { useState, useEffect, useCallback } from "react";
+import { API_CONFIG, invokeFunctionWithRetry } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
 
-interface OrderDetails {
-  orderId: string;
+export interface OrderData {
+  id: string;
+  ff_order_id: string;
+  ff_order_token: string;
+  from_currency: string;
+  to_currency: string;
+  amount: number;
+  destination_address: string;
+  status: string;
+  created_at: string;
+  deposit_address: string;
+  initial_rate: number;
+  expiration_time: string;
+}
+
+export interface OrderDetails {
+  depositAddress: string;
+  depositAmount: string;
+  currentStatus: string;
   fromCurrency: string;
   toCurrency: string;
-  amount: number;
-  estimatedReceivedAmount: number;
-  depositAddress: string;
+  orderId: string;
   destinationAddress: string;
-  orderType: 'fixed' | 'float';
-  currentStatus: 'awaiting_deposit' | 'confirming' | 'processing' | 'completed' | 'expired' | 'failed';
-  createdAt: string;
-  expiresAt: string;
+  expiresAt: string | null;
+  timeRemaining: string | null;
+  ffOrderId: string;
+  ffOrderToken: string;
 }
 
 export function useBridgeOrder(orderId: string | null) {
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pollingInterval, setPollingInterval] = useState<number | null>(null);
 
-  // Simulate API call to fetch order details
-  useEffect(() => {
+  const fetchOrderDetails = useCallback(async () => {
     if (!orderId) {
       setError("No order ID provided");
       setLoading(false);
       return;
     }
 
-    const fetchOrderDetails = async () => {
-      setLoading(true);
-      setError(null);
+    try {
+      const orderResult = await invokeFunctionWithRetry('bridge-order', {
+        body: { orderId }
+      });
 
-      try {
-        // Simulate API fetch with timeout
-        await new Promise(resolve => setTimeout(resolve, 1800));
-        
-        // Create mock order details
-        const mockOrderDetails: OrderDetails = {
-          orderId,
-          fromCurrency: "BTC",
-          toCurrency: "ETH",
-          amount: 0.05,
-          estimatedReceivedAmount: 0.875,
-          depositAddress: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
-          destinationAddress: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
-          orderType: "fixed",
-          currentStatus: "awaiting_deposit",
-          createdAt: new Date().toISOString(),
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour from now
-        };
-
-        setOrderDetails(mockOrderDetails);
-      } catch (error) {
-        console.error("Failed to fetch order details:", error);
-        setError("Failed to fetch order details. Please try again.");
-      } finally {
-        setLoading(false);
+      if (!orderResult || orderResult.error) {
+        throw new Error(orderResult?.error?.message || "Failed to fetch order details");
       }
-    };
 
-    fetchOrderDetails();
+      const order = orderResult.data as OrderData;
+
+      if (!order.ff_order_id || !order.ff_order_token) {
+        throw new Error("Order doesn't have exchange information");
+      }
+
+      const statusData = await invokeFunctionWithRetry(API_CONFIG.FF_STATUS, {
+        body: { 
+          id: order.ff_order_id, 
+          token: order.ff_order_token 
+        }
+      });
+
+      if (!statusData || statusData.error) {
+        throw new Error(statusData?.error || "Failed to fetch order status");
+      }
+
+      let timeRemaining = null;
+      let expiresAt = order.expiration_time;
+      
+      if (expiresAt) {
+        const expirationTime = new Date(expiresAt);
+        const now = new Date();
+        const diffMs = expirationTime.getTime() - now.getTime();
+        
+        if (diffMs > 0) {
+          const diffMinutes = Math.floor(diffMs / 60000);
+          const diffSeconds = Math.floor((diffMs % 60000) / 1000);
+          timeRemaining = `${diffMinutes}:${diffSeconds.toString().padStart(2, '0')}`;
+        }
+      } else if (statusData.details && statusData.details.expiration) {
+        const expirationTime = new Date(statusData.details.expiration * 1000);
+        expiresAt = expirationTime.toISOString();
+        
+        const now = new Date();
+        const diffMs = expirationTime.getTime() - now.getTime();
+        
+        if (diffMs > 0) {
+          const diffMinutes = Math.floor(diffMs / 60000);
+          const diffSeconds = Math.floor((diffMs % 60000) / 1000);
+          timeRemaining = `${diffMinutes}:${diffSeconds.toString().padStart(2, '0')}`;
+        }
+      }
+
+      setOrderDetails({
+        depositAddress: order.deposit_address || (statusData.details?.from?.address || "Generating address..."),
+        depositAmount: statusData.details?.from?.amount || order.amount.toString(),
+        currentStatus: statusData.status || order.status,
+        fromCurrency: order.from_currency,
+        toCurrency: order.to_currency,
+        orderId: order.id,
+        ffOrderId: order.ff_order_id,
+        ffOrderToken: order.ff_order_token,
+        destinationAddress: order.destination_address,
+        expiresAt,
+        timeRemaining
+      });
+      
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching order details:", error);
+      setError(error instanceof Error ? error.message : "An unknown error occurred");
+      setLoading(false);
+    }
   }, [orderId]);
 
-  const handleCopyAddress = useCallback(() => {
-    if (!orderDetails?.depositAddress) return;
+  useEffect(() => {
+    fetchOrderDetails();
     
-    navigator.clipboard.writeText(orderDetails.depositAddress)
+    const interval = window.setInterval(fetchOrderDetails, 15000);
+    setPollingInterval(interval);
+    
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [orderId, fetchOrderDetails]);
+
+  const handleCopyAddress = (text: string) => {
+    navigator.clipboard.writeText(text)
       .then(() => {
         toast({
-          title: "Address copied",
-          description: "Deposit address copied to clipboard",
+          title: "Copied",
+          description: "Address copied to clipboard",
         });
       })
-      .catch(err => {
-        console.error("Failed to copy address:", err);
+      .catch(() => {
         toast({
-          title: "Copy failed",
-          description: "Failed to copy address to clipboard",
-          variant: "destructive",
+          title: "Error",
+          description: "Failed to copy address",
+          variant: "destructive"
         });
       });
-  }, [orderDetails?.depositAddress]);
+  };
 
-  return { orderDetails, loading, error, handleCopyAddress };
+  return {
+    orderDetails,
+    loading,
+    error,
+    handleCopyAddress
+  };
 }

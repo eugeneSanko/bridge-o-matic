@@ -1,7 +1,6 @@
 
-import { XCircle } from "lucide-react";
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import React from "react";
+import { Button } from "@/components/ui/button";
 
 interface ErrorStateProps {
   error: string;
@@ -9,29 +8,17 @@ interface ErrorStateProps {
 
 export const ErrorState = ({ error }: ErrorStateProps) => {
   return (
-    <div className="min-h-screen bg-bridge-dark pt-24 px-8 pb-24 flex items-center justify-center">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-md w-full glass-card p-8 rounded-xl"
-      >
-        <div className="flex items-center justify-center mb-6">
-          <div className="bg-red-500/20 rounded-full p-3">
-            <XCircle className="h-8 w-8 text-red-500" />
-          </div>
-        </div>
-        
-        <h2 className="text-xl font-bold text-center mb-2">Error</h2>
-        <p className="text-gray-400 text-center mb-6">{error}</p>
-        
-        <Link
-          to="/bridge"
-          className="block w-full py-2 px-4 bg-bridge-accent hover:bg-bridge-accent/90 text-white text-center rounded-lg transition-colors"
+    <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24 flex items-center justify-center">
+      <div className="max-w-md w-full glass-card p-8 rounded-xl">
+        <h2 className="text-xl font-bold text-red-500 mb-4">Error</h2>
+        <p className="text-gray-300 mb-6">{error}</p>
+        <Button 
+          className="w-full bg-[#0FA0CE] hover:bg-[#0FA0CE]/90"
+          onClick={() => window.location.href = "/bridge"}
         >
           Return to Bridge
-        </Link>
-      </motion.div>
+        </Button>
+      </div>
     </div>
   );
 };

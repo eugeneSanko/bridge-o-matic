@@ -1,5 +1,6 @@
 
 import { ArrowRight } from "lucide-react";
+import { AddressPlaceholder } from "./AddressPlaceholder";
 
 interface TransactionSummaryProps {
   fromCurrency: string;
@@ -9,45 +10,76 @@ interface TransactionSummaryProps {
 }
 
 export const TransactionSummary = ({ 
-  fromCurrency,
-  toCurrency,
-  amount,
+  fromCurrency, 
+  toCurrency, 
+  amount, 
   destinationAddress 
 }: TransactionSummaryProps) => {
-  const formattedAddress = destinationAddress.length > 20
-    ? `${destinationAddress.slice(0, 10)}...${destinationAddress.slice(-10)}`
-    : destinationAddress;
+  // Determine currency symbols for visual display
+  const getCurrencyIcon = (currency: string) => {
+    const lowerCurrency = currency.toLowerCase();
+    if (lowerCurrency === 'btc') return '₿';
+    if (lowerCurrency === 'eth') return 'Ξ';
+    if (lowerCurrency === 'sol') return '◎';
+    return currency.toUpperCase().substring(0, 1);
+  };
+
+  // Determine background colors based on currency
+  const getCurrencyColor = (currency: string) => {
+    const lowerCurrency = currency.toLowerCase();
+    if (lowerCurrency === 'btc') return 'bg-[#F7931A]';
+    if (lowerCurrency === 'eth') return 'bg-[#627EEA]';
+    if (lowerCurrency === 'sol') return 'bg-[#9945FF]';
+    return 'bg-[#0FA0CE]';
+  };
+
+  // Format address for display
+  const formatAddress = (address: string) => {
+    if (!address) return '';
+    if (address.length <= 16) return address;
+    return `${address.slice(0, 8)}...${address.slice(-8)}`;
+  };
 
   return (
-    <div className="glass-card p-4 rounded-xl mb-8 bg-gradient-to-r from-bridge-card to-bridge-card/80">
-      <div className="flex flex-col sm:flex-row items-center justify-between p-2">
-        <div className="flex items-center mb-4 sm:mb-0">
-          <div className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center mr-3">
-            <img src={`/${fromCurrency.toLowerCase()}.svg`} alt={fromCurrency} className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-xs text-gray-400">From</div>
-            <div className="font-bold">{amount} {fromCurrency}</div>
-          </div>
-        </div>
-
-        <div className="flex-shrink-0 mb-4 sm:mb-0">
-          <ArrowRight className="w-6 h-6 text-bridge-accent" />
-        </div>
-
-        <div className="flex items-center mb-4 sm:mb-0">
-          <div className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center mr-3">
-            <img src={`/${toCurrency.toLowerCase()}.svg`} alt={toCurrency} className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-xs text-gray-400">To</div>
-            <div className="font-bold">{toCurrency}</div>
+    <div className="glass-card p-8 md:p-12 rounded-xl mb-8 relative overflow-hidden">
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0FA0CE]/20 to-transparent" />
+      </div>
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-12 relative">
+        <div className="flex-1 w-full md:w-auto">
+          <div className="text-sm text-gray-400 mb-3">YOU SEND</div>
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-full ${getCurrencyColor(fromCurrency)} flex items-center justify-center text-lg font-bold text-white`}>
+              {getCurrencyIcon(fromCurrency)}
+            </div>
+            <div>
+              <div className="text-2xl md:text-3xl font-bold mb-2">{amount} {fromCurrency?.toUpperCase()}</div>
+              <div className="text-sm text-gray-400 font-mono">
+                {destinationAddress ? formatAddress(destinationAddress) : <AddressPlaceholder />}
+              </div>
+            </div>
           </div>
         </div>
-
-        <div className="ml-0 sm:ml-4 text-right">
-          <div className="text-xs text-gray-400">Destination</div>
-          <div className="font-mono text-xs">{formattedAddress}</div>
+        
+        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-secondary/20 flex items-center justify-center">
+          <ArrowRight className="w-8 h-8 md:w-10 md:h-10 text-[#0FA0CE]" />
+        </div>
+        
+        <div className="flex-1 w-full md:w-auto">
+          <div className="text-sm text-gray-400 mb-3">YOU RECEIVE</div>
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-full ${getCurrencyColor(toCurrency)} flex items-center justify-center text-lg font-bold text-white`}>
+              {getCurrencyIcon(toCurrency)}
+            </div>
+            <div>
+              <div className="text-2xl md:text-3xl font-bold mb-2">
+                {/* Exact amount will be determined upon completion */}
+                {/* Showing the currency only */}
+                {toCurrency?.toUpperCase()}
+              </div>
+              <div className="text-sm text-gray-400 font-mono">{formatAddress(destinationAddress)}</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

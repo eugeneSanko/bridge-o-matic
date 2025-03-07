@@ -1,6 +1,7 @@
 
-import { Info } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { QrCode, Copy, Clipboard } from "lucide-react";
 
 interface DestinationAddressInputProps {
   value: string;
@@ -10,32 +11,27 @@ interface DestinationAddressInputProps {
 export const DestinationAddressInput = ({ value, onChange }: DestinationAddressInputProps) => {
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
-        <label className="text-sm text-gray-400">
-          Destination Address
-        </label>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button className="text-gray-400 hover:text-gray-300 transition-colors">
-                <Info className="w-4 h-4" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="max-w-xs text-xs">
-                Enter the wallet address where you want to receive your bridged assets
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+      <label className="block text-sm font-medium mb-2 text-gray-300">Destination Address</label>
+      <div className="relative">
+        <Input 
+          type="text" 
+          placeholder="Enter destination address" 
+          className="h-[3.5rem] sm:h-[4.5rem] px-3 sm:px-4 bg-secondary/30 pr-24 sm:pr-32 text-sm sm:text-base"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1 sm:gap-2">
+          <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8">
+            <QrCode className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8">
+            <Copy className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8">
+            <Clipboard className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-      <input
-        type="text"
-        placeholder="0x..."
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full p-3 bg-gray-800/50 rounded-lg border border-white/5 focus:border-white/20 transition-all focus:outline-none font-mono"
-      />
     </div>
   );
 };

@@ -1,35 +1,85 @@
-
-import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Beaker } from "lucide-react";
+import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
+import { API_CONFIG, invokeFunctionWithRetry } from "@/config/api";
 
 export const BridgeHeader = () => {
+  const [isTestingApi, setIsTestingApi] = useState(false);
+
+  const testApi = async () => {
+    setIsTestingApi(true);
+    try {
+      console.log("Starting API test...");
+      toast({
+        title: "Testing API connection",
+        description:
+          "Please wait while we test the connection to FixedFloat...",
+      });
+
+      console.log("Calling API endpoint:", API_CONFIG.FF_TEST);
+      const result = await invokeFunctionWithRetry(API_CONFIG.FF_TEST);
+      console.log("API test results:", result);
+
+      if (result.success) {
+        toast({
+          title: "API Test Successful",
+          description: "Connection to FixedFloat API is working properly",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "API Test Failed",
+          description:
+            result.message || "There was an issue connecting to FixedFloat API",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("API test error:", error);
+      toast({
+        title: "API Test Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to test API connection",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTestingApi(false);
+    }
+  };
+
   return (
-    <div className="mb-8 sm:mb-12 text-center">
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="inline-block py-2 px-4 bg-bridge-accent/10 rounded-full mb-4"
-      >
-        <span className="text-sm font-medium text-bridge-accent">Fast & Secure Bridging</span>
-      </motion.div>
-      
-      <motion.h1 
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
-        className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent"
-      >
-        Bridge-O-Matic
-      </motion.h1>
-      
-      <motion.p 
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
-        className="text-gray-400 text-sm sm:text-base mx-auto max-w-lg"
-      >
-        The most elegant way to bridge your crypto assets across blockchains with lowest fees and fastest transaction times.
-      </motion.p>
-    </div>
+    <>
+      <div className="flex items-center flex-wrap gap-4 mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+          Tradenly Bridge
+        </h1>
+        <div className="px-3 py-1 bg-[#ea384c] text-white text-sm font-medium rounded-full animate-pulse-subtle">
+          Coming Soon
+        </div>
+
+        <div className="ml-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={testApi}
+            disabled={isTestingApi}
+            className="flex items-center gap-1 text-[#0FA0CE] hover:text-[#0FA0CE] border-[#0FA0CE] hover:border-[#0FA0CE] hover:bg-[#0FA0CE]/10"
+          >
+            <Beaker className="w-4 h-4" />
+            {isTestingApi ? "Testing..." : "Test API"}
+          </Button>
+        </div>
+      </div>
+
+      <div className="text-gray-400 mb-8 sm:mb-12 space-y-2">
+        <p>The exchange service is provided by FixedFloat.</p>
+        <p>
+          Creating an order confirms your agreement with the FixedFloat rules.
+        </p>
+      </div>
+    </>
   );
 };

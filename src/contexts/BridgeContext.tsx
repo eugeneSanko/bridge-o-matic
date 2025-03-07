@@ -1,187 +1,380 @@
-
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import { toast } from "@/hooks/use-toast";
+import { useBridgeService } from "@/hooks/useBridgeService";
+import { BridgeContextType, TimerConfig, Currency } from "@/types/bridge";
 
-export interface Currency {
-  id: string;
-  name: string;
-  symbol: string;
-  img: string;
-  testnet?: boolean;
-}
-
-export interface BridgeContextType {
-  fromCurrency: Currency | null;
-  toCurrency: Currency | null;
-  amount: string;
-  estimatedReceiveAmount: string;
-  destinationAddress: string;
-  orderType: 'fixed' | 'float';
-  timeRemaining: number;
-  isCalculating: boolean;
-  availableCurrencies: Currency[];
-  isLoadingCurrencies: boolean;
-  setFromCurrency: (currency: Currency | null) => void;
-  setToCurrency: (currency: Currency | null) => void;
-  setAmount: (amount: string) => void;
-  setDestinationAddress: (address: string) => void;
-  setOrderType: (type: 'fixed' | 'float') => void;
-  createBridgeTransaction: () => Promise<any>;
-}
+/**
+ * Configuration for timers used in the bridge process
+ */
+const TIMER_CONFIG: TimerConfig = {
+  QUOTE_VALIDITY_MS: 10000, // 10 seconds
+  TIMER_UPDATE_INTERVAL_MS: 50, // 50ms update interval for smooth countdown
+};
 
 const BridgeContext = createContext<BridgeContextType | undefined>(undefined);
 
-// Sample cryptocurrency data
-const SAMPLE_CURRENCIES: Currency[] = [
-  { id: '1', name: 'Bitcoin', symbol: 'BTC', img: '/bitcoin.svg' },
-  { id: '2', name: 'Ethereum', symbol: 'ETH', img: '/ethereum.svg' },
-  { id: '3', name: 'Solana', symbol: 'SOL', img: '/solana.svg' },
-  { id: '4', name: 'USD Coin', symbol: 'USDC', img: '/usdc.svg' },
-  { id: '5', name: 'Tether', symbol: 'USDT', img: '/tether.svg' },
-  { id: '6', name: 'Binance Coin', symbol: 'BNB', img: '/bnb.svg' },
-  { id: '7', name: 'BTC Testnet', symbol: 'tBTC', img: '/bitcoin.svg', testnet: true },
-];
+/**
+ * BridgeProvider component that manages the state and logic for the cross-chain bridge functionality
+ *
+ * @param children - React children components
+ */
+export function BridgeProvider({ children }: { children: React.ReactNode }) {
+  const [fromCurrency, setFromCurrency] = useState<string>("");
+  const [toCurrency, setToCurrency] = useState<string>("");
+  const [amount, setAmount] = useState<string>("");
+  const [estimatedReceiveAmount, setEstimatedReceiveAmount] =
+    useState<string>("");
+  const [destinationAddress, setDestinationAddress] = useState<string>("");
+  const [orderType, setOrderType] = useState<"fixed" | "float">("fixed");
+  const [isCalculating, setIsCalculating] = useState<boolean>(false);
+  const [availableCurrencies, setAvailableCurrencies] = useState<Currency[]>(
+    []
+  );
+  const [isLoadingCurrencies, setIsLoadingCurrencies] = useState<boolean>(true);
+  const [timeRemaining, setTimeRemaining] = useState<string | null>(null);
 
-// Mock API function
-const mockApiCall = <T,>(data: T, delay = 1000): Promise<T> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(data);
-    }, delay);
-  });
-};
+  // Use refs for timers to prevent issues with cleanup and closures
+  const priceCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const statusCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const timeRemainingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const quoteExpiryTimeRef = useRef<number | null>(null);
 
-export function BridgeProvider({ children }: { children: ReactNode }) {
-  const [fromCurrency, setFromCurrency] = useState<Currency | null>(null);
-  const [toCurrency, setToCurrency] = useState<Currency | null>(null);
-  const [amount, setAmount] = useState("");
-  const [estimatedReceiveAmount, setEstimatedReceiveAmount] = useState("");
-  const [destinationAddress, setDestinationAddress] = useState("");
-  const [orderType, setOrderType] = useState<'fixed' | 'float'>('fixed');
-  const [timeRemaining, setTimeRemaining] = useState(30);
-  const [isCalculating, setIsCalculating] = useState(false);
-  const [availableCurrencies, setAvailableCurrencies] = useState<Currency[]>([]);
-  const [isLoadingCurrencies, setIsLoadingCurrencies] = useState(true);
+  const {
+    fetchCurrencies,
+    calculatePrice,
+    createOrder,
+    checkOrderStatus,
+    lastPriceCheck,
+  } = useBridgeService();
 
+  /**
+   * Load available currencies on component mount
+   */
   useEffect(() => {
-    // Simulate fetching available currencies
-    const fetchCurrencies = async () => {
+    const loadCurrencies = async () => {
+      setIsLoadingCurrencies(true);
       try {
-        setIsLoadingCurrencies(true);
-        const currencies = await mockApiCall(SAMPLE_CURRENCIES, 1500);
-        setAvailableCurrencies(currencies);
+        const currencies = await fetchCurrencies();
+        if (Array.isArray(currencies) && currencies.length > 0) {
+          setAvailableCurrencies(currencies);
+          console.log(`Loaded ${currencies.length} currencies`);
+        } else {
+          console.warn("No currencies received from API");
+          setAvailableCurrencies([]);
+        }
       } catch (error) {
-        console.error("Failed to fetch currencies", error);
+        console.error("Failed to load currencies:", error);
         toast({
           title: "Error",
           description: "Failed to load available currencies",
-          variant: "destructive"
+          variant: "destructive",
         });
+        setAvailableCurrencies([]);
       } finally {
         setIsLoadingCurrencies(false);
       }
     };
 
-    fetchCurrencies();
-  }, []);
+    loadCurrencies();
+  }, [fetchCurrencies]);
 
-  // Calculate estimated receive amount when amount or currencies change
+  /**
+   * Start the countdown timer when a new price estimate is received
+   */
   useEffect(() => {
+    // Clear any existing timer
+    if (timeRemainingTimerRef.current) {
+      clearInterval(timeRemainingTimerRef.current);
+      timeRemainingTimerRef.current = null;
+    }
+
+    // Only start the timer if we have a valid estimate and aren't calculating
+    if (estimatedReceiveAmount && !isCalculating) {
+      // Set the expiry time for this quote
+      quoteExpiryTimeRef.current = Date.now() + TIMER_CONFIG.QUOTE_VALIDITY_MS;
+
+      // Update function to calculate and display remaining time
+      const updateTimer = () => {
+        if (!quoteExpiryTimeRef.current) return;
+
+        const now = Date.now();
+        const timeLeft = Math.max(0, quoteExpiryTimeRef.current - now);
+
+        if (timeLeft <= 0) {
+          setTimeRemaining(null);
+          if (timeRemainingTimerRef.current) {
+            clearInterval(timeRemainingTimerRef.current);
+            timeRemainingTimerRef.current = null;
+          }
+          return;
+        }
+
+        // Format the remaining time as seconds with 2 decimal places
+        const seconds = Math.floor(timeLeft / 1000);
+        const milliseconds = Math.floor((timeLeft % 1000) / 10);
+        setTimeRemaining(
+          `${seconds}.${milliseconds.toString().padStart(2, "0")}`
+        );
+      };
+
+      // Initial update
+      updateTimer();
+
+      // Set interval for continuous updates
+      timeRemainingTimerRef.current = setInterval(
+        updateTimer,
+        TIMER_CONFIG.TIMER_UPDATE_INTERVAL_MS
+      );
+    } else {
+      // Reset timer if we're recalculating or have no estimate
+      setTimeRemaining(null);
+    }
+
+    // Clean up timer on unmount or when dependencies change
+    return () => {
+      if (timeRemainingTimerRef.current) {
+        clearInterval(timeRemainingTimerRef.current);
+        timeRemainingTimerRef.current = null;
+      }
+    };
+  }, [estimatedReceiveAmount, isCalculating]);
+
+  /**
+   * Calculate the estimated receive amount based on current input values
+   */
+  const calculateReceiveAmount = useCallback(async () => {
+    // Clear any existing price check timer
+    if (priceCheckTimerRef.current) {
+      clearTimeout(priceCheckTimerRef.current);
+      priceCheckTimerRef.current = null;
+    }
+
+    // Validate required inputs
     if (!fromCurrency || !toCurrency || !amount || parseFloat(amount) <= 0) {
       setEstimatedReceiveAmount("");
       return;
     }
 
-    const calculateEstimate = async () => {
-      setIsCalculating(true);
-      setTimeRemaining(30);
-      
-      try {
-        // Simulate API calculation with random exchange rate
-        const exchangeRate = Math.random() * 20;
-        await mockApiCall(null, 1200);
-        const estimated = (parseFloat(amount) * exchangeRate).toFixed(6);
-        setEstimatedReceiveAmount(estimated);
-      } catch (error) {
-        console.error("Failed to calculate estimate", error);
-        setEstimatedReceiveAmount("");
-        toast({
-          title: "Error",
-          description: "Failed to calculate estimated amount",
-          variant: "destructive"
-        });
-      } finally {
-        setIsCalculating(false);
+    setIsCalculating(true);
+    try {
+      const now = new Date().getTime();
+
+      // Use cached price check if it's still valid
+      if (
+        lastPriceCheck &&
+        lastPriceCheck.data.from.currency === fromCurrency &&
+        lastPriceCheck.data.to.currency === toCurrency &&
+        lastPriceCheck.expiresAt > now
+      ) {
+        const receiveAmount = lastPriceCheck.data.to.amount;
+        setEstimatedReceiveAmount(receiveAmount);
+
+        // Reset quote expiry time when using a cached quote
+        quoteExpiryTimeRef.current =
+          Date.now() + TIMER_CONFIG.QUOTE_VALIDITY_MS;
+      } else {
+        // Get fresh price data
+        const data = await calculatePrice(
+          fromCurrency,
+          toCurrency,
+          amount,
+          orderType
+        );
+
+        if (!data) {
+          setEstimatedReceiveAmount("0");
+          setIsCalculating(false);
+          return;
+        }
+
+        setEstimatedReceiveAmount(data.data.to.amount);
+
+        // Calculate when to refresh the price
+        const timeToExpiry = data.expiresAt - now;
+        const refreshTime = Math.max(timeToExpiry - 5000, 0);
+
+        // Schedule a refresh before the price expires
+        priceCheckTimerRef.current = setTimeout(() => {
+          calculateReceiveAmount();
+        }, refreshTime);
+      }
+    } catch (error) {
+      console.error("Error calculating amount:", error);
+      setEstimatedReceiveAmount("0");
+      toast({
+        title: "Calculation Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to calculate estimated amount",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCalculating(false);
+    }
+  }, [
+    amount,
+    fromCurrency,
+    toCurrency,
+    orderType,
+    lastPriceCheck,
+    calculatePrice,
+  ]);
+
+  /**
+   * Start periodic status checking for an order
+   *
+   * @param orderId - The ID of the order to monitor
+   * @returns Cleanup function
+   */
+  const startStatusChecking = useCallback(
+    (orderId: string) => {
+      // Clear any existing status check timer
+      if (statusCheckTimerRef.current) {
+        clearInterval(statusCheckTimerRef.current);
+        statusCheckTimerRef.current = null;
+      }
+
+      // Set up status check at regular intervals
+      const timerId = setInterval(async () => {
+        const data = await checkOrderStatus(orderId);
+
+        // Stop checking if order is in a terminal state
+        if (
+          data &&
+          ["completed", "failed", "expired", "refunded"].includes(
+            data.data.status
+          )
+        ) {
+          if (statusCheckTimerRef.current) {
+            clearInterval(statusCheckTimerRef.current);
+            statusCheckTimerRef.current = null;
+          }
+        }
+      }, 10000);
+
+      statusCheckTimerRef.current = timerId;
+
+      // Return cleanup function
+      return () => {
+        if (statusCheckTimerRef.current) {
+          clearInterval(statusCheckTimerRef.current);
+          statusCheckTimerRef.current = null;
+        }
+      };
+    },
+    [checkOrderStatus]
+  );
+
+  /**
+   * Update estimated receive amount when inputs change
+   */
+  useEffect(() => {
+    if (amount && fromCurrency && toCurrency) {
+      calculateReceiveAmount();
+    } else {
+      setEstimatedReceiveAmount("");
+    }
+
+    // Cleanup all timers when component unmounts or when key dependencies change
+    return () => {
+      if (priceCheckTimerRef.current) {
+        clearTimeout(priceCheckTimerRef.current);
+        priceCheckTimerRef.current = null;
+      }
+      if (statusCheckTimerRef.current) {
+        clearInterval(statusCheckTimerRef.current);
+        statusCheckTimerRef.current = null;
+      }
+      if (timeRemainingTimerRef.current) {
+        clearInterval(timeRemainingTimerRef.current);
+        timeRemainingTimerRef.current = null;
       }
     };
+  }, [amount, fromCurrency, toCurrency, orderType, calculateReceiveAmount]);
 
-    calculateEstimate();
+  /**
+   * Validates all inputs required for a bridge transaction
+   *
+   * @throws Error with description if validation fails
+   */
+  const validateBridgeTransaction = () => {
+    if (!fromCurrency) throw new Error("Source currency is required");
+    if (!toCurrency) throw new Error("Destination currency is required");
+    if (!amount || parseFloat(amount) <= 0)
+      throw new Error("Valid amount is required");
+    if (!destinationAddress) throw new Error("Destination address is required");
 
-    // Start countdown timer
-    const intervalId = setInterval(() => {
-      setTimeRemaining((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
+    if (lastPriceCheck) {
+      const minAmount = parseFloat(lastPriceCheck.data.from.min);
+      const maxAmount = parseFloat(lastPriceCheck.data.from.max);
+      const currentAmount = parseFloat(amount);
 
-    return () => clearInterval(intervalId);
-  }, [fromCurrency, toCurrency, amount]);
+      if (currentAmount < minAmount) {
+        throw new Error(`Minimum amount is ${minAmount} ${fromCurrency}`);
+      }
 
-  // Refresh estimate when timer reaches 0
-  useEffect(() => {
-    if (timeRemaining === 0 && fromCurrency && toCurrency && amount) {
-      // Trigger recalculation
-      const amountValue = amount;
-      setAmount("");
-      setTimeout(() => setAmount(amountValue), 100);
+      if (currentAmount > maxAmount) {
+        throw new Error(`Maximum amount is ${maxAmount} ${fromCurrency}`);
+      }
     }
-  }, [timeRemaining, fromCurrency, toCurrency, amount]);
+  };
 
-  const createBridgeTransaction = useCallback(async () => {
-    if (!fromCurrency || !toCurrency || !amount || !destinationAddress) {
-      toast({
-        title: "Missing information",
-        description: "Please fill in all fields to continue",
-        variant: "destructive"
-      });
-      return null;
-    }
-
+  /**
+   * Creates a bridge transaction with the current input values
+   *
+   * @returns Object containing orderId if successful, null otherwise
+   */
+  const createBridgeTransaction = async () => {
     try {
-      toast({
-        title: "Creating transaction",
-        description: "Please wait while we set up your bridge transaction",
-      });
+      validateBridgeTransaction();
 
-      // Simulate API call to create bridge transaction
-      const response = await mockApiCall({
-        orderId: `order-${Date.now()}`,
-        fromCurrency: fromCurrency.symbol,
-        toCurrency: toCurrency.symbol,
-        amount: parseFloat(amount),
-        estimatedReceiveAmount: parseFloat(estimatedReceiveAmount),
+      // Verify exchange rate is still valid
+      const now = new Date().getTime();
+      if (!lastPriceCheck || lastPriceCheck.expiresAt < now) {
+        await calculateReceiveAmount();
+        throw new Error("Exchange rate has expired. Please try again.");
+      }
+
+      // Create order
+      const result = await createOrder(
+        fromCurrency,
+        toCurrency,
+        amount,
         destinationAddress,
         orderType,
-        depositAddress: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
-        status: "awaiting_deposit",
-        created: new Date().toISOString()
-      }, 2000);
+        lastPriceCheck.data.rate
+      );
 
-      toast({
-        title: "Transaction created",
-        description: "Your bridge transaction has been set up successfully",
-      });
+      if (result) {
+        startStatusChecking(result.orderId);
 
-      return response;
-    } catch (error) {
-      console.error("Failed to create transaction", error);
+        toast({
+          title: "Transaction Created",
+          description: "Your bridge transaction has been initiated",
+        });
+      }
+
+      return result;
+    } catch (error: any) {
       toast({
-        title: "Transaction failed",
-        description: "Failed to create bridge transaction. Please try again.",
-        variant: "destructive"
+        title: "Transaction Failed",
+        description: error.message || "Failed to create bridge transaction",
+        variant: "destructive",
       });
+      console.error("Bridge transaction error:", error);
       return null;
     }
-  }, [fromCurrency, toCurrency, amount, estimatedReceiveAmount, destinationAddress, orderType]);
+  };
 
+  // Context value to be provided
   const value = {
     fromCurrency,
     toCurrency,
@@ -189,29 +382,34 @@ export function BridgeProvider({ children }: { children: ReactNode }) {
     estimatedReceiveAmount,
     destinationAddress,
     orderType,
-    timeRemaining,
     isCalculating,
-    availableCurrencies,
-    isLoadingCurrencies,
+    timeRemaining,
     setFromCurrency,
     setToCurrency,
     setAmount,
     setDestinationAddress,
     setOrderType,
-    createBridgeTransaction
+    calculateReceiveAmount,
+    createBridgeTransaction,
+    availableCurrencies,
+    isLoadingCurrencies,
   };
 
   return (
-    <BridgeContext.Provider value={value}>
-      {children}
-    </BridgeContext.Provider>
+    <BridgeContext.Provider value={value}>{children}</BridgeContext.Provider>
   );
 }
 
-export const useBridge = () => {
+/**
+ * Hook to access the bridge context
+ *
+ * @returns Bridge context
+ * @throws Error if used outside of BridgeProvider
+ */
+export function useBridge() {
   const context = useContext(BridgeContext);
   if (context === undefined) {
     throw new Error("useBridge must be used within a BridgeProvider");
   }
   return context;
-};
+}
