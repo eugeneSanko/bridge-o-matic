@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -15,7 +14,7 @@ import { BridgeContextType, TimerConfig, Currency, PriceResponse } from "@/types
  * Configuration for timers used in the bridge process
  */
 const TIMER_CONFIG: TimerConfig = {
-  QUOTE_VALIDITY_MS: 60000, // 60 seconds (1 minute)
+  QUOTE_VALIDITY_MS: 120000, // 120 seconds (2 minutes)
   TIMER_UPDATE_INTERVAL_MS: 50, // 50ms update interval for smooth countdown
 };
 
@@ -250,7 +249,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Check if a minute has passed since the last price check
+    // Check if 2 minutes have passed since the last price check
     const now = Date.now();
     const timeSinceLastCheck = now - lastPriceCheckTimeRef.current;
     const shouldCheckPrice = timeSinceLastCheck >= TIMER_CONFIG.QUOTE_VALIDITY_MS || !lastPriceData;

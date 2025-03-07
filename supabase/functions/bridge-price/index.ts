@@ -89,9 +89,9 @@ serve(async (req) => {
     // Get the response data
     const data = await response.json();
     
-    // Add timestamp and expiry time (60 seconds)
+    // Add timestamp and expiry time (120 seconds = 2 minutes)
     const timestamp = Math.floor(Date.now() / 1000);
-    const expiresAt = timestamp + 60; // 60 seconds expiration
+    const expiresAt = timestamp + 120; // 120 seconds expiration (2 minutes)
     
     // Ensure rate is properly included in response
     if (data.code === 0 && data.data) {
