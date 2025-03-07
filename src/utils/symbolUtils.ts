@@ -39,3 +39,22 @@ export function normalizeCurrencySymbol(symbol: string): string {
   // If no pattern matched, return the original symbol
   return symbol;
 }
+
+/**
+ * Cleans a symbol by removing network information
+ * @param symbol The cryptocurrency symbol (e.g., "ETHBSC", "USDTTRC")
+ * @returns Cleaned symbol (e.g., "ETH", "USDT")
+ */
+export function cleanSymbol(symbol: string): string {
+  return normalizeCurrencySymbol(symbol);
+}
+
+/**
+ * Checks if a trading symbol is valid for API requests
+ * @param symbol The trading symbol to validate
+ * @returns True if the symbol appears valid, false otherwise
+ */
+export function isValidSymbol(symbol: string): boolean {
+  // Simple validation: must be at least 2 characters and contain only letters
+  return symbol.length >= 2 && /^[A-Za-z]+$/.test(symbol);
+}
