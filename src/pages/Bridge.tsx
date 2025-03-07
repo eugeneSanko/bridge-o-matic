@@ -1,5 +1,6 @@
 
 import { useBridge } from "@/contexts/BridgeContext";
+import { BridgeProvider } from "@/contexts/BridgeContext";
 import { BridgeHeader } from "@/components/bridge/BridgeHeader";
 import { BridgeForm } from "@/components/bridge/BridgeForm";
 import { FAQSection } from "@/components/bridge/FAQSection";
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useBridgeService } from "@/hooks/useBridgeService";
 import { AlertCircle } from "lucide-react";
 
-const Bridge = () => {
+const BridgeContent = () => {
   const { isLoadingCurrencies, availableCurrencies, refreshCurrencies } = useBridge();
   const [apiResponse, setApiResponse] = useState<string | null>(null);
   const bridgeService = useBridgeService();
@@ -91,6 +92,15 @@ const Bridge = () => {
         <FAQSection />
       </div>
     </div>
+  );
+};
+
+// Wrap the component with BridgeProvider to fix the "useBridge must be used within a BridgeProvider" error
+const Bridge = () => {
+  return (
+    <BridgeProvider>
+      <BridgeContent />
+    </BridgeProvider>
   );
 };
 

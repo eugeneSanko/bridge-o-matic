@@ -277,7 +277,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
         if (
           data &&
           ["completed", "failed", "expired", "refunded"].includes(
-            data.data.status
+            data.status
           )
         ) {
           if (statusCheckTimerRef.current) {

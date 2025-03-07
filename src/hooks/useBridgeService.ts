@@ -237,7 +237,7 @@ export function useBridgeService() {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock status response
+      // Mock status response with a specific address for the destination
       return {
         code: 0,
         msg: "Success",
@@ -249,7 +249,7 @@ export function useBridgeService() {
             currency: "BTC"
           },
           to: {
-            address: destination,
+            address: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e", // Mock destination address
             amount: "230.45",
             currency: "USDT"
           },
