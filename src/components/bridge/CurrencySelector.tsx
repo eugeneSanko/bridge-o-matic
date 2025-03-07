@@ -1,7 +1,6 @@
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { AddressPlaceholder } from "@/components/bridge/AddressPlaceholder";
 import { Clock } from "lucide-react";
 import { Currency } from "@/types/bridge";
 import { useEffect } from "react";
@@ -44,23 +43,32 @@ export const CurrencySelector = ({
 
   useEffect(() => {
     // If currencies are loaded and we don't have a value selected yet, set the first one
-    if (availableCurrencies.length > 0 && !value && !isReceiveSide) {
-      // Find BTC or another high priority currency
-      const btc = availableCurrencies.find(c => c.symbol === 'BTC');
-      const eth = availableCurrencies.find(c => c.symbol === 'ETH');
-      const highPriorityCurrency = availableCurrencies.sort((a, b) => (b.priority || 0) - (a.priority || 0))[0];
-      
-      onChange(btc?.symbol || eth?.symbol || highPriorityCurrency?.symbol || availableCurrencies[0].symbol);
-    } else if (availableCurrencies.length > 0 && !value && isReceiveSide) {
-      // For receive side, prefer stablecoins or ETH if no currency is selected
-      const usdt = availableCurrencies.find(c => c.symbol.includes('USDT'));
-      const usdc = availableCurrencies.find(c => c.symbol.includes('USDC'));
-      const eth = availableCurrencies.find(c => c.symbol === 'ETH');
-      const highPriorityCurrency = availableCurrencies.sort((a, b) => (b.priority || 0) - (a.priority || 0))[0];
-      
-      onChange(usdt?.symbol || usdc?.symbol || eth?.symbol || highPriorityCurrency?.symbol || availableCurrencies[0].symbol);
+    if (availableCurrencies.length > 0 && !value) {
+      // For send side, prefer BTC or high priority currencies
+      if (!isReceiveSide) {
+        const btc = availableCurrencies.find(c => c.symbol === 'BTC');
+        const eth = availableCurrencies.find(c => c.symbol === 'ETH');
+        const highPriorityCurrency = availableCurrencies.sort((a, b) => (b.priority || 0) - (a.priority || 0))[0];
+        
+        onChange(btc?.symbol || eth?.symbol || highPriorityCurrency?.symbol || availableCurrencies[0].symbol);
+      } 
+      // For receive side, prefer stablecoins or ETH
+      else {
+        const usdt = availableCurrencies.find(c => c.symbol.includes('USDT'));
+        const usdc = availableCurrencies.find(c => c.symbol.includes('USDC'));
+        const eth = availableCurrencies.find(c => c.symbol === 'ETH');
+        const canReceive = availableCurrencies.filter(c => c.canReceive);
+        const highPriorityCurrency = canReceive.sort((a, b) => (b.priority || 0) - (a.priority || 0))[0];
+        
+        onChange(usdt?.symbol || usdc?.symbol || eth?.symbol || highPriorityCurrency?.symbol || availableCurrencies[0].symbol);
+      }
     }
   }, [availableCurrencies, value, onChange, isReceiveSide]);
+
+  // Filter currencies based on send/receive capability
+  const filteredCurrencies = isReceiveSide
+    ? availableCurrencies.filter(c => c.canReceive !== false)
+    : availableCurrencies.filter(c => c.canSend !== false);
 
   return (
     <div className="flex-1">
@@ -115,10 +123,10 @@ export const CurrencySelector = ({
           <SelectContent className="bg-[#141413] border border-white/10 max-h-[300px]">
             {isLoadingCurrencies ? (
               <SelectItem value="loading" disabled>Loading currencies...</SelectItem>
-            ) : availableCurrencies.length === 0 ? (
+            ) : filteredCurrencies.length === 0 ? (
               <SelectItem value="none" disabled>No currencies available</SelectItem>
             ) : (
-              availableCurrencies
+              filteredCurrencies
                 .sort((a, b) => (b.priority || 0) - (a.priority || 0))
                 .map((currency) => (
                 <SelectItem key={currency.symbol} value={currency.symbol}>
@@ -130,7 +138,7 @@ export const CurrencySelector = ({
                         {currency.symbol.substring(0, 1).toUpperCase()}
                       </div>
                     )}
-                    {currency.name} ({currency.coin?.toUpperCase() || currency.symbol?.toUpperCase()})
+                    {currency.name}
                     {currency.network && currency.network !== currency.coin && (
                       <span className="text-xs text-gray-400">
                         [{currency.network}]

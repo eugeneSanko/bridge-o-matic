@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { API_CONFIG } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -88,20 +89,23 @@ export function useBridgeService() {
       console.log('Edge function response:', data);
       
       // If the API response is successful and contains currencies
-      if (data.code === 0 && data.ccies) {
-        // Transform the currencies data from object to array with the right shape
-        const currenciesArray: Currency[] = Object.entries(data.ccies).map(([symbol, details]: [string, any]) => ({
-          symbol,
-          name: details.name || symbol,
-          image: details.image || null,
-          network: details.network || null,
-          available: details.available !== false,
-          color: details.color || null,
-          coin: symbol.toLowerCase(),
-          priority: details.priority || 0
+      if (data.code === 0 && data.data) {
+        // Transform the currencies data to match our Currency interface
+        const currenciesArray: Currency[] = data.data.map((item: any) => ({
+          symbol: item.code, // Use the currency code as symbol
+          name: item.name,
+          image: item.logo,
+          network: item.network,
+          available: item.send === 1, // Available for sending
+          color: item.color,
+          coin: item.coin.toLowerCase(),
+          tag: item.tag,
+          priority: item.priority,
+          canSend: item.send === 1,
+          canReceive: item.recv === 1
         }));
         
-        return currenciesArray;
+        return currenciesArray.filter(c => c.available !== false);
       } else {
         console.error('API returned an error:', data);
         throw new Error(data.msg || 'Unknown API error');
