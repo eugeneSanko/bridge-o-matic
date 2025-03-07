@@ -10,8 +10,6 @@ export interface Currency {
   coin?: string;
   tag?: string | null;
   priority?: number;
-  canSend?: boolean;
-  canReceive?: boolean;
 }
 
 export interface BridgeContextType {
