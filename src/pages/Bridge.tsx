@@ -7,11 +7,12 @@ import { FAQSection } from "@/components/bridge/FAQSection";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useBridgeService } from "@/hooks/useBridgeService";
-import { AlertCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 const BridgeContent = () => {
   const { isLoadingCurrencies, availableCurrencies, refreshCurrencies } = useBridge();
   const [apiResponse, setApiResponse] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const bridgeService = useBridgeService();
 
   useEffect(() => {
@@ -30,24 +31,27 @@ const BridgeContent = () => {
 
   const testDirectApiCall = async () => {
     console.log("Testing direct API call to FixedFloat...");
+    setIsLoading(true);
+    setApiResponse(null);
+    
     try {
       const currencies = await bridgeService.fetchCurrencies();
       
-      if (currencies && currencies.length > 0) {
-        // Format the mock API response to display in the UI
-        const mockResponse = {
+      // Display the full raw response
+      if (currencies) {
+        setApiResponse(JSON.stringify({
           code: 0,
           msg: "OK",
           ccies: currencies
-        };
-        
-        setApiResponse(JSON.stringify(mockResponse, null, 2));
+        }, null, 2));
       } else {
-        setApiResponse("API request succeeded but no currencies were returned.");
+        setApiResponse("API request succeeded but returned no data.");
       }
     } catch (error) {
       console.error("Direct API test failed:", error);
       setApiResponse(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -56,41 +60,30 @@ const BridgeContent = () => {
       <div className="max-w-3xl mx-auto">
         <BridgeHeader />
         
-        {/* Development Mode Notice */}
-        <div className="mb-8 p-4 bg-[#2A2A2A] border border-yellow-600/50 rounded-xl">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5 flex-shrink-0" />
-            <div>
-              <h3 className="text-white text-lg font-medium mb-2">Development Mode</h3>
-              <p className="text-gray-300 text-sm mb-2">
-                This application is running in development mode with mock data. Direct API calls to FixedFloat are 
-                blocked by CORS policy, which is a security feature of web browsers.
-              </p>
-              <p className="text-gray-300 text-sm mb-2">
-                In a production environment, you would need to:
-              </p>
-              <ol className="list-decimal pl-5 text-gray-300 text-sm space-y-1 mb-3">
-                <li>Create a backend proxy service (like a Supabase Edge Function)</li>
-                <li>The proxy would make API calls to FixedFloat on behalf of your frontend</li>
-                <li>Your frontend would call your proxy instead of calling FixedFloat directly</li>
-              </ol>
-            </div>
-          </div>
-        </div>
-        
         {/* API Test Section */}
         <div className="mb-8 p-4 bg-[#1A1A1A] rounded-xl">
-          <h3 className="text-white text-lg font-medium mb-2">API Connection Test</h3>
+          <h3 className="text-white text-lg font-medium mb-2">FixedFloat API Response</h3>
+          <p className="text-gray-400 text-sm mb-3">
+            View the direct response from the FixedFloat API currencies endpoint.
+          </p>
           <Button 
             onClick={testDirectApiCall} 
             variant="outline"
-            className="mb-2"
+            className="mb-3"
+            disabled={isLoading}
           >
-            Test Mock API Response
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              'Show FixedFloat API Response'
+            )}
           </Button>
           
           {apiResponse && (
-            <div className="mt-2 p-3 bg-[#111] rounded text-sm text-white overflow-auto max-h-96">
+            <div className="mt-2 p-3 bg-[#111] rounded text-sm text-white overflow-auto max-h-[500px]">
               <pre className="whitespace-pre-wrap">{apiResponse}</pre>
             </div>
           )}
