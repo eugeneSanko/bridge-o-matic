@@ -36,6 +36,7 @@ export interface BridgeContextType {
   availableCurrencies: Currency[];
   isLoadingCurrencies: boolean;
   refreshCurrencies: () => Promise<void>;
+  lastPriceData: PriceResponse | null;
 }
 
 export interface BridgeError extends Error {
@@ -57,6 +58,9 @@ export interface PriceResponse {
       max: string;
       min: string;
       network: string;
+      rate?: string;
+      usd?: number;
+      btc?: number;
     };
     to: {
       amount: string;
@@ -64,8 +68,12 @@ export interface PriceResponse {
       max: string;
       min: string;
       network: string;
+      rate?: string;
+      usd?: number;
+      btc?: number;
     };
-    rate: string;
+    rate?: string;
+    errors?: string[];
   };
   timestamp: number;
   expiresAt: number;

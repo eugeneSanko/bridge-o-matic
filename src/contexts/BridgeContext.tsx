@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { toast } from "@/hooks/use-toast";
 import { useBridgeService } from "@/hooks/useBridgeService";
-import { BridgeContextType, TimerConfig, Currency } from "@/types/bridge";
+import { BridgeContextType, TimerConfig, Currency, PriceResponse } from "@/types/bridge";
 
 /**
  * Configuration for timers used in the bridge process
@@ -39,6 +39,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
   );
   const [isLoadingCurrencies, setIsLoadingCurrencies] = useState<boolean>(true);
   const [timeRemaining, setTimeRemaining] = useState<string | null>(null);
+  const [lastPriceData, setLastPriceData] = useState<PriceResponse | null>(null);
 
   // Use refs for timers to prevent issues with cleanup and closures
   const priceCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -53,6 +54,13 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
     checkOrderStatus,
     lastPriceCheck,
   } = useBridgeService();
+
+  // Update lastPriceData when lastPriceCheck changes
+  useEffect(() => {
+    if (lastPriceCheck) {
+      setLastPriceData(lastPriceCheck);
+    }
+  }, [lastPriceCheck]);
 
   /**
    * Function to refresh available currencies
@@ -186,6 +194,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
     // Validate required inputs
     if (!fromCurrency || !toCurrency || !amount || parseFloat(amount) <= 0) {
       setEstimatedReceiveAmount("");
+      setLastPriceData(null);
       return;
     }
 
@@ -202,6 +211,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       ) {
         const receiveAmount = lastPriceCheck.data.to.amount;
         setEstimatedReceiveAmount(receiveAmount);
+        setLastPriceData(lastPriceCheck);
 
         // Reset quote expiry time when using a cached quote
         quoteExpiryTimeRef.current =
@@ -217,11 +227,13 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
 
         if (!data) {
           setEstimatedReceiveAmount("0");
+          setLastPriceData(null);
           setIsCalculating(false);
           return;
         }
 
         setEstimatedReceiveAmount(data.data.to.amount);
+        setLastPriceData(data);
 
         // Calculate when to refresh the price
         const timeToExpiry = data.expiresAt - now;
@@ -235,6 +247,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Error calculating amount:", error);
       setEstimatedReceiveAmount("0");
+      setLastPriceData(null);
       toast({
         title: "Calculation Error",
         description:
@@ -308,6 +321,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       calculateReceiveAmount();
     } else {
       setEstimatedReceiveAmount("");
+      setLastPriceData(null);
     }
 
     // Cleanup all timers when component unmounts or when key dependencies change
@@ -421,6 +435,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
     availableCurrencies,
     isLoadingCurrencies,
     refreshCurrencies,
+    lastPriceData,
   };
 
   return (

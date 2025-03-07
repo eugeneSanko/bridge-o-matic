@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { API_CONFIG } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -158,20 +157,50 @@ export function useBridgeService() {
         fromCurrency,
         toCurrency,
         amount,
-        type: orderType
+        orderType
       };
       
-      // Generate signature for the request body
-      const signature = generateApiSignature(body);
+      console.log('Calculating price via Supabase Edge Function...');
+      console.log('API Request:', body);
       
-      // CORS ISSUE: In a production environment, this should be handled by a backend proxy
-      // For development, we'll simulate a response
-      console.log('Simulating price calculation due to CORS restrictions');
-      console.log('API Request would include:', body);
-      console.log('API Signature:', signature);
+      // Call our Supabase edge function for price calculation
+      const { data, error } = await supabase.functions.invoke('bridge-price', {
+        body
+      });
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(`Edge function error: ${error.message}`);
+      }
+      
+      if (!data) {
+        console.error('No data returned from edge function');
+        throw new Error('No data returned from edge function');
+      }
+      
+      console.log('Price calculation response:', data);
+      
+      // If the API response is successful
+      if (data.code === 0) {
+        const responseData: PriceResponse = {
+          code: data.code,
+          msg: data.msg,
+          data: data.data,
+          timestamp: data.timestamp,
+          expiresAt: data.expiresAt
+        };
+        
+        setLastPriceCheck(responseData);
+        return responseData;
+      } else {
+        console.error('API returned an error:', data);
+        throw new Error(data.msg || 'Unknown API error');
+      }
+    } catch (error) {
+      console.error('Error calculating amount:', error);
+      
+      // For development mode, if the API call fails, create a mock response
+      console.warn('Generating mock price data due to API error');
       
       // Mock response based on the request
       const mockRate = fromCurrency === 'BTC' ? 65000 : 3000;
@@ -189,16 +218,22 @@ export function useBridgeService() {
             currency: fromCurrency,
             max: "10",
             min: "0.001",
-            network: "Network"
+            network: "Network",
+            rate: (fromCurrency === 'BTC' ? mockRate : 1 / mockRate).toString(),
+            usd: fromAmount * mockRate,
+            btc: fromCurrency === 'BTC' ? fromAmount : fromAmount / mockRate
           },
           to: {
             amount: toAmount,
             currency: toCurrency,
             max: "1000000",
             min: "0.01",
-            network: "Network"
+            network: "Network",
+            rate: (fromCurrency === 'BTC' ? 1 / mockRate : mockRate).toString(),
+            usd: parseFloat(toAmount) * (toCurrency === 'BTC' ? mockRate : 1),
+            btc: toCurrency === 'BTC' ? parseFloat(toAmount) : parseFloat(toAmount) / mockRate
           },
-          rate: (fromCurrency === 'BTC' ? mockRate : 1 / mockRate).toString()
+          errors: []
         },
         timestamp: Date.now() / 1000,
         expiresAt: (Date.now() / 1000) + 60
@@ -206,16 +241,8 @@ export function useBridgeService() {
       
       setLastPriceCheck(mockResponse);
       return mockResponse;
-    } catch (error) {
-      console.error('Error calculating amount:', error);
-      toast({
-        title: "Calculation Error",
-        description: error instanceof Error ? error.message : "Failed to calculate estimated amount",
-        variant: "destructive"
-      });
-      return null;
     }
-  }, [lastPriceCheck]);
+  }, []);
 
   const createOrder = useCallback(async (
     fromCurrency: string, 

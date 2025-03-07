@@ -8,9 +8,9 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { AddressPlaceholder } from "@/components/bridge/AddressPlaceholder";
-import { Clock } from "lucide-react";
+import { Clock, Search, ArrowDownUp } from "lucide-react";
 import { Currency } from "@/types/bridge";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 
 interface CurrencySelectorProps {
@@ -26,6 +26,11 @@ interface CurrencySelectorProps {
   isLoadingCurrencies: boolean;
   isReceiveSide?: boolean;
   borderColor?: string;
+  exchangeRate?: {
+    rate: string;
+    usdValue: string;
+    invert?: boolean;
+  } | null;
 }
 
 export const CurrencySelector = ({
@@ -41,7 +46,11 @@ export const CurrencySelector = ({
   isLoadingCurrencies,
   isReceiveSide = false,
   borderColor,
+  exchangeRate,
 }: CurrencySelectorProps) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+
   const handleAmountChange = (value: string) => {
     if (!onAmountChange) return;
 
@@ -55,6 +64,19 @@ export const CurrencySelector = ({
   const filteredCurrencies = availableCurrencies.filter((currency) =>
     isReceiveSide ? currency.recv === 1 : currency.send === 1
   );
+
+  // Further filter currencies by search term
+  const searchedCurrencies = filteredCurrencies.filter((currency) => {
+    if (!searchTerm) return true;
+    
+    const search = searchTerm.toLowerCase();
+    return (
+      (currency.name?.toLowerCase().includes(search)) ||
+      (currency.code?.toLowerCase().includes(search)) ||
+      (currency.coin?.toLowerCase().includes(search)) ||
+      (currency.network?.toLowerCase().includes(search))
+    );
+  });
 
   useEffect(() => {
     // If currencies are loaded and we don't have a value selected yet, set the first one
@@ -102,6 +124,16 @@ export const CurrencySelector = ({
     borderWidth: '2px',
   } : {};
 
+  // Get the selected currency object
+  const selectedCurrency = availableCurrencies.find(c => c.code === value);
+
+  // Reset search when dropdown closes
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchTerm("");
+    }
+  }, [isOpen]);
+
   return (
     <div className="flex-1">
       <label className="block text-sm font-medium mb-2 text-gray-300 text-center sm:text-left">
@@ -112,6 +144,7 @@ export const CurrencySelector = ({
           value={value}
           onValueChange={onChange}
           disabled={isLoadingCurrencies}
+          onOpenChange={setIsOpen}
         >
           <SelectTrigger 
             className="h-[3.5rem] sm:h-[4.5rem] px-3 sm:px-4 bg-secondary/30 text-sm sm:text-base transition-all duration-200" 
@@ -171,16 +204,46 @@ export const CurrencySelector = ({
             </div>
           </SelectTrigger>
           <SelectContent className="border border-white/10 max-h-[300px] glass-card">
+            {/* Search input */}
+            <div className="sticky top-0 px-2 py-2 bg-background/80 backdrop-blur-md z-10">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search currency..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+            </div>
+            
+            {/* Exchange rate if available */}
+            {exchangeRate && value && (
+              <div className="px-3 py-2 border-b border-white/10 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1 mb-1">
+                  <ArrowDownUp className="h-3 w-3" />
+                  <span>Exchange Rate</span>
+                </div>
+                <div className="font-mono">
+                  {exchangeRate.invert 
+                    ? `1 ${selectedCurrency?.code} = ${exchangeRate.rate} ${isReceiveSide ? "send" : "receive"} ($${exchangeRate.usdValue})`
+                    : `1 ${isReceiveSide ? "send" : "receive"} = ${exchangeRate.rate} ${selectedCurrency?.code} ($${exchangeRate.usdValue})`
+                  }
+                </div>
+              </div>
+            )}
+            
+            {/* Currency list */}
             {isLoadingCurrencies ? (
               <SelectItem value="loading" disabled>
                 <Icon icon="eos-icons:three-dots-loading" />
               </SelectItem>
-            ) : filteredCurrencies.length === 0 ? (
+            ) : searchedCurrencies.length === 0 ? (
               <SelectItem value="none" disabled>
-                No currencies available
+                {searchTerm ? "No matching currencies" : "No currencies available"}
               </SelectItem>
             ) : (
-              filteredCurrencies
+              searchedCurrencies
                 .sort((a, b) => (b.priority || 0) - (a.priority || 0))
                 .map((currency) => (
                   <SelectItem key={currency.code} value={currency.code || ""}>
@@ -216,6 +279,18 @@ export const CurrencySelector = ({
           </SelectContent>
         </Select>
       </div>
+      
+      {/* Display exchange rate below the selector */}
+      {exchangeRate && value && amount && !isReceiveSide && (
+        <div className="mt-1 text-xs text-gray-400 font-mono">
+          {`1 ${selectedCurrency?.code} = ${exchangeRate.rate} ${isReceiveSide ? "send" : "receive"} ($${exchangeRate.usdValue})`}
+        </div>
+      )}
+      {exchangeRate && value && estimatedAmount && isReceiveSide && (
+        <div className="mt-1 text-xs text-gray-400 font-mono">
+          {`1 ${selectedCurrency?.code} = ${exchangeRate.rate} ${isReceiveSide ? "send" : "receive"} ($${exchangeRate.usdValue})`}
+        </div>
+      )}
     </div>
   );
 };

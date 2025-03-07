@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowRight, ArrowLeftRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CurrencySelector } from "./CurrencySelector";
@@ -28,7 +28,34 @@ export const BridgeForm = () => {
     createBridgeTransaction,
     availableCurrencies,
     isLoadingCurrencies,
+    lastPriceData
   } = useBridge();
+  
+  const [fromExchangeRate, setFromExchangeRate] = useState<{rate: string; usdValue: string;} | null>(null);
+  const [toExchangeRate, setToExchangeRate] = useState<{rate: string; usdValue: string;} | null>(null);
+
+  // Update exchange rates when price data changes
+  useEffect(() => {
+    if (lastPriceData && lastPriceData.data) {
+      const { from, to } = lastPriceData.data;
+      
+      // Calculate and format exchange rates
+      if (from && to) {
+        // From currency exchange rate
+        const fromRate = parseFloat(from.rate).toFixed(8);
+        const fromUsdValue = from.usd ? parseFloat(from.usd.toString()).toFixed(2) : "0.00";
+        setFromExchangeRate({ rate: fromRate, usdValue: fromUsdValue });
+        
+        // To currency exchange rate
+        const toRate = parseFloat(to.rate).toFixed(8);
+        const toUsdValue = to.usd ? parseFloat(to.usd.toString()).toFixed(2) : "0.00";
+        setToExchangeRate({ rate: toRate, usdValue: toUsdValue });
+      }
+    } else {
+      setFromExchangeRate(null);
+      setToExchangeRate(null);
+    }
+  }, [lastPriceData]);
 
   const handleBridgeAssets = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -93,6 +120,7 @@ export const BridgeForm = () => {
           availableCurrencies={availableCurrencies}
           isLoadingCurrencies={isLoadingCurrencies}
           borderColor={fromCurrencyObj?.color}
+          exchangeRate={fromExchangeRate}
         />
 
         <div className="flex flex-col items-center justify-center">
@@ -117,6 +145,7 @@ export const BridgeForm = () => {
           isLoadingCurrencies={isLoadingCurrencies}
           isReceiveSide={true}
           borderColor={toCurrencyObj?.color}
+          exchangeRate={toExchangeRate}
         />
       </div>
 
