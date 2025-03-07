@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import * as crypto from 'crypto';
 
@@ -33,6 +32,9 @@ export const API_CONFIG = {
   // FixedFloat API credentials (for frontend reference only)
   FF_API_KEY,
   FF_API_SECRET,
+  
+  // Direct API URL (only for testing or when edge functions are not available)
+  FF_DIRECT_API_URL: "https://ff.io/api/v2"
 };
 
 /**
@@ -41,7 +43,7 @@ export const API_CONFIG = {
  * @returns The HMAC-SHA256 signature of the stringified body
  */
 export function generateFixedFloatSignature(body: any): string {
-  // Convert body to string
+  // Convert body to string - if empty, use '{}' as that's what the API expects
   const bodyStr = body ? JSON.stringify(body) : '{}';
   
   // Create HMAC signature

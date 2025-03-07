@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { API_CONFIG, invokeFunctionWithRetry } from "@/config/api";
+import { API_CONFIG, invokeFunctionWithRetry, generateFixedFloatSignature } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
 import { PriceResponse, BridgeError, Currency } from "@/types/bridge";
 
@@ -10,9 +10,22 @@ export function useBridgeService() {
   const fetchCurrencies = useCallback(async () => {
     try {
       console.log('Fetching available currencies...');
-      // Empty body is fine for this endpoint
+      
+      // Create an empty body for the request - this is required for signature generation
+      const body = {};
+      
+      // Generate the API signature for the empty body
+      const signature = generateFixedFloatSignature(body);
+      
+      console.log('Generated signature for currency request:', signature);
+      
+      // Make the request to the API
       const data = await invokeFunctionWithRetry(API_CONFIG.FF_CURRENCIES, {
-        body: {}
+        body: body, // Send empty body for proper signature
+        headers: {
+          'X-API-KEY': API_CONFIG.FF_API_KEY,
+          'X-API-SIGN': signature
+        }
       });
       
       if (data.code === 0) {

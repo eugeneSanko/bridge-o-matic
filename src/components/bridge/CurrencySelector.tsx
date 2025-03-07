@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { AddressPlaceholder } from "@/components/bridge/AddressPlaceholder";
 import { Clock } from "lucide-react";
 import { Currency } from "@/types/bridge";
+import { useEffect } from "react";
 
 interface CurrencySelectorProps {
   label: string;
@@ -40,6 +41,26 @@ export const CurrencySelector = ({
       onAmountChange(value);
     }
   };
+
+  useEffect(() => {
+    // If currencies are loaded and we don't have a value selected yet, set the first one
+    if (availableCurrencies.length > 0 && !value && !isReceiveSide) {
+      // Find BTC or another high priority currency
+      const btc = availableCurrencies.find(c => c.symbol === 'BTC');
+      const eth = availableCurrencies.find(c => c.symbol === 'ETH');
+      const highPriorityCurrency = availableCurrencies.sort((a, b) => (b.priority || 0) - (a.priority || 0))[0];
+      
+      onChange(btc?.symbol || eth?.symbol || highPriorityCurrency?.symbol || availableCurrencies[0].symbol);
+    } else if (availableCurrencies.length > 0 && !value && isReceiveSide) {
+      // For receive side, prefer stablecoins or ETH if no currency is selected
+      const usdt = availableCurrencies.find(c => c.symbol.includes('USDT'));
+      const usdc = availableCurrencies.find(c => c.symbol.includes('USDC'));
+      const eth = availableCurrencies.find(c => c.symbol === 'ETH');
+      const highPriorityCurrency = availableCurrencies.sort((a, b) => (b.priority || 0) - (a.priority || 0))[0];
+      
+      onChange(usdt?.symbol || usdc?.symbol || eth?.symbol || highPriorityCurrency?.symbol || availableCurrencies[0].symbol);
+    }
+  }, [availableCurrencies, value, onChange, isReceiveSide]);
 
   return (
     <div className="flex-1">
@@ -124,4 +145,4 @@ export const CurrencySelector = ({
       </div>
     </div>
   );
-};
+}

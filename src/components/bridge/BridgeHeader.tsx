@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Beaker } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
-import { API_CONFIG, invokeFunctionWithRetry } from "@/config/api";
+import { API_CONFIG, invokeFunctionWithRetry, generateFixedFloatSignature } from "@/config/api";
 
 export const BridgeHeader = () => {
   const [isTestingApi, setIsTestingApi] = useState(false);
@@ -15,12 +15,20 @@ export const BridgeHeader = () => {
       toast({
         title: "Testing API connection",
         description:
-          "Please wait while we test the connection to FixedFloat...",
+          "Please wait while we test the connection to FixedFloat API...",
       });
 
+      // Generate signature for empty body
+      const signature = generateFixedFloatSignature({});
+      console.log("Generated API signature:", signature);
+      
       console.log("Calling API endpoint:", API_CONFIG.FF_TEST);
       const result = await invokeFunctionWithRetry(API_CONFIG.FF_TEST, {
-        body: {} // Ensure we send an empty body object to generate proper signature
+        body: {}, // Ensure we send an empty body object to generate proper signature
+        headers: {
+          'X-API-KEY': API_CONFIG.FF_API_KEY,
+          'X-API-SIGN': signature
+        }
       });
       console.log("API test results:", result);
 
