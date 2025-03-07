@@ -58,6 +58,9 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
   
   // Flag to prevent redundant price calculations
   const isPriceCalculationNeededRef = useRef(false);
+  
+  // Debounce timer ref to prevent multiple rapid calls
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const {
     fetchCurrencies,
@@ -269,8 +272,15 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       previousInputValues.amount !== currentInputValues.amount ||
       previousInputValues.orderType !== currentInputValues.orderType;
 
+    // Only calculate if we need to check the price or inputs have changed
     if (!shouldCheckPrice && !inputsHaveChanged && !isPriceCalculationNeededRef.current) {
       return;
+    }
+
+    // Cancel any pending debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
     }
 
     // Update the ref with current values
@@ -382,17 +392,31 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       // Set the flag to indicate a calculation is needed
       isPriceCalculationNeededRef.current = true;
       
-      // Add a small delay to prevent rapid re-calculation
-      const timerId = setTimeout(() => {
-        calculateReceiveAmount();
-      }, 500);
+      // Clear any existing debounce timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
       
-      return () => clearTimeout(timerId);
+      // Add a longer delay to prevent rapid re-calculation
+      debounceTimerRef.current = setTimeout(() => {
+        // Check if any price calculation is already in progress
+        if (!isCalculating) {
+          calculateReceiveAmount();
+        }
+        debounceTimerRef.current = null;
+      }, 1000); // 1-second debounce
+      
+      return () => {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+          debounceTimerRef.current = null;
+        }
+      };
     } else {
       setEstimatedReceiveAmount("");
       setLastPriceData(null);
     }
-  }, [amount, fromCurrency, toCurrency, orderType, calculateReceiveAmount]);
+  }, [amount, fromCurrency, toCurrency, orderType, calculateReceiveAmount, isCalculating]);
 
   /**
    * Validates all inputs required for a bridge transaction
