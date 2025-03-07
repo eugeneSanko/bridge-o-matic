@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useBridgeService } from "@/hooks/useBridgeService";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const BridgeContent = () => {
   const { isLoadingCurrencies, availableCurrencies, refreshCurrencies } = useBridge();
@@ -30,25 +31,22 @@ const BridgeContent = () => {
   }, [availableCurrencies]);
 
   const testDirectApiCall = async () => {
-    console.log("Testing direct API call to FixedFloat...");
+    console.log("Testing direct API call to FixedFloat via edge function...");
     setIsLoading(true);
     setApiResponse(null);
     
     try {
-      const currencies = await bridgeService.fetchCurrencies();
+      // Call the Supabase edge function directly to get the raw response
+      const { data, error } = await supabase.functions.invoke('bridge-currencies');
+      
+      if (error) {
+        throw new Error(`Edge function error: ${error.message}`);
+      }
       
       // Display the full raw response
-      if (currencies) {
-        setApiResponse(JSON.stringify({
-          code: 0,
-          msg: "OK",
-          ccies: currencies
-        }, null, 2));
-      } else {
-        setApiResponse("API request succeeded but returned no data.");
-      }
+      setApiResponse(JSON.stringify(data, null, 2));
     } catch (error) {
-      console.error("Direct API test failed:", error);
+      console.error("API test failed:", error);
       setApiResponse(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setIsLoading(false);

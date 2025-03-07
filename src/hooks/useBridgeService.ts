@@ -1,11 +1,11 @@
-
 import { useState, useCallback } from 'react';
 import { API_CONFIG } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
 import { PriceResponse, BridgeError, Currency } from "@/types/bridge";
 import CryptoJS from 'crypto-js';
+import { supabase } from "@/integrations/supabase/client";
 
-// Mock data for development (since we can't call the API directly due to CORS)
+// Mock data for development fallback if the API call fails
 const MOCK_CURRENCIES: Currency[] = [
   {
     symbol: "BTC",
@@ -70,37 +70,55 @@ export function useBridgeService() {
   
   const fetchCurrencies = useCallback(async () => {
     try {
-      console.log('Fetching available currencies from FixedFloat API...');
+      console.log('Fetching available currencies from FixedFloat API via Supabase Edge Function...');
       
-      // Generate signature with empty body
-      const signature = generateApiSignature();
+      // Call our Supabase edge function instead of direct API
+      const { data, error } = await supabase.functions.invoke('bridge-currencies');
       
-      // CORS ISSUE: In a production environment, this should be handled by a backend proxy
-      // For development, we'll use mock data
-      console.log('Using mock currency data due to CORS restrictions');
-      console.log('In production, this should be handled by a backend service that can make the API call');
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(`Edge function error: ${error.message}`);
+      }
       
-      // Log what the actual API response would look like (mock data)
-      console.log('Mock API Response (similar to what the real API would return):');
-      console.log(JSON.stringify({
-        code: 0,
-        msg: "OK",
-        ccies: MOCK_CURRENCIES
-      }, null, 2));
+      if (!data) {
+        console.error('No data returned from edge function');
+        throw new Error('No data returned from edge function');
+      }
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Edge function response:', data);
       
-      return MOCK_CURRENCIES;
+      // If the API response is successful and contains currencies
+      if (data.code === 0 && data.ccies) {
+        // Transform the currencies data from object to array with the right shape
+        const currenciesArray: Currency[] = Object.entries(data.ccies).map(([symbol, details]: [string, any]) => ({
+          symbol,
+          name: details.name || symbol,
+          image: details.image || null,
+          network: details.network || null,
+          available: details.available !== false,
+          color: details.color || null,
+          coin: symbol.toLowerCase(),
+          priority: details.priority || 0
+        }));
+        
+        return currenciesArray;
+      } else {
+        console.error('API returned an error:', data);
+        throw new Error(data.msg || 'Unknown API error');
+      }
     } catch (error) {
       console.error('Error fetching currencies:', error);
+      
+      // Fallback to mock data in case of error
+      console.warn('Falling back to mock currency data due to API error');
       toast({
-        title: "Error",
-        description: "Failed to load available currencies",
+        title: "API Error",
+        description: "Could not connect to exchange API. Using fallback data.",
         variant: "destructive"
       });
-      // Return an empty array instead of throwing to avoid breaking the UI
-      return [];
+      
+      // Return mock data instead of throwing
+      return MOCK_CURRENCIES;
     }
   }, []);
 
