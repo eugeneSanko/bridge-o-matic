@@ -1,3 +1,4 @@
+
 import {
   Select,
   SelectContent,
@@ -59,10 +60,12 @@ export const CurrencySelector = ({
     }
   };
 
+  // Filter currencies based on whether they're for send or receive capability
   const filteredCurrencies = availableCurrencies.filter((currency) =>
     isReceiveSide ? currency.recv === 1 : currency.send === 1
   );
 
+  // Further filter currencies by search term
   const searchedCurrencies = filteredCurrencies.filter((currency) => {
     if (!searchTerm) return true;
     
@@ -76,8 +79,11 @@ export const CurrencySelector = ({
   });
 
   useEffect(() => {
+    // If currencies are loaded and we don't have a value selected yet, set the first one
     if (filteredCurrencies.length > 0 && !value) {
+      // Find currencies by priority or defaults
       if (!isReceiveSide) {
+        // For send side, prefer BTC, ETH or high priority currencies
         const btc = filteredCurrencies.find((c) => c.code === "BTC");
         const eth = filteredCurrencies.find((c) => c.code === "ETH");
         const highPriorityCurrency = filteredCurrencies.sort(
@@ -92,6 +98,7 @@ export const CurrencySelector = ({
             ""
         );
       } else {
+        // For receive side, prefer stablecoins or ETH if no currency is selected
         const usdt = filteredCurrencies.find((c) => c.code?.includes("USDT"));
         const usdc = filteredCurrencies.find((c) => c.code?.includes("USDC"));
         const eth = filteredCurrencies.find((c) => c.code === "ETH");
@@ -111,13 +118,16 @@ export const CurrencySelector = ({
     }
   }, [filteredCurrencies, value, onChange, isReceiveSide]);
 
+  // Create a style object for the border color
   const borderStyle = borderColor ? {
     borderColor: borderColor,
     borderWidth: '2px',
   } : {};
 
+  // Get the selected currency object
   const selectedCurrency = availableCurrencies.find(c => c.code === value);
 
+  // Reset search when dropdown closes
   useEffect(() => {
     if (!isOpen) {
       setSearchTerm("");
@@ -167,6 +177,7 @@ export const CurrencySelector = ({
                         {timeRemaining && (
                           <span className="flex items-center text-xs text-[#0FA0CE]">
                             <Clock className="h-3 w-3 mr-1" />
+                            {timeRemaining}s
                           </span>
                         )}
                       </>
@@ -193,6 +204,7 @@ export const CurrencySelector = ({
             </div>
           </SelectTrigger>
           <SelectContent className="border border-white/10 max-h-[300px] glass-card">
+            {/* Search input */}
             <div className="sticky top-0 px-2 py-2 bg-background/80 backdrop-blur-md z-10">
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -205,6 +217,7 @@ export const CurrencySelector = ({
               </div>
             </div>
             
+            {/* Exchange rate if available */}
             {exchangeRate && value && (
               <div className="px-3 py-2 border-b border-white/10 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1 mb-1">
@@ -220,6 +233,7 @@ export const CurrencySelector = ({
               </div>
             )}
             
+            {/* Currency list */}
             {isLoadingCurrencies ? (
               <SelectItem value="loading" disabled>
                 <Icon icon="eos-icons:three-dots-loading" />
@@ -266,6 +280,7 @@ export const CurrencySelector = ({
         </Select>
       </div>
       
+      {/* Display exchange rate below the selector */}
       {exchangeRate && value && amount && !isReceiveSide && (
         <div className="mt-1 text-xs text-gray-400 font-mono">
           {`1 ${selectedCurrency?.code} = ${exchangeRate.rate} ${isReceiveSide ? "send" : "receive"} ($${exchangeRate.usdValue})`}

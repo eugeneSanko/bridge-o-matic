@@ -105,8 +105,6 @@ serve(async (req) => {
       }
     }
     
-    console.log(`Sending price response with expiry at ${expiresAt} (${new Date(expiresAt * 1000).toISOString()})`);
-    
     return new Response(
       JSON.stringify({
         ...data,
