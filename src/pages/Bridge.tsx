@@ -6,6 +6,7 @@ import { FAQSection } from "@/components/bridge/FAQSection";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useBridgeService } from "@/hooks/useBridgeService";
+import { AlertCircle } from "lucide-react";
 
 const Bridge = () => {
   const { isLoadingCurrencies, availableCurrencies, refreshCurrencies } = useBridge();
@@ -31,7 +32,7 @@ const Bridge = () => {
       const currencies = await bridgeService.fetchCurrencies();
       
       if (currencies && currencies.length > 0) {
-        setApiResponse(`Success! Loaded ${currencies.length} currencies.`);
+        setApiResponse(`Success! Loaded ${currencies.length} currencies (mock data for development).`);
       } else {
         setApiResponse("API request succeeded but no currencies were returned.");
       }
@@ -46,6 +47,28 @@ const Bridge = () => {
       <div className="max-w-3xl mx-auto">
         <BridgeHeader />
         
+        {/* Development Mode Notice */}
+        <div className="mb-8 p-4 bg-[#2A2A2A] border border-yellow-600/50 rounded-xl">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="text-white text-lg font-medium mb-2">Development Mode</h3>
+              <p className="text-gray-300 text-sm mb-2">
+                This application is running in development mode with mock data. Direct API calls to FixedFloat are 
+                blocked by CORS policy, which is a security feature of web browsers.
+              </p>
+              <p className="text-gray-300 text-sm mb-2">
+                In a production environment, you would need to:
+              </p>
+              <ol className="list-decimal pl-5 text-gray-300 text-sm space-y-1 mb-3">
+                <li>Create a backend proxy service (like a Supabase Edge Function)</li>
+                <li>The proxy would make API calls to FixedFloat on behalf of your frontend</li>
+                <li>Your frontend would call your proxy instead of calling FixedFloat directly</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+        
         {/* API Test Section */}
         <div className="mb-8 p-4 bg-[#1A1A1A] rounded-xl">
           <h3 className="text-white text-lg font-medium mb-2">API Connection Test</h3>
@@ -54,7 +77,7 @@ const Bridge = () => {
             variant="outline"
             className="mb-2"
           >
-            Test Direct API Call
+            Test Mock API Response
           </Button>
           
           {apiResponse && (

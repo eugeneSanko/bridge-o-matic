@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import * as crypto from 'crypto';
 import { toast } from "@/hooks/use-toast";
@@ -16,9 +15,9 @@ export const API_CONFIG = {
   FF_PRICE: "/api/price",
   FF_ORDER: "/api/order",
   FF_STATUS: "/api/status",
-  FF_TEST: "/api/test", // Added missing FF_TEST endpoint
+  FF_TEST: "/api/test", // Test endpoint
   
-  // Direct API URL for frontend requests
+  // Direct API URL for backend requests
   FF_API_URL: "https://ff.io/api/v2",
   
   // API credentials
@@ -30,7 +29,7 @@ export const API_CONFIG = {
   RETRY_DELAY: 1000,
   
   // Request timeout in milliseconds
-  TIMEOUT: 30000 // Added missing TIMEOUT property
+  TIMEOUT: 30000
 };
 
 /**

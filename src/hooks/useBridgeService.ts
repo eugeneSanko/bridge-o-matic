@@ -5,6 +5,55 @@ import { toast } from "@/hooks/use-toast";
 import { PriceResponse, BridgeError, Currency } from "@/types/bridge";
 import CryptoJS from 'crypto-js';
 
+// Mock data for development (since we can't call the API directly due to CORS)
+const MOCK_CURRENCIES: Currency[] = [
+  {
+    symbol: "BTC",
+    name: "Bitcoin",
+    image: "https://ff.io/static/currencies/btc.svg",
+    network: "Bitcoin",
+    available: true,
+    color: "#F7931A",
+    coin: "btc"
+  },
+  {
+    symbol: "ETH",
+    name: "Ethereum",
+    image: "https://ff.io/static/currencies/eth.svg",
+    network: "Ethereum",
+    available: true,
+    color: "#627EEA",
+    coin: "eth"
+  },
+  {
+    symbol: "USDT",
+    name: "Tether USD",
+    image: "https://ff.io/static/currencies/usdt.svg",
+    network: "Ethereum",
+    available: true,
+    color: "#26A17B",
+    coin: "usdt"
+  },
+  {
+    symbol: "USDC",
+    name: "USD Coin",
+    image: "https://ff.io/static/currencies/usdc.svg",
+    network: "Ethereum",
+    available: true,
+    color: "#2775CA",
+    coin: "usdc"
+  },
+  {
+    symbol: "SOL",
+    name: "Solana",
+    image: "https://ff.io/static/currencies/sol.svg",
+    network: "Solana",
+    available: true,
+    color: "#00ffbd",
+    coin: "sol"
+  }
+];
+
 export function useBridgeService() {
   const [lastPriceCheck, setLastPriceCheck] = useState<PriceResponse | null>(null);
   
@@ -26,47 +75,15 @@ export function useBridgeService() {
       // Generate signature with empty body
       const signature = generateApiSignature();
       
-      // Make direct fetch request to the API
-      const response = await fetch('https://ff.io/api/v2/ccies', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-API-KEY': API_CONFIG.FF_API_KEY,
-          'X-API-SIGN': signature
-        },
-        body: '{}' // Empty JSON object as string
-      });
+      // CORS ISSUE: In a production environment, this should be handled by a backend proxy
+      // For development, we'll use mock data
+      console.log('Using mock currency data due to CORS restrictions');
+      console.log('In production, this should be handled by a backend service that can make the API call');
       
-      if (!response.ok) {
-        throw new Error(`API request failed with status: ${response.status}`);
-      }
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const data = await response.json();
-      console.log('Currency API response:', data);
-      
-      if (data.code === 0) {
-        // Transform the raw data from FixedFloat API to our expected format
-        const currencies = data.data.map((currency: any) => {
-          return {
-            symbol: currency.code,
-            name: currency.name,
-            image: currency.logo || null,
-            network: currency.network || null,
-            available: (currency.recv === 1 && currency.send === 1),
-            color: currency.color || "#ffffff",
-            coin: currency.coin || "",
-            tag: currency.tag || null,
-            priority: currency.priority || 0
-          };
-        }).filter((currency: Currency) => currency.available); // Only include available currencies
-        
-        console.log('Successfully loaded currencies:', currencies.length);
-        return currencies;
-      } else {
-        console.error('Currency API returned error:', data.msg);
-        throw new Error(data.msg || 'Failed to fetch currencies');
-      }
+      return MOCK_CURRENCIES;
     } catch (error) {
       console.error('Error fetching currencies:', error);
       toast({
@@ -100,41 +117,48 @@ export function useBridgeService() {
       // Generate signature for the request body
       const signature = generateApiSignature(body);
       
-      // Make direct API call to FixedFloat
-      const response = await fetch(`${API_CONFIG.FF_API_URL}/price`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-API-KEY': API_CONFIG.FF_API_KEY,
-          'X-API-SIGN': signature
+      // CORS ISSUE: In a production environment, this should be handled by a backend proxy
+      // For development, we'll simulate a response
+      console.log('Simulating price calculation due to CORS restrictions');
+      console.log('API Request would include:', body);
+      console.log('API Signature:', signature);
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Mock response based on the request
+      const mockRate = fromCurrency === 'BTC' ? 65000 : 3000;
+      const fromAmount = parseFloat(amount);
+      const toAmount = fromCurrency === 'BTC' 
+        ? (fromAmount * mockRate).toFixed(2) 
+        : (fromAmount / mockRate).toFixed(8);
+      
+      const mockResponse: PriceResponse = {
+        code: 0,
+        msg: "Success",
+        data: {
+          from: {
+            amount: amount,
+            currency: fromCurrency,
+            max: "10",
+            min: "0.001",
+            network: "Network"
+          },
+          to: {
+            amount: toAmount,
+            currency: toCurrency,
+            max: "1000000",
+            min: "0.01",
+            network: "Network"
+          },
+          rate: (fromCurrency === 'BTC' ? mockRate : 1 / mockRate).toString()
         },
-        body: JSON.stringify(body)
-      });
+        timestamp: Date.now() / 1000,
+        expiresAt: (Date.now() / 1000) + 60
+      };
       
-      if (!response.ok) {
-        throw new Error(`API request failed with status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.code !== 0) {
-        throw new Error(data.msg || 'Failed to calculate price');
-      }
-      
-      if (lastPriceCheck && data.data.rate) {
-        const rateChange = Math.abs(
-          (parseFloat(data.data.rate) - parseFloat(lastPriceCheck.data.rate)) / 
-          parseFloat(lastPriceCheck.data.rate)
-        );
-        
-        if (rateChange > 0.05) {
-          throw new Error('Exchange rate has changed significantly. Please try again.');
-        }
-      }
-      
-      setLastPriceCheck(data);
-      return data;
+      setLastPriceCheck(mockResponse);
+      return mockResponse;
     } catch (error) {
       console.error('Error calculating amount:', error);
       toast({
@@ -167,29 +191,24 @@ export function useBridgeService() {
       // Generate signature for the request body
       const signature = generateApiSignature(body);
       
-      // Make direct API call to FixedFloat
-      const response = await fetch(`${API_CONFIG.FF_API_URL}/create`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-API-KEY': API_CONFIG.FF_API_KEY,
-          'X-API-SIGN': signature
-        },
-        body: JSON.stringify(body)
+      // CORS ISSUE: In a production environment, this should be handled by a backend proxy
+      // For development, we'll simulate a response
+      console.log('Simulating order creation due to CORS restrictions');
+      console.log('API Request would include:', body);
+      console.log('API Signature:', signature);
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Mock order ID
+      const mockOrderId = `FF-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+      
+      toast({
+        title: "Development Mode",
+        description: "In production, this would create a real order with the FixedFloat API",
       });
       
-      if (!response.ok) {
-        throw new Error(`API request failed with status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.code !== 0) {
-        throw new Error(data.msg || 'Failed to create bridge transaction');
-      }
-
-      return { orderId: data.data.orderId };
+      return { orderId: mockOrderId };
     } catch (error) {
       const bridgeError = error as BridgeError;
       toast({
@@ -209,29 +228,34 @@ export function useBridgeService() {
       // Generate signature for the request body
       const signature = generateApiSignature(body);
       
-      // Make direct API call to FixedFloat
-      const response = await fetch(`${API_CONFIG.FF_API_URL}/status`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-API-KEY': API_CONFIG.FF_API_KEY,
-          'X-API-SIGN': signature
-        },
-        body: JSON.stringify(body)
-      });
+      // CORS ISSUE: In a production environment, this should be handled by a backend proxy
+      // For development, we'll simulate a response
+      console.log('Simulating order status check due to CORS restrictions');
+      console.log('API Request would include:', body);
+      console.log('API Signature:', signature);
       
-      if (!response.ok) {
-        throw new Error(`API request failed with status: ${response.status}`);
-      }
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const data = await response.json();
-
-      if (data.code !== 0) {
-        throw new Error(data.msg || 'Failed to fetch order status');
-      }
-
-      return data;
+      // Mock status response
+      return {
+        code: 0,
+        msg: "Success",
+        status: "waiting",
+        details: {
+          from: {
+            address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
+            amount: "0.01",
+            currency: "BTC"
+          },
+          to: {
+            address: destination,
+            amount: "230.45",
+            currency: "USDT"
+          },
+          expiration: (Date.now() / 1000) + 3600
+        }
+      };
     } catch (error) {
       console.error('Error checking order status:', error);
       return null;

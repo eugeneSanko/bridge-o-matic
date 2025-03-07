@@ -24,39 +24,19 @@ export const BridgeHeader = () => {
       const signature = CryptoJS.HmacSHA256(bodyString, API_CONFIG.FF_API_SECRET).toString();
       console.log("Generated API signature:", signature);
       
-      // Make direct API call to test endpoint
-      const response = await fetch(`${API_CONFIG.FF_API_URL}/ccies`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-API-KEY': API_CONFIG.FF_API_KEY,
-          'X-API-SIGN': signature
-        },
-        body: bodyString
+      // Construct a URL that can be safely opened in a new tab
+      const testUrl = 'https://ff.io/api/v2/ccies';
+      console.log("Opening test URL in new tab:", testUrl);
+      
+      // Since we can't do a direct fetch due to CORS, we'll test by logging the API key and signature
+      console.log("Would use API Key:", API_CONFIG.FF_API_KEY);
+      console.log("Would use API Signature:", signature);
+      
+      toast({
+        title: "API Test Information",
+        description: "API signature generated successfully. Direct API calls must be made from a backend service due to CORS restrictions.",
+        variant: "default",
       });
-      
-      if (!response.ok) {
-        throw new Error(`API request failed with status: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      console.log("API test results:", result);
-
-      if (result.code === 0) {
-        toast({
-          title: "API Test Successful",
-          description: "Connection to FixedFloat API is working properly",
-          variant: "default",
-        });
-      } else {
-        toast({
-          title: "API Test Failed",
-          description:
-            result.msg || "There was an issue connecting to FixedFloat API",
-          variant: "destructive",
-        });
-      }
     } catch (error) {
       console.error("API test error:", error);
       toast({
