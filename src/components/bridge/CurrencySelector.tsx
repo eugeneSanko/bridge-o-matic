@@ -300,13 +300,16 @@ export const CurrencySelector = ({
         </div>
       )}
       
-      {/* Show min/max amount when sending */}
+      {/* Show min/max amount indicators when sending - UPDATED STYLING */}
       {!isReceiveSide && minMaxAmounts && selectedCurrency && (isAmountFocused || amount) && (
-        <div className="mt-1 text-xs font-mono">
-          <div className="flex items-center gap-1 text-gray-400">
-            <span>Min: {minMaxAmounts.min} {selectedCurrency.code}</span>
-            <span className="mx-1">•</span>
-            <span>Max: {minMaxAmounts.max} {selectedCurrency.code}</span>
+        <div className="mt-1.5 flex gap-2">
+          <div className="bg-[#221F26] rounded-md px-2.5 py-1 text-xs">
+            <span className="text-[#FFA500]">min: </span>
+            <span className="font-mono text-gray-300">{minMaxAmounts.min} {selectedCurrency.code}</span>
+          </div>
+          <div className="bg-[#221F26] rounded-md px-2.5 py-1 text-xs">
+            <span className="text-[#FFA500]">max: </span>
+            <span className="font-mono text-gray-300">{minMaxAmounts.max} {selectedCurrency.code}</span>
           </div>
         </div>
       )}
