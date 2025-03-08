@@ -47,6 +47,8 @@ export const BridgeForm = () => {
   const lastInputValuesRef = useRef({ fromCurrency, toCurrency, amount, orderType });
   // Track if we are handling an amount change specifically
   const isAmountChangeRef = useRef(false);
+  // Track if we are handling a currency change specifically
+  const isCurrencyChangeRef = useRef(false);
 
   // Update exchange rates when price data changes
   useEffect(() => {
@@ -77,6 +79,17 @@ export const BridgeForm = () => {
     isAmountChangeRef.current = true;
   };
   
+  // Handle currency changes - always recalculate when currency changes
+  const handleFromCurrencyChange = (newCurrency: string) => {
+    setFromCurrency(newCurrency);
+    isCurrencyChangeRef.current = true;
+  };
+  
+  const handleToCurrencyChange = (newCurrency: string) => {
+    setToCurrency(newCurrency);
+    isCurrencyChangeRef.current = true;
+  };
+  
   // Recalculate price when input values change
   useEffect(() => {
     // Check if any input values have changed
@@ -94,11 +107,12 @@ export const BridgeForm = () => {
       // Update the latest input values
       lastInputValuesRef.current = { fromCurrency, toCurrency, amount, orderType };
       
-      // If this is an amount change, or a calculation has never been done, 
+      // If this is an amount change, a currency change, or a calculation has never been done, 
       // or it's been more than 2 minutes, do the calculation
-      if (isAmountChangeRef.current || lastCalculationTimeRef.current === 0 || timeSinceLastCalculation >= 120000) {
+      if (isAmountChangeRef.current || isCurrencyChangeRef.current || lastCalculationTimeRef.current === 0 || timeSinceLastCalculation >= 120000) {
         calculateReceiveAmount();
-        isAmountChangeRef.current = false; // Reset the flag
+        isAmountChangeRef.current = false; // Reset the flags
+        isCurrencyChangeRef.current = false;
       }
     }
   }, [fromCurrency, toCurrency, amount, orderType, calculateReceiveAmount, isCalculating]);
@@ -191,7 +205,7 @@ export const BridgeForm = () => {
         <CurrencySelector
           label="Send"
           value={fromCurrency}
-          onChange={setFromCurrency}
+          onChange={handleFromCurrencyChange}
           onAmountChange={handleAmountChange}
           amount={amount}
           availableCurrencies={availableCurrencies}
@@ -218,7 +232,7 @@ export const BridgeForm = () => {
         <CurrencySelector
           label="Receive"
           value={toCurrency}
-          onChange={setToCurrency}
+          onChange={handleToCurrencyChange}
           estimatedAmount={estimatedReceiveAmount}
           isCalculating={isCalculating}
           timeRemaining={timeRemaining}

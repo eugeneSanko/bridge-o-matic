@@ -7,7 +7,7 @@ import { FAQSection } from "@/components/bridge/FAQSection";
 import { useEffect } from "react";
 
 const BridgeContent = () => {
-  const { refreshCurrencies, availableCurrencies } = useBridge();
+  const { refreshCurrencies, availableCurrencies, fromCurrency, toCurrency, amount, calculateReceiveAmount } = useBridge();
 
   useEffect(() => {
     // Fetch currencies when the component mounts
@@ -21,6 +21,14 @@ const BridgeContent = () => {
       console.log("Currencies loaded:", availableCurrencies.length);
     }
   }, [availableCurrencies]);
+  
+  // Calculate initial price when currencies and amount are set
+  useEffect(() => {
+    if (fromCurrency && toCurrency && amount && parseFloat(amount) > 0) {
+      console.log("Initial calculation triggered with currencies and amount");
+      calculateReceiveAmount();
+    }
+  }, [fromCurrency, toCurrency, amount, calculateReceiveAmount]);
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-16 sm:pt-24 px-4 sm:px-8 pb-16 sm:pb-24">
