@@ -1,14 +1,16 @@
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder, OrderDetails } from "@/hooks/useBridgeOrder";
 import { useDeepLink } from "@/hooks/useDeepLink";
 import { LoadingState } from "@/components/bridge/LoadingState";
 import { ErrorState } from "@/components/bridge/ErrorState";
 import { EmptyState } from "@/components/bridge/EmptyState";
 import { BridgeTransaction } from "@/components/bridge/BridgeTransaction";
+import { toast } from "@/hooks/use-toast";
 
 const BridgeAwaitingDeposit = () => {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get("orderId");
   
@@ -19,17 +21,29 @@ const BridgeAwaitingDeposit = () => {
     currentStatus: "pending", // Options: pending, processing, exchanging, sending, completed
     fromCurrency: "btc",
     toCurrency: "eth",
-    orderId: "demo123456789",
+    orderId: orderId || "demo123456789",
     destinationAddress: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
     expiresAt: new Date(Date.now() + 30 * 60000).toISOString(), // 30 minutes from now
     timeRemaining: "29:59",
-    ffOrderId: "ff1234567890",
+    ffOrderId: orderId || "ff1234567890",
     ffOrderToken: "testtoken123456789",
   };
 
   const [isUsingStatic, setIsUsingStatic] = useState(true);
   const { orderDetails, loading, error, handleCopyAddress } = useBridgeOrder(isUsingStatic ? null : orderId);
   const { deepLink, logs, addLog } = useDeepLink();
+
+  // Check if we have orderId and show appropriate message
+  useEffect(() => {
+    if (!orderId) {
+      toast({
+        title: "Missing Order ID",
+        description: "Using demo data instead of a real order",
+      });
+    } else {
+      console.log(`Processing order: ${orderId}`);
+    }
+  }, [orderId]);
 
   useEffect(() => {
     if (!deepLink) return;

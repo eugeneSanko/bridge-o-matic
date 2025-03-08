@@ -1,5 +1,6 @@
 
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 interface BridgeFormActionsProps {
   isFormValid: boolean;
@@ -19,7 +20,14 @@ export const BridgeFormActions = ({
         onClick={onBridgeAssets}
         disabled={!isFormValid || isSubmitting}
       >
-        {isSubmitting ? "Processing..." : "Bridge Assets"}
+        {isSubmitting ? (
+          <>
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            Creating Order...
+          </>
+        ) : (
+          "Bridge Assets"
+        )}
       </Button>
 
       <p className="text-xs text-center text-gray-400">

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { API_CONFIG } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
-import { PriceResponse, BridgeError, Currency } from "@/types/bridge";
+import { PriceResponse, BridgeError, Currency, ApiOrderResponse } from "@/types/bridge";
 import CryptoJS from 'crypto-js';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -253,45 +253,88 @@ export function useBridgeService() {
     initialRate: string
   ) => {
     try {
+      // Create the request body according to the API format
       const body = {
-        fromCurrency,
-        toCurrency,
-        amount,
-        destination,
+        fromCcy: fromCurrency,
+        toCcy: toCurrency,
+        amount: amount,
+        direction: "from",
         type: orderType,
-        initialRate
+        toAddress: destination
       };
       
       // Generate signature for the request body
       const signature = generateApiSignature(body);
       
+      console.log('Creating order with parameters:', body);
+      
       // CORS ISSUE: In a production environment, this should be handled by a backend proxy
-      // For development, we'll simulate a response
-      console.log('Simulating order creation due to CORS restrictions');
-      console.log('API Request would include:', body);
-      console.log('API Signature:', signature);
+      // For development, we'll simulate a successful response
       
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Mock order ID
-      const mockOrderId = `FF-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+      // Simulate a successful API response
+      const mockResponse: ApiOrderResponse = {
+        code: 0,
+        msg: "OK",
+        data: {
+          id: `FF-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+          token: `${Math.random().toString(36).substring(2, 30)}`,
+          type: orderType,
+          status: "NEW",
+          time: {
+            reg: Math.floor(Date.now() / 1000),
+            start: null,
+            finish: null,
+            update: Math.floor(Date.now() / 1000),
+            expiration: Math.floor(Date.now() / 1000) + 1800, // 30 min expiration
+            left: 1800 // 30 min remaining
+          },
+          from: {
+            code: fromCurrency,
+            coin: fromCurrency.toLowerCase(),
+            network: fromCurrency,
+            name: fromCurrency,
+            amount: amount,
+            address: `bc1q${Math.random().toString(36).substring(2, 30)}`
+          },
+          to: {
+            code: toCurrency,
+            coin: toCurrency.toLowerCase(),
+            network: toCurrency,
+            name: toCurrency,
+            amount: parseFloat(amount) * 1500 + '', // Simple conversion
+            address: destination
+          }
+        }
+      };
       
-      toast({
-        title: "Development Mode",
-        description: "In production, this would create a real order with the FixedFloat API",
-      });
+      // Check if the response indicates an error (like the "Not have permission" example)
+      // Simulate error case 10% of the time
+      if (Math.random() < 0.1) {
+        const errorResponse: ApiOrderResponse = {
+          code: "501",
+          msg: "Not have permission",
+          data: null
+        };
+        
+        console.error('Bridge order error:', errorResponse);
+        throw new Error(errorResponse.msg);
+      }
       
-      return { orderId: mockOrderId };
+      // Log the successful response
+      console.log('Order created successfully:', mockResponse);
+      
+      // Return the orderId and token
+      return { 
+        orderId: mockResponse.data?.id || '', 
+        orderToken: mockResponse.data?.token || '' 
+      };
     } catch (error) {
       const bridgeError = error as BridgeError;
-      toast({
-        title: "Transaction Failed",
-        description: bridgeError.message || "Failed to create bridge transaction",
-        variant: "destructive"
-      });
       console.error('Bridge transaction error:', error);
-      return null;
+      throw bridgeError;
     }
   }, []);
 

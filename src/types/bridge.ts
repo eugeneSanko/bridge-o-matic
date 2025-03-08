@@ -82,6 +82,46 @@ export interface PriceResponse {
 
 export interface OrderResponse {
   orderId: string;
+  orderToken?: string;
+}
+
+// New interface for API order creation response
+export interface ApiOrderResponse {
+  code: number | string;
+  msg: string;
+  data: {
+    id: string;
+    token: string;
+    type: string;
+    status: string;
+    time: {
+      reg: number;
+      start: number | null;
+      finish: number | null;
+      update: number;
+      expiration: number;
+      left: number;
+    };
+    from: {
+      code: string;
+      coin: string;
+      network: string;
+      name: string;
+      amount: string;
+      address: string;
+      // ... other fields
+    };
+    to: {
+      code: string;
+      coin: string;
+      network: string;
+      name: string;
+      amount: string;
+      address: string;
+      // ... other fields
+    };
+    // ... other fields
+  } | null;
 }
 
 /**
