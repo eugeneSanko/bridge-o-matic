@@ -321,13 +321,13 @@ export const CurrencySelector = ({
         </Select>
       </div>
 
-      <div className="h-10">
+      <div className="h-14 mt-2">
         {/* Show either min/max values when typing or exchange rate when not typing */}
         {!isReceiveSide && value && selectedCurrency && (
           <>
             {/* Show min/max when typing or focused */}
             {(isTyping || isAmountFocused) && minMaxAmounts ? (
-              <div className="mt-1.5 flex gap-2">
+              <div className=" flex gap-2">
                 <div className="bg-[#221F26] rounded-md px-2.5 py-1 text-xs">
                   <span className="text-[#FFA500]">min: </span>
                   <span className="font-mono text-gray-300">
@@ -345,7 +345,7 @@ export const CurrencySelector = ({
               /* Show exchange rate when not typing */
               exchangeRate &&
               amount && (
-                <div className="mt-1 flex items-center text-xs text-gray-400 font-mono gap-1 flex justify-between">
+                <div className=" flex items-center text-xs text-gray-400 font-mono gap-1 flex justify-between">
                   <span>
                     1 {selectedCurrency?.code} = {exchangeRate.rate}
                   </span>
@@ -361,10 +361,13 @@ export const CurrencySelector = ({
 
         {/* For receive side, always show exchange rate if available */}
         {isReceiveSide && value && exchangeRate && estimatedAmount && (
-          <div className="mt-1 text-xs text-gray-400 font-mono ">
-            {`1 ${selectedCurrency?.code} = ${exchangeRate.rate} ${
-              isReceiveSide ? "receive" : "send"
-            } ($${exchangeRate.usdValue})`}
+          <div className="mt-1 flex items-center text-xs text-gray-400 font-mono gap-1 justify-between">
+            <span>
+              1 {selectedCurrency?.code} = {exchangeRate.rate}
+            </span>
+            <span>
+              {isReceiveSide ? "receive" : "send"}(${exchangeRate.usdValue})
+            </span>
           </div>
         )}
       </div>
