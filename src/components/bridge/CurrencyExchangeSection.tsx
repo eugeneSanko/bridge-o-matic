@@ -4,6 +4,8 @@ import { ArrowLeftRight, AlertCircle } from "lucide-react";
 import { CurrencySelector } from "./CurrencySelector";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Currency } from "@/types/bridge";
+import { useBridge } from "@/contexts/BridgeContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CurrencyExchangeSectionProps {
   fromCurrency: string;
@@ -48,10 +50,25 @@ export const CurrencyExchangeSection = ({
   onAmountChange,
   onSwapCurrencies,
 }: CurrencyExchangeSectionProps) => {
+  const { formatNumberWithCommas } = useBridge();
+  
   const fromCurrencyObj =
     availableCurrencies.find((c) => c.code === fromCurrency) || null;
   const toCurrencyObj =
     availableCurrencies.find((c) => c.code === toCurrency) || null;
+
+  // Helper function to render exchange rate with skeleton loading state
+  const renderExchangeRate = (rate: string | undefined, currencyCode: string, usdValue: string | undefined) => {
+    if (!rate || !currencyCode) {
+      return (
+        <div className="flex items-center gap-1">
+          <Skeleton className="h-4 w-32" />
+        </div>
+      );
+    }
+    
+    return `1 ${currencyCode} = ${formatNumberWithCommas(rate)} send($${usdValue})`;
+  };
 
   return (
     <>
@@ -74,6 +91,7 @@ export const CurrencyExchangeSection = ({
                 }
               : undefined
           }
+          formatNumberWithCommas={formatNumberWithCommas}
         />
 
         <div className="flex flex-col items-center justify-center h-10">
@@ -99,6 +117,7 @@ export const CurrencyExchangeSection = ({
           isReceiveSide={true}
           borderColor={toCurrencyObj?.color}
           exchangeRate={toExchangeRate}
+          formatNumberWithCommas={formatNumberWithCommas}
         />
       </div>
 

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -45,24 +44,18 @@ export const BridgeForm = () => {
   } | null>(null);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
   
-  // Custom hook for rate refresh
   const { manualRefreshEnabled, handleRefreshRate } = useRateRefresh(calculateReceiveAmount);
 
-  // Ref to track if we should recalculate the price
   const lastCalculationTimeRef = useRef<number>(0);
-  // Ref to track the latest input values for debouncing
   const lastInputValuesRef = useRef({
     fromCurrency,
     toCurrency,
     amount,
     orderType,
   });
-  // Track if we are handling an amount change specifically
   const isAmountChangeRef = useRef(false);
-  // Track if this is a currency change operation
   const isCurrencyChangeRef = useRef(false);
 
-  // Update exchange rates when price data changes
   useEffect(() => {
     if (lastPriceData && lastPriceData.data) {
       const { from, to } = lastPriceData.data;
@@ -89,34 +82,28 @@ export const BridgeForm = () => {
     }
   }, [lastPriceData]);
 
-  // Handle amount changes specifically - always recalculate for amount changes
   const handleAmountChange = (newAmount: string) => {
     setAmount(newAmount);
     isAmountChangeRef.current = true;
   };
 
-  // Handle from currency changes - trigger recalculation
   const handleFromCurrencyChange = (currency: string) => {
     setFromCurrency(currency);
     isCurrencyChangeRef.current = true;
   };
 
-  // Handle to currency changes - trigger recalculation
   const handleToCurrencyChange = (currency: string) => {
     setToCurrency(currency);
     isCurrencyChangeRef.current = true;
   };
 
-  // Recalculate price when input values change
   useEffect(() => {
-    // Check if any input values have changed
     const inputsChanged =
       fromCurrency !== lastInputValuesRef.current.fromCurrency ||
       toCurrency !== lastInputValuesRef.current.toCurrency ||
       amount !== lastInputValuesRef.current.amount ||
       orderType !== lastInputValuesRef.current.orderType;
 
-    // Only calculate if inputs changed and there's an amount
     if (
       inputsChanged &&
       fromCurrency &&
@@ -129,7 +116,6 @@ export const BridgeForm = () => {
       const timeSinceLastCalculation =
         currentTime - lastCalculationTimeRef.current;
 
-      // Update the latest input values
       lastInputValuesRef.current = {
         fromCurrency,
         toCurrency,
@@ -137,8 +123,6 @@ export const BridgeForm = () => {
         orderType,
       };
 
-      // If this is an amount change, or a currency change, or a calculation has never been done,
-      // or it's been more than 2 minutes, do the calculation
       if (
         isAmountChangeRef.current ||
         isCurrencyChangeRef.current ||
@@ -146,8 +130,8 @@ export const BridgeForm = () => {
         timeSinceLastCalculation >= 120000
       ) {
         calculateReceiveAmount();
-        isAmountChangeRef.current = false; // Reset the flag
-        isCurrencyChangeRef.current = false; // Reset the flag
+        isAmountChangeRef.current = false;
+        isCurrencyChangeRef.current = false;
       }
     }
   }, [
@@ -165,7 +149,6 @@ export const BridgeForm = () => {
 
     if (isSubmitting) return;
 
-    // Always calculate latest rate before submitting
     if (fromCurrency && toCurrency && amount && parseFloat(amount) > 0) {
       await calculateReceiveAmount();
     }
@@ -184,7 +167,6 @@ export const BridgeForm = () => {
   };
 
   const handleSwapCurrencies = () => {
-    // Check if the currencies can be swapped (to currency can be sent, from currency can be received)
     const canSendToCurrency = availableCurrencies.some(
       (c) => c.code === toCurrency && c.send === 1
     );
@@ -195,9 +177,7 @@ export const BridgeForm = () => {
     if (canSendToCurrency && canReceiveFromCurrency) {
       setFromCurrency(toCurrency);
       setToCurrency(fromCurrency);
-      setAmount(""); // Reset amount when swapping
-
-      // Force a recalculation on next render after swap
+      isCurrencyChangeRef.current = true;
       lastCalculationTimeRef.current = 0;
     } else {
       toast({
@@ -216,6 +196,8 @@ export const BridgeForm = () => {
       destinationAddress &&
       !amountError
   );
+
+  const selectedToCurrency = availableCurrencies.find(c => c.code === toCurrency);
 
   return (
     <div className="glass-card p-4 sm:p-8 rounded-lg mb-8 sm:mb-12">
@@ -242,8 +224,9 @@ export const BridgeForm = () => {
         <DestinationAddressInput
           value={destinationAddress}
           onChange={setDestinationAddress}
-          borderColor={availableCurrencies.find((c) => c.code === toCurrency)?.color}
+          borderColor={selectedToCurrency?.color}
           receivingCurrency={toCurrency}
+          currencyNetwork={selectedToCurrency?.network}
         />
 
         <OrderTypeSelector value={orderType} onChange={setOrderType} />

@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -72,6 +71,16 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     validateAmount();
   }, [amount]);
+
+  /**
+   * Helper function to format numbers with commas for thousands separators
+   */
+  const formatNumberWithCommas = (value: string | number): string => {
+    if (typeof value === 'string') {
+      value = parseFloat(value);
+    }
+    return value.toLocaleString('en-US', { maximumFractionDigits: 8 });
+  };
 
   /**
    * Function to refresh available currencies
@@ -270,6 +279,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Format the estimated receive amount with commas if needed (keep original raw value for calculations)
       setEstimatedReceiveAmount(data.data.to.amount);
       setLastPriceData(data);
       
@@ -381,7 +391,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
         throw new Error("Exchange rate has expired. Please try again.");
       }
 
-      // Create order
+      // Create order with orderType included in payload
       const result = await createOrder(
         fromCurrency,
         toCurrency,
@@ -434,6 +444,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
     refreshCurrencies,
     lastPriceData,
     amountError,
+    formatNumberWithCommas,
   };
 
   return (
