@@ -1,7 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.0";
-import * as crypto from "https://deno.land/std@0.168.0/crypto/mod.ts";
 
 // Validate required environment variables
 const API_KEY = Deno.env.get("FF_API_KEY");
@@ -12,62 +11,64 @@ if (!API_KEY || !API_SECRET) {
   console.error("Missing required environment variables: FF_API_KEY and/or FF_API_SECRET");
 }
 
-// Generate HMAC signature for FixedFloat API
+// Enhanced CORS headers to ensure proper cross-origin requests
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-API-KEY, X-API-SIGN, apikey, x-client-info",
+  "Access-Control-Max-Age": "86400",
+};
+
+// Generate HMAC signature for FixedFloat API (synchronous version)
 function generateSignature(body: string): string {
-  const key = new TextEncoder().encode(API_SECRET || "");
-  const message = new TextEncoder().encode(body);
+  const encoder = new TextEncoder();
+  const key = encoder.encode(API_SECRET || "");
+  const message = encoder.encode(body);
   
-  // Create HMAC using SHA-256
-  const hmac = crypto.subtle.importKey(
-    "raw",
-    key,
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  ).then(key => crypto.subtle.sign(
-    "HMAC",
-    key,
-    message
-  )).then(signature => {
-    // Convert signature to hex string
-    return Array.from(new Uint8Array(signature))
-      .map(b => b.toString(16).padStart(2, "0"))
-      .join("");
-  });
+  // Create HMAC using SHA-256 with the Web Crypto API (synchronous method for Deno)
+  const keyData = new Uint8Array(key);
+  const msgData = new Uint8Array(message);
   
-  return hmac;
+  // Deno provides a native crypto implementation
+  const digest = crypto.subtle.digestSync("HMAC-SHA-256", keyData, msgData);
+  
+  // Convert to hex string
+  return Array.from(new Uint8Array(digest))
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 serve(async (req) => {
+  console.log(`Received ${req.method} request to bridge-create`);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log("Responding to CORS preflight request");
     return new Response(null, {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-API-KEY, X-API-SIGN",
-      },
+      status: 204,
+      headers: corsHeaders,
     });
   }
 
   try {
     // Parse request body
     const requestData = await req.json();
-    console.log("Create order request:", requestData);
+    console.log("Request data:", JSON.stringify(requestData, null, 2));
     
     // Validate required parameters
     if (!requestData.fromCcy || !requestData.toCcy || !requestData.amount || !requestData.toAddress) {
+      console.error("Missing required parameters");
       return new Response(
         JSON.stringify({
           code: 400,
-          msg: "Missing required parameters",
+          msg: "Missing required parameters: fromCcy, toCcy, amount, toAddress are required",
           data: null,
         }),
         {
           status: 400,
           headers: {
             "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
+            ...corsHeaders,
           },
         }
       );
@@ -83,13 +84,14 @@ serve(async (req) => {
       toAddress: requestData.toAddress,
     });
     
-    // Generate signature
-    const signature = await generateSignature(requestBody);
+    // Generate signature using the improved method
+    const signature = generateSignature(requestBody);
     
-    console.log("Sending request to FixedFloat API");
+    console.log("Making request to FixedFloat API:");
     console.log("URL:", API_URL);
     console.log("Body:", requestBody);
-    console.log("Signature:", signature);
+    console.log("X-API-KEY:", API_KEY);
+    console.log("X-API-SIGN:", signature);
     
     // Make request to FixedFloat API
     const response = await fetch(API_URL, {
@@ -103,9 +105,31 @@ serve(async (req) => {
       body: requestBody,
     });
     
+    // Check for HTTP error status codes
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`FixedFloat API error (${response.status}):`, errorText);
+      
+      return new Response(
+        JSON.stringify({
+          code: response.status,
+          msg: `API Error: ${response.statusText}`,
+          data: null,
+          error: errorText,
+        }),
+        {
+          status: 502, // Bad Gateway
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        }
+      );
+    }
+    
     // Parse API response
     const responseData = await response.json();
-    console.log("FixedFloat API response:", responseData);
+    console.log("FixedFloat API response:", JSON.stringify(responseData, null, 2));
     
     // Return API response to client
     return new Response(
@@ -114,7 +138,7 @@ serve(async (req) => {
         status: 200,
         headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
+          ...corsHeaders,
         },
       }
     );
@@ -124,15 +148,15 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         code: 500,
-        msg: error.message || "Internal server error",
+        msg: error instanceof Error ? error.message : "Internal server error",
         data: null,
-        error: error,
+        error: String(error),
       }),
       {
         status: 500,
         headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
+          ...corsHeaders,
         },
       }
     );
