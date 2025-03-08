@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -167,11 +168,24 @@ export const BridgeForm = () => {
     setIsSubmitting(true);
     try {
       const result = await createBridgeTransaction();
-      if (result) {
+      // Only redirect if we have a successful result with an orderId
+      if (result && result.orderId) {
         navigate(`/bridge/awaiting-deposit?orderId=${result.orderId}`);
+      } else {
+        // Show error toast if no result or orderId
+        toast({
+          title: "Transaction Failed",
+          description: "Unable to create bridge transaction. Please try again.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error("Bridge transaction failed:", error);
+      toast({
+        title: "Transaction Failed",
+        description: error instanceof Error ? error.message : "An error occurred creating the transaction",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
