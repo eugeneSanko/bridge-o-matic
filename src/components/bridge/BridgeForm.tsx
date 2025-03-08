@@ -186,9 +186,6 @@ export const BridgeForm = () => {
       {lastUpdateTime && (
         <div className="text-xs text-center text-gray-400 mb-4">
           Rates last updated: {lastUpdateTime.toLocaleTimeString()} 
-          {timeRemaining && (
-            <span className="ml-2 text-[#0FA0CE]">(valid for {timeRemaining}s)</span>
-          )}
           <Button 
             variant="link" 
             className="text-xs text-[#0FA0CE] ml-2 p-0 h-auto" 
