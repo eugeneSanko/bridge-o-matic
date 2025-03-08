@@ -166,10 +166,22 @@ export const BridgeForm = () => {
     }
 
     setIsSubmitting(true);
+    
     try {
+      toast({
+        title: "Creating Order",
+        description: "Initializing your bridge transaction...",
+      });
+
+      // Call the createBridgeTransaction function from context
       const result = await createBridgeTransaction();
+      
       // Only redirect if we have a successful result with an orderId
       if (result && result.orderId) {
+        toast({
+          title: "Order Created",
+          description: "Your bridge transaction has been successfully created!",
+        });
         navigate(`/bridge/awaiting-deposit?orderId=${result.orderId}`);
       } else {
         // Show error toast if no result or orderId

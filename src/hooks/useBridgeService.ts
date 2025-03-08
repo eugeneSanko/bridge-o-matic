@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { API_CONFIG } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -264,77 +263,51 @@ export function useBridgeService() {
         toAddress: destination
       };
       
-      // Generate signature for the request body
-      const signature = generateApiSignature(body);
+      console.log('Creating bridge order with parameters:', body);
       
-      console.log('Creating order with parameters:', body);
+      // Call our Supabase edge function for order creation
+      const { data, error } = await supabase.functions.invoke('bridge-create', {
+        body
+      });
       
-      // CORS ISSUE: In a production environment, this should be handled by a backend proxy
-      // For development, we'll simulate a successful response
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simulate API response - 90% of the time succeed, 10% fail with error
-      if (Math.random() < 0.1) {
-        // Simulate error response
-        const errorResponse: ApiOrderResponse = {
-          code: "501",
-          msg: "Not have permission",
-          data: null
-        };
-        
-        console.error('Bridge order error:', errorResponse);
-        throw new Error(errorResponse.msg);
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(`Edge function error: ${error.message}`);
       }
       
-      // Simulate a successful API response
-      const mockResponse: ApiOrderResponse = {
-        code: 0,
-        msg: "OK",
-        data: {
-          id: `FF-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-          token: `${Math.random().toString(36).substring(2, 30)}`,
-          type: orderType,
-          status: "NEW",
-          time: {
-            reg: Math.floor(Date.now() / 1000),
-            start: null,
-            finish: null,
-            update: Math.floor(Date.now() / 1000),
-            expiration: Math.floor(Date.now() / 1000) + 1800, // 30 min expiration
-            left: 1800 // 30 min remaining
-          },
-          from: {
-            code: fromCurrency,
-            coin: fromCurrency.toLowerCase(),
-            network: fromCurrency,
-            name: fromCurrency,
-            amount: amount,
-            address: `bc1q${Math.random().toString(36).substring(2, 30)}`
-          },
-          to: {
-            code: toCurrency,
-            coin: toCurrency.toLowerCase(),
-            network: toCurrency,
-            name: toCurrency,
-            amount: parseFloat(amount) * 1500 + '', // Simple conversion
-            address: destination
-          }
-        }
-      };
+      if (!data) {
+        console.error('No data returned from edge function');
+        throw new Error('No data returned from edge function');
+      }
       
-      // Log the successful response
-      console.log('Order created successfully:', mockResponse);
+      console.log('Order creation response:', data);
       
-      // Return the orderId and token
-      return { 
-        orderId: mockResponse.data?.id || '', 
-        orderToken: mockResponse.data?.token || '' 
-      };
+      // If the API response is successful
+      if (data.code === 0 && data.data) {
+        // Return the orderId and token
+        return { 
+          orderId: data.data.id || '', 
+          orderToken: data.data.token || '' 
+        };
+      } else {
+        console.error('API returned an error:', data);
+        throw new Error(data.msg || 'Unknown API error');
+      }
     } catch (error) {
       const bridgeError = error as BridgeError;
       console.error('Bridge transaction error:', error);
+      
+      // For development mode, if the API call fails, return a mock response
+      if (import.meta.env.DEV) {
+        console.warn('Generating mock order data due to API error');
+        
+        // Mock successful order creation
+        return { 
+          orderId: `FF-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+          orderToken: `${Math.random().toString(36).substring(2, 30)}`
+        };
+      }
+      
       throw bridgeError;
     }
   }, []);

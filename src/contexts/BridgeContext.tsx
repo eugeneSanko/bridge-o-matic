@@ -415,11 +415,12 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
           description: "Your bridge transaction has been initiated successfully!",
         });
 
-        // Return the result with order details, the component will handle navigation
+        // Return the result with order details
         return result;
       }
 
-      return result;
+      console.error("Order creation failed: No orderId returned");
+      return null;
     } catch (error: any) {
       toast({
         title: "Transaction Failed",
