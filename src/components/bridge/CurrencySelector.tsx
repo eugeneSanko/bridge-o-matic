@@ -1,3 +1,4 @@
+
 import {
   Select,
   SelectContent,
@@ -60,6 +61,19 @@ export const CurrencySelector = ({
   const [isAmountFocused, setIsAmountFocused] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState<number | null>(null);
+  const [showMinMaxInfo, setShowMinMaxInfo] = useState(false);
+
+  // Add effect to animate min/max amounts appearance
+  useEffect(() => {
+    if (isTyping || isAmountFocused) {
+      setShowMinMaxInfo(true);
+    } else {
+      const timer = setTimeout(() => {
+        setShowMinMaxInfo(false);
+      }, 300); // Delay hiding to allow for animation
+      return () => clearTimeout(timer);
+    }
+  }, [isTyping, isAmountFocused]);
 
   const handleAmountChange = (value: string) => {
     if (!onAmountChange) return;
@@ -315,40 +329,48 @@ export const CurrencySelector = ({
       <div className="h-14 mt-2">
         {!isReceiveSide && value && selectedCurrency && (
           <>
-            {(isTyping || isAmountFocused) && minMaxAmounts ? (
-              <div className=" flex gap-2">
-                <div className="bg-[#221F26] rounded-md px-2.5 py-1 text-xs">
-                  <span className="text-[#FFA500]">min: </span>
-                  <span className="font-mono text-gray-300">
-                    {formatDisplayValue(minMaxAmounts.min)} {selectedCurrency.code}
-                  </span>
+            {/* Animation container for min/max amount display */}
+            <div 
+              className={`transition-all duration-300 overflow-hidden ${
+                showMinMaxInfo ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
+              }`}
+            >
+              {minMaxAmounts && (
+                <div className="flex gap-2 mb-2">
+                  <div className="bg-[#221F26] rounded-md px-2.5 py-1 text-xs">
+                    <span className="text-[#FFA500]">min: </span>
+                    <span className="font-mono text-gray-300">
+                      {formatDisplayValue(minMaxAmounts.min)} {selectedCurrency.code}
+                    </span>
+                  </div>
+                  <div className="bg-[#221F26] rounded-md px-2.5 py-1 text-xs">
+                    <span className="text-[#FFA500]">max: </span>
+                    <span className="font-mono text-gray-300">
+                      {formatDisplayValue(minMaxAmounts.max)} {selectedCurrency.code}
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-[#221F26] rounded-md px-2.5 py-1 text-xs">
-                  <span className="text-[#FFA500]">max: </span>
-                  <span className="font-mono text-gray-300">
-                    {formatDisplayValue(minMaxAmounts.max)} {selectedCurrency.code}
-                  </span>
-                </div>
+              )}
+            </div>
+
+            {/* Only show exchange rate when not showing min/max */}
+            {(!showMinMaxInfo && exchangeRate && amount) ? (
+              <div className="flex items-center text-xs text-gray-400 font-mono gap-1 flex justify-between transition-opacity duration-300">
+                {!exchangeRate.rate ? (
+                  <Skeleton className="h-4 w-32" />
+                ) : (
+                  <>
+                    <span>
+                      1 {selectedCurrency?.code} = {formatDisplayValue(exchangeRate.rate)}
+                    </span>
+                    <span>
+                      {isReceiveSide ? "receive" : "send"}($
+                      {exchangeRate.usdValue})
+                    </span>
+                  </>
+                )}
               </div>
-            ) : (
-              exchangeRate && amount ? (
-                <div className="flex items-center text-xs text-gray-400 font-mono gap-1 flex justify-between">
-                  {!exchangeRate.rate ? (
-                    <Skeleton className="h-4 w-32" />
-                  ) : (
-                    <>
-                      <span>
-                        1 {selectedCurrency?.code} = {formatDisplayValue(exchangeRate.rate)}
-                      </span>
-                      <span>
-                        {isReceiveSide ? "receive" : "send"}($
-                        {exchangeRate.usdValue})
-                      </span>
-                    </>
-                  )}
-                </div>
-              ) : null
-            )}
+            ) : null}
           </>
         )}
 
