@@ -45,6 +45,8 @@ export const BridgeForm = () => {
   const lastCalculationTimeRef = useRef<number>(0);
   // Ref to track the latest input values for debouncing
   const lastInputValuesRef = useRef({ fromCurrency, toCurrency, amount, orderType });
+  // Track if we are handling an amount change specifically
+  const isAmountChangeRef = useRef(false);
 
   // Update exchange rates when price data changes
   useEffect(() => {
@@ -69,7 +71,13 @@ export const BridgeForm = () => {
     }
   }, [lastPriceData]);
   
-  // Recalculate price when input values change, but not more than once every 2 minutes
+  // Handle amount changes specifically - always recalculate for amount changes
+  const handleAmountChange = (newAmount: string) => {
+    setAmount(newAmount);
+    isAmountChangeRef.current = true;
+  };
+  
+  // Recalculate price when input values change
   useEffect(() => {
     // Check if any input values have changed
     const inputsChanged = 
@@ -86,9 +94,11 @@ export const BridgeForm = () => {
       // Update the latest input values
       lastInputValuesRef.current = { fromCurrency, toCurrency, amount, orderType };
       
-      // If a calculation has never been done, or it's been more than 2 minutes, do the calculation
-      if (lastCalculationTimeRef.current === 0 || timeSinceLastCalculation >= 120000) {
+      // If this is an amount change, or a calculation has never been done, 
+      // or it's been more than 2 minutes, do the calculation
+      if (isAmountChangeRef.current || lastCalculationTimeRef.current === 0 || timeSinceLastCalculation >= 120000) {
         calculateReceiveAmount();
+        isAmountChangeRef.current = false; // Reset the flag
       }
     }
   }, [fromCurrency, toCurrency, amount, orderType, calculateReceiveAmount, isCalculating]);
@@ -182,7 +192,7 @@ export const BridgeForm = () => {
           label="Send"
           value={fromCurrency}
           onChange={setFromCurrency}
-          onAmountChange={setAmount}
+          onAmountChange={handleAmountChange}
           amount={amount}
           availableCurrencies={availableCurrencies}
           isLoadingCurrencies={isLoadingCurrencies}
