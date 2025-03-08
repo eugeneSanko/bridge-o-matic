@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -63,8 +64,14 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (lastPriceCheck) {
       setLastPriceData(lastPriceCheck);
+      validateAmount(); // Validate amount whenever price data updates
     }
   }, [lastPriceCheck]);
+
+  // Watch for amount changes to validate in real-time
+  useEffect(() => {
+    validateAmount();
+  }, [amount]);
 
   /**
    * Function to refresh available currencies
@@ -213,6 +220,11 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
     }
 
     const currentAmount = parseFloat(amount);
+    if (isNaN(currentAmount)) {
+      setAmountError(null);
+      return true;
+    }
+
     const minAmount = parseFloat(lastPriceData.data.from.min);
     const maxAmount = parseFloat(lastPriceData.data.from.max);
 

@@ -41,6 +41,7 @@ export const BridgeForm = () => {
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
   const [manualRefreshEnabled, setManualRefreshEnabled] = useState<boolean>(true);
 
+  // Update exchange rates when price data changes
   useEffect(() => {
     if (lastPriceData && lastPriceData.data) {
       const { from, to } = lastPriceData.data;
@@ -62,12 +63,12 @@ export const BridgeForm = () => {
     }
   }, [lastPriceData]);
   
+  // Recalculate price when input values change
   useEffect(() => {
-    // Only do initial calculation when the component first loads
-    if (fromCurrency && toCurrency && amount && parseFloat(amount) > 0 && !lastPriceData && !isCalculating) {
+    if (fromCurrency && toCurrency && amount && parseFloat(amount) > 0 && !isCalculating) {
       calculateReceiveAmount();
     }
-  }, [fromCurrency, toCurrency, amount, lastPriceData, isCalculating, calculateReceiveAmount]);
+  }, [fromCurrency, toCurrency, amount, orderType, calculateReceiveAmount, isCalculating]);
 
   const handleBridgeAssets = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -94,14 +95,14 @@ export const BridgeForm = () => {
       setManualRefreshEnabled(false);
       toast({
         title: "Rates refreshed",
-        description: "Next refresh available in 2 minutes",
+        description: "Next manual refresh available in 2 minutes",
         duration: 3000,
       });
       setTimeout(() => setManualRefreshEnabled(true), 120000); // 2 minutes
     } else {
       toast({
         title: "Please wait",
-        description: "Rate refresh is available every 2 minutes",
+        description: "Manual rate refresh is available every 2 minutes",
         duration: 3000,
       });
     }
@@ -113,17 +114,24 @@ export const BridgeForm = () => {
     availableCurrencies.find((c) => c.code === toCurrency) || null;
 
   const handleSwapCurrencies = () => {
-    const newFromCurrency = availableCurrencies.find(
+    // Check if the currencies can be swapped (to currency can be sent, from currency can be received)
+    const canSendToCurrency = availableCurrencies.some(
       (c) => c.code === toCurrency && c.send === 1
     );
-    const newToCurrency = availableCurrencies.find(
+    const canReceiveFromCurrency = availableCurrencies.some(
       (c) => c.code === fromCurrency && c.recv === 1
     );
 
-    if (newFromCurrency && newToCurrency) {
+    if (canSendToCurrency && canReceiveFromCurrency) {
       setFromCurrency(toCurrency);
       setToCurrency(fromCurrency);
-      setAmount("");
+      setAmount(""); // Reset amount when swapping
+    } else {
+      toast({
+        title: "Cannot swap currencies",
+        description: "One or both currencies don't support this direction",
+        duration: 3000,
+      });
     }
   };
 
@@ -149,6 +157,10 @@ export const BridgeForm = () => {
           isLoadingCurrencies={isLoadingCurrencies}
           borderColor={fromCurrencyObj?.color}
           exchangeRate={fromExchangeRate}
+          minMaxAmounts={lastPriceData?.data.from ? { 
+            min: lastPriceData.data.from.min, 
+            max: lastPriceData.data.from.max 
+          } : undefined}
         />
 
         <div className="flex flex-col items-center justify-center">
@@ -193,7 +205,7 @@ export const BridgeForm = () => {
             onClick={handleRefreshRate}
             disabled={!manualRefreshEnabled}
           >
-            {manualRefreshEnabled ? "Refresh" : "Wait 2m to refresh"}
+            {manualRefreshEnabled ? "Refresh manually" : "Wait 2m to refresh"}
           </Button>
         </div>
       )}

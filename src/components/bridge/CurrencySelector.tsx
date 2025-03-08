@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { AddressPlaceholder } from "@/components/bridge/AddressPlaceholder";
-import { Clock, Search, ArrowDownUp } from "lucide-react";
+import { Clock, Search, ArrowDownUp, AlertCircle } from "lucide-react";
 import { Currency } from "@/types/bridge";
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
@@ -31,6 +31,10 @@ interface CurrencySelectorProps {
     usdValue: string;
     invert?: boolean;
   } | null;
+  minMaxAmounts?: {
+    min: string;
+    max: string;
+  };
 }
 
 export const CurrencySelector = ({
@@ -47,9 +51,11 @@ export const CurrencySelector = ({
   isReceiveSide = false,
   borderColor,
   exchangeRate,
+  minMaxAmounts,
 }: CurrencySelectorProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [isAmountFocused, setIsAmountFocused] = useState(false);
 
   const handleAmountChange = (value: string) => {
     if (!onAmountChange) return;
@@ -196,6 +202,8 @@ export const CurrencySelector = ({
                       placeholder="0.00"
                       value={amount || ""}
                       onChange={(e) => handleAmountChange(e.target.value)}
+                      onFocus={() => setIsAmountFocused(true)}
+                      onBlur={() => setIsAmountFocused(false)}
                       className="w-24 h-6 px-1 text-right bg-transparent border-none text-sm focus:outline-none focus:ring-0"
                     />
                   </div>
@@ -289,6 +297,17 @@ export const CurrencySelector = ({
       {exchangeRate && value && estimatedAmount && isReceiveSide && (
         <div className="mt-1 text-xs text-gray-400 font-mono">
           {`1 ${selectedCurrency?.code} = ${exchangeRate.rate} ${isReceiveSide ? "send" : "receive"} ($${exchangeRate.usdValue})`}
+        </div>
+      )}
+      
+      {/* Show min/max amount when sending */}
+      {!isReceiveSide && minMaxAmounts && selectedCurrency && (isAmountFocused || amount) && (
+        <div className="mt-1 text-xs font-mono">
+          <div className="flex items-center gap-1 text-gray-400">
+            <span>Min: {minMaxAmounts.min} {selectedCurrency.code}</span>
+            <span className="mx-1">•</span>
+            <span>Max: {minMaxAmounts.max} {selectedCurrency.code}</span>
+          </div>
         </div>
       )}
     </div>
