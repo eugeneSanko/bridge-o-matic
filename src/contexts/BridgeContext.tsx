@@ -9,7 +9,6 @@ import React, {
 import { toast } from "@/hooks/use-toast";
 import { useBridgeService } from "@/hooks/useBridgeService";
 import { BridgeContextType, TimerConfig, Currency, PriceResponse } from "@/types/bridge";
-import { useNavigate } from "react-router-dom";
 
 /**
  * Configuration for timers used in the bridge process
@@ -28,7 +27,6 @@ const BridgeContext = createContext<BridgeContextType | undefined>(undefined);
  * @param children - React children components
  */
 export function BridgeProvider({ children }: { children: React.ReactNode }) {
-  const navigate = useNavigate();
   const [fromCurrency, setFromCurrency] = useState<string>("");
   const [toCurrency, setToCurrency] = useState<string>("");
   const [amount, setAmount] = useState<string>("50"); // Set default amount to 50
@@ -417,8 +415,8 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
           description: "Your bridge transaction has been initiated successfully!",
         });
 
-        // Navigate to the awaiting deposit page with the orderId
-        navigate(`/bridge/awaiting-deposit?orderId=${result.orderId}`);
+        // Return the result with order details, the component will handle navigation
+        return result;
       }
 
       return result;

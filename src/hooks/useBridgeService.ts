@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { API_CONFIG } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -274,6 +275,19 @@ export function useBridgeService() {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 2000));
       
+      // Simulate API response - 90% of the time succeed, 10% fail with error
+      if (Math.random() < 0.1) {
+        // Simulate error response
+        const errorResponse: ApiOrderResponse = {
+          code: "501",
+          msg: "Not have permission",
+          data: null
+        };
+        
+        console.error('Bridge order error:', errorResponse);
+        throw new Error(errorResponse.msg);
+      }
+      
       // Simulate a successful API response
       const mockResponse: ApiOrderResponse = {
         code: 0,
@@ -309,19 +323,6 @@ export function useBridgeService() {
           }
         }
       };
-      
-      // Check if the response indicates an error (like the "Not have permission" example)
-      // Simulate error case 10% of the time
-      if (Math.random() < 0.1) {
-        const errorResponse: ApiOrderResponse = {
-          code: "501",
-          msg: "Not have permission",
-          data: null
-        };
-        
-        console.error('Bridge order error:', errorResponse);
-        throw new Error(errorResponse.msg);
-      }
       
       // Log the successful response
       console.log('Order created successfully:', mockResponse);

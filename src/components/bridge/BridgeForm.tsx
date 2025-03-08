@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +12,7 @@ export const BridgeForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const {
     fromCurrency,
     toCurrency,
@@ -103,7 +103,6 @@ export const BridgeForm = () => {
   const handleOrderTypeChange = (type: 'fixed' | 'float') => {
     setOrderType(type);
     isOrderTypeChangeRef.current = true;
-    // Force recalculation by resetting the last calculation time
     lastCalculationTimeRef.current = 0;
   };
 
@@ -187,7 +186,6 @@ export const BridgeForm = () => {
     );
 
     if (canSendToCurrency && canReceiveFromCurrency) {
-      // Retain the amount when swapping currencies (don't reset it)
       setFromCurrency(toCurrency);
       setToCurrency(fromCurrency);
       isCurrencyChangeRef.current = true;

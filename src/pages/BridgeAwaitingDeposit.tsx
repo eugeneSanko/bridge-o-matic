@@ -29,7 +29,8 @@ const BridgeAwaitingDeposit = () => {
     ffOrderToken: "testtoken123456789",
   };
 
-  const [isUsingStatic, setIsUsingStatic] = useState(true);
+  // If we have a real orderId from the URL, use actual data, otherwise use static data
+  const [isUsingStatic, setIsUsingStatic] = useState(!orderId);
   const { orderDetails, loading, error, handleCopyAddress } = useBridgeOrder(isUsingStatic ? null : orderId);
   const { deepLink, logs, addLog } = useDeepLink();
 
