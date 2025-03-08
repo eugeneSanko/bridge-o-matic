@@ -57,6 +57,7 @@ export const BridgeForm = () => {
   });
   const isAmountChangeRef = useRef(false);
   const isCurrencyChangeRef = useRef(false);
+  const isOrderTypeChangeRef = useRef(false);
 
   useEffect(() => {
     if (lastPriceData && lastPriceData.data) {
@@ -99,6 +100,13 @@ export const BridgeForm = () => {
     isCurrencyChangeRef.current = true;
   };
 
+  const handleOrderTypeChange = (type: 'fixed' | 'float') => {
+    setOrderType(type);
+    isOrderTypeChangeRef.current = true;
+    // Force recalculation by resetting the last calculation time
+    lastCalculationTimeRef.current = 0;
+  };
+
   useEffect(() => {
     const inputsChanged =
       fromCurrency !== lastInputValuesRef.current.fromCurrency ||
@@ -128,12 +136,14 @@ export const BridgeForm = () => {
       if (
         isAmountChangeRef.current ||
         isCurrencyChangeRef.current ||
+        isOrderTypeChangeRef.current ||
         lastCalculationTimeRef.current === 0 ||
         timeSinceLastCalculation >= 120000
       ) {
         calculateReceiveAmount();
         isAmountChangeRef.current = false;
         isCurrencyChangeRef.current = false;
+        isOrderTypeChangeRef.current = false;
       }
     }
   }, [
@@ -233,7 +243,7 @@ export const BridgeForm = () => {
           currencyNetwork={selectedToCurrency?.network}
         />
 
-        <OrderTypeSelector value={orderType} onChange={setOrderType} />
+        <OrderTypeSelector value={orderType} onChange={handleOrderTypeChange} />
 
         <BridgeFormActions
           isFormValid={isFormValid}
