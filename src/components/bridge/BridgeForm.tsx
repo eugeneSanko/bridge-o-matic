@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ArrowRight, ArrowLeftRight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,24 +38,19 @@ export const BridgeForm = () => {
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
   const [manualRefreshEnabled, setManualRefreshEnabled] = useState<boolean>(true);
 
-  // Update exchange rates when price data changes
   useEffect(() => {
     if (lastPriceData && lastPriceData.data) {
       const { from, to } = lastPriceData.data;
       
-      // Calculate and format exchange rates
       if (from && to) {
-        // From currency exchange rate
         const fromRate = parseFloat(from.rate?.toString() || "0").toFixed(8);
         const fromUsdValue = from.usd ? parseFloat(from.usd.toString()).toFixed(2) : "0.00";
         setFromExchangeRate({ rate: fromRate, usdValue: fromUsdValue });
         
-        // To currency exchange rate
         const toRate = parseFloat(to.rate?.toString() || "0").toFixed(8);
         const toUsdValue = to.usd ? parseFloat(to.usd.toString()).toFixed(2) : "0.00";
         setToExchangeRate({ rate: toRate, usdValue: toUsdValue });
         
-        // Set the last update time
         setLastUpdateTime(new Date());
       }
     } else {
@@ -65,10 +59,8 @@ export const BridgeForm = () => {
     }
   }, [lastPriceData]);
   
-  // Call the API once when currencies and amount are set
   useEffect(() => {
     if (fromCurrency && toCurrency && amount && parseFloat(amount) > 0 && !lastPriceData && !isCalculating) {
-      // Only fetch once when we have all required data and no existing price data
       calculateReceiveAmount();
     }
   }, [fromCurrency, toCurrency, amount, lastPriceData, isCalculating, calculateReceiveAmount]);
@@ -92,25 +84,20 @@ export const BridgeForm = () => {
     }
   };
 
-  // Function to manually refresh rate
   const handleRefreshRate = () => {
     if (manualRefreshEnabled) {
       calculateReceiveAmount();
       setManualRefreshEnabled(false);
-      // Re-enable refresh after 2 minutes
       setTimeout(() => setManualRefreshEnabled(true), 120000);
     }
   };
 
-  // Find the selected currencies in the availableCurrencies array
   const fromCurrencyObj =
     availableCurrencies.find((c) => c.code === fromCurrency) || null;
   const toCurrencyObj =
     availableCurrencies.find((c) => c.code === toCurrency) || null;
 
-  // Function to swap the from and to currencies
   const handleSwapCurrencies = () => {
-    // Make sure both currencies have the proper send/receive capabilities before swapping
     const newFromCurrency = availableCurrencies.find(
       (c) => c.code === toCurrency && c.send === 1
     );
@@ -119,10 +106,9 @@ export const BridgeForm = () => {
     );
 
     if (newFromCurrency && newToCurrency) {
-      // Only swap if both currencies can be used in their new positions
       setFromCurrency(toCurrency);
       setToCurrency(fromCurrency);
-      setAmount(""); // Reset amount since exchange rate will be different
+      setAmount("");
     }
   };
 

@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -16,7 +15,7 @@ import { BridgeContextType, TimerConfig, Currency, PriceResponse } from "@/types
  */
 const TIMER_CONFIG: TimerConfig = {
   QUOTE_VALIDITY_MS: 120000, // 120 seconds (2 minutes)
-  TIMER_UPDATE_INTERVAL_MS: 50, // 50ms update interval for smooth countdown
+  TIMER_UPDATE_INTERVAL_MS: 1000, // 1 second update interval (reduced from 50ms)
   RECALCULATION_THROTTLE_MS: 120000, // 120 seconds (2 minutes) between recalculations
 };
 
@@ -257,7 +256,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
     // Check if 2 minutes have passed since the last price check
     const now = Date.now();
     const timeSinceLastCheck = now - lastPriceCheckTimeRef.current;
-    const shouldCheckPrice = timeSinceLastCheck >= TIMER_CONFIG.QUOTE_VALIDITY_MS || !lastPriceData;
+    const shouldCheckPrice = timeSinceLastCheck >= TIMER_CONFIG.RECALCULATION_THROTTLE_MS || !lastPriceData;
 
     // Make sure the inputs have actually changed
     const currentInputValues = {
@@ -406,7 +405,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
           calculateReceiveAmount();
         }
         debounceTimerRef.current = null;
-      }, 1000); // 1-second debounce
+      }, 2000); // 2-second debounce (increased from 1 second)
       
       return () => {
         if (debounceTimerRef.current) {
