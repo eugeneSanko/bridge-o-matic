@@ -4,7 +4,6 @@ import { ArrowLeftRight, AlertCircle } from "lucide-react";
 import { CurrencySelector } from "./CurrencySelector";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Currency } from "@/types/bridge";
-import { useBridge } from "@/contexts/BridgeContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface CurrencyExchangeSectionProps {

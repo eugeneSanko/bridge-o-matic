@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -176,6 +177,7 @@ export const BridgeForm = () => {
     );
 
     if (canSendToCurrency && canReceiveFromCurrency) {
+      // Retain the amount when swapping currencies (don't reset it)
       setFromCurrency(toCurrency);
       setToCurrency(fromCurrency);
       isCurrencyChangeRef.current = true;
