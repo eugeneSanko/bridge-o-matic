@@ -15,7 +15,7 @@ import { BridgeContextType, TimerConfig, Currency, PriceResponse } from "@/types
  */
 const TIMER_CONFIG: TimerConfig = {
   QUOTE_VALIDITY_MS: 120000, // 120 seconds (2 minutes)
-  TIMER_UPDATE_INTERVAL_MS: 1000, // 1 second update interval (reduced from 50ms)
+  TIMER_UPDATE_INTERVAL_MS: 1000, // 1 second update interval
   RECALCULATION_THROTTLE_MS: 120000, // 120 seconds (2 minutes) between recalculations
 };
 
@@ -47,21 +47,9 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
   const timeRemainingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const quoteExpiryTimeRef = useRef<number | null>(null);
   const statusCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastInputValuesRef = useRef({
-    fromCurrency: "",
-    toCurrency: "",
-    amount: "",
-    orderType: "fixed" as "fixed" | "float",
-  });
   
   // Last time a price calculation was made
   const lastPriceCheckTimeRef = useRef<number>(0);
-  
-  // Flag to prevent redundant price calculations
-  const isPriceCalculationNeededRef = useRef(false);
-  
-  // Debounce timer ref to prevent multiple rapid calls
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const {
     fetchCurrencies,
@@ -253,44 +241,6 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Check if 2 minutes have passed since the last price check
-    const now = Date.now();
-    const timeSinceLastCheck = now - lastPriceCheckTimeRef.current;
-    const shouldCheckPrice = timeSinceLastCheck >= TIMER_CONFIG.RECALCULATION_THROTTLE_MS || !lastPriceData;
-
-    // Make sure the inputs have actually changed
-    const currentInputValues = {
-      fromCurrency,
-      toCurrency,
-      amount,
-      orderType,
-    };
-
-    const previousInputValues = lastInputValuesRef.current;
-    const inputsHaveChanged = 
-      previousInputValues.fromCurrency !== currentInputValues.fromCurrency ||
-      previousInputValues.toCurrency !== currentInputValues.toCurrency ||
-      previousInputValues.amount !== currentInputValues.amount ||
-      previousInputValues.orderType !== currentInputValues.orderType;
-
-    // Only calculate if we need to check the price or inputs have changed
-    if (!shouldCheckPrice && !inputsHaveChanged && !isPriceCalculationNeededRef.current) {
-      return;
-    }
-
-    // Cancel any pending debounce timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = null;
-    }
-
-    // Update the ref with current values
-    lastInputValuesRef.current = { ...currentInputValues };
-    isPriceCalculationNeededRef.current = false;
-    
-    // Update the last check time
-    lastPriceCheckTimeRef.current = now;
-
     setIsCalculating(true);
     try {
       // Get fresh price data
@@ -314,6 +264,9 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       // Validate amount after getting price data
       validateAmount();
       
+      // Update the last check time
+      lastPriceCheckTimeRef.current = Date.now();
+      
     } catch (error) {
       console.error("Error calculating amount:", error);
       setEstimatedReceiveAmount("0");
@@ -336,7 +289,6 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
     orderType,
     calculatePrice,
     validateAmount,
-    lastPriceData,
   ]);
 
   /**
@@ -383,41 +335,6 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
     },
     [checkOrderStatus]
   );
-
-  /**
-   * Update estimated receive amount when inputs change
-   */
-  useEffect(() => {
-    // Only calculate if we have all required inputs
-    if (amount && fromCurrency && toCurrency) {
-      // Set the flag to indicate a calculation is needed
-      isPriceCalculationNeededRef.current = true;
-      
-      // Clear any existing debounce timer
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      
-      // Add a longer delay to prevent rapid re-calculation
-      debounceTimerRef.current = setTimeout(() => {
-        // Check if any price calculation is already in progress
-        if (!isCalculating) {
-          calculateReceiveAmount();
-        }
-        debounceTimerRef.current = null;
-      }, 2000); // 2-second debounce (increased from 1 second)
-      
-      return () => {
-        if (debounceTimerRef.current) {
-          clearTimeout(debounceTimerRef.current);
-          debounceTimerRef.current = null;
-        }
-      };
-    } else {
-      setEstimatedReceiveAmount("");
-      setLastPriceData(null);
-    }
-  }, [amount, fromCurrency, toCurrency, orderType, calculateReceiveAmount, isCalculating]);
 
   /**
    * Validates all inputs required for a bridge transaction

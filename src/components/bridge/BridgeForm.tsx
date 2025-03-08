@@ -63,6 +63,7 @@ export const BridgeForm = () => {
   }, [lastPriceData]);
   
   useEffect(() => {
+    // Only do initial calculation when the component first loads
     if (fromCurrency && toCurrency && amount && parseFloat(amount) > 0 && !lastPriceData && !isCalculating) {
       calculateReceiveAmount();
     }
@@ -93,7 +94,7 @@ export const BridgeForm = () => {
       setManualRefreshEnabled(false);
       toast({
         title: "Rates refreshed",
-        description: "Rates have been updated. Next refresh available in 2 minutes.",
+        description: "Next refresh available in 2 minutes",
         duration: 3000,
       });
       setTimeout(() => setManualRefreshEnabled(true), 120000); // 2 minutes
