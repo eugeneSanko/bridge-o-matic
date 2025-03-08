@@ -1,13 +1,13 @@
+
 import { useState, useEffect, useRef } from "react";
-import { ArrowRight, ArrowLeftRight, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { CurrencySelector } from "./CurrencySelector";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { useBridge } from "@/contexts/BridgeContext";
+import { CurrencyExchangeSection } from "./CurrencyExchangeSection";
 import { DestinationAddressInput } from "./DestinationAddressInput";
 import { OrderTypeSelector } from "./OrderTypeSelector";
-import { useBridge } from "@/contexts/BridgeContext";
-import { useNavigate } from "react-router-dom";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
+import { BridgeFormActions } from "./BridgeFormActions";
+import { useRateRefresh } from "@/hooks/useRateRefresh";
 
 export const BridgeForm = () => {
   const navigate = useNavigate();
@@ -44,8 +44,9 @@ export const BridgeForm = () => {
     usdValue: string;
   } | null>(null);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
-  const [manualRefreshEnabled, setManualRefreshEnabled] =
-    useState<boolean>(true);
+  
+  // Custom hook for rate refresh
+  const { manualRefreshEnabled, handleRefreshRate } = useRateRefresh(calculateReceiveAmount);
 
   // Ref to track if we should recalculate the price
   const lastCalculationTimeRef = useRef<number>(0);
@@ -182,30 +183,6 @@ export const BridgeForm = () => {
     }
   };
 
-  const handleRefreshRate = () => {
-    if (manualRefreshEnabled) {
-      calculateReceiveAmount();
-      setManualRefreshEnabled(false);
-      toast({
-        title: "Rates refreshed",
-        description: "Next manual refresh available in 2 minutes",
-        duration: 3000,
-      });
-      setTimeout(() => setManualRefreshEnabled(true), 120000); // 2 minutes
-    } else {
-      toast({
-        title: "Please wait",
-        description: "Manual rate refresh is available every 2 minutes",
-        duration: 3000,
-      });
-    }
-  };
-
-  const fromCurrencyObj =
-    availableCurrencies.find((c) => c.code === fromCurrency) || null;
-  const toCurrencyObj =
-    availableCurrencies.find((c) => c.code === toCurrency) || null;
-
   const handleSwapCurrencies = () => {
     // Check if the currencies can be swapped (to currency can be sent, from currency can be received)
     const canSendToCurrency = availableCurrencies.some(
@@ -242,95 +219,40 @@ export const BridgeForm = () => {
 
   return (
     <div className="glass-card p-4 sm:p-8 rounded-lg mb-8 sm:mb-12">
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6  relative">
-        <CurrencySelector
-          label="Send"
-          value={fromCurrency}
-          onChange={handleFromCurrencyChange}
-          onAmountChange={handleAmountChange}
-          amount={amount}
-          availableCurrencies={availableCurrencies}
-          isLoadingCurrencies={isLoadingCurrencies}
-          borderColor={fromCurrencyObj?.color}
-          exchangeRate={fromExchangeRate}
-          minMaxAmounts={
-            lastPriceData?.data.from
-              ? {
-                  min: lastPriceData.data.from.min,
-                  max: lastPriceData.data.from.max,
-                }
-              : undefined
-          }
-        />
-
-        <div className="flex flex-col items-center justify-center h-10">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full bg-secondary/50 hover:bg-secondary my-1 -mt-4"
-            onClick={handleSwapCurrencies}
-          >
-            <ArrowLeftRight className="h-4 w-4 text-[#0FA0CE]" />
-          </Button>
-        </div>
-
-        <CurrencySelector
-          label="Receive"
-          value={toCurrency}
-          onChange={handleToCurrencyChange}
-          estimatedAmount={estimatedReceiveAmount}
-          isCalculating={isCalculating}
-          timeRemaining={timeRemaining}
-          availableCurrencies={availableCurrencies}
-          isLoadingCurrencies={isLoadingCurrencies}
-          isReceiveSide={true}
-          borderColor={toCurrencyObj?.color}
-          exchangeRate={toExchangeRate}
-        />
-      </div>
-
-      {amountError && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{amountError}</AlertDescription>
-        </Alert>
-      )}
-
-      {/* {lastUpdateTime && (
-        <div className="text-xs text-center text-gray-400 mb-4">
-          Rates last updated: {lastUpdateTime.toLocaleTimeString()}
-          <Button
-            variant="link"
-            className="text-xs text-[#0FA0CE] ml-2 p-0 h-auto"
-            onClick={handleRefreshRate}
-            disabled={!manualRefreshEnabled}
-          >
-            {manualRefreshEnabled ? "Refresh manually" : "Wait 2m to refresh"}
-          </Button>
-        </div>
-      )} */}
+      <CurrencyExchangeSection
+        fromCurrency={fromCurrency}
+        toCurrency={toCurrency}
+        amount={amount}
+        estimatedReceiveAmount={estimatedReceiveAmount}
+        isCalculating={isCalculating}
+        timeRemaining={timeRemaining}
+        availableCurrencies={availableCurrencies}
+        isLoadingCurrencies={isLoadingCurrencies}
+        fromExchangeRate={fromExchangeRate}
+        toExchangeRate={toExchangeRate}
+        lastPriceData={lastPriceData}
+        amountError={amountError}
+        onFromCurrencyChange={handleFromCurrencyChange}
+        onToCurrencyChange={handleToCurrencyChange}
+        onAmountChange={handleAmountChange}
+        onSwapCurrencies={handleSwapCurrencies}
+      />
 
       <div className="space-y-4 sm:space-y-6">
         <DestinationAddressInput
           value={destinationAddress}
           onChange={setDestinationAddress}
-          borderColor={toCurrencyObj?.color}
+          borderColor={availableCurrencies.find((c) => c.code === toCurrency)?.color}
           receivingCurrency={toCurrency}
         />
 
         <OrderTypeSelector value={orderType} onChange={setOrderType} />
 
-        <Button
-          className="w-full h-[3.5rem] sm:h-[4.5rem] text-base sm:text-lg font-medium bg-[#0FA0CE] hover:bg-[#0FA0CE]/90 disabled:opacity-50 disabled:cursor-not-allowed"
-          onClick={handleBridgeAssets}
-          disabled={!isFormValid || isSubmitting}
-        >
-          {isSubmitting ? "Processing..." : "Bridge Assets"}
-        </Button>
-
-        <p className="text-xs text-center text-gray-400">
-          By proceeding, you agree to our Terms of Service
-        </p>
+        <BridgeFormActions
+          isFormValid={isFormValid}
+          isSubmitting={isSubmitting}
+          onBridgeAssets={handleBridgeAssets}
+        />
       </div>
     </div>
   );
