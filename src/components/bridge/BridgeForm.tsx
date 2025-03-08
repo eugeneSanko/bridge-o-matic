@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { ArrowRight, ArrowLeftRight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,18 +32,30 @@ export const BridgeForm = () => {
     availableCurrencies,
     isLoadingCurrencies,
     lastPriceData,
-    amountError
+    amountError,
   } = useBridge();
-  
-  const [fromExchangeRate, setFromExchangeRate] = useState<{rate: string; usdValue: string;} | null>(null);
-  const [toExchangeRate, setToExchangeRate] = useState<{rate: string; usdValue: string;} | null>(null);
+
+  const [fromExchangeRate, setFromExchangeRate] = useState<{
+    rate: string;
+    usdValue: string;
+  } | null>(null);
+  const [toExchangeRate, setToExchangeRate] = useState<{
+    rate: string;
+    usdValue: string;
+  } | null>(null);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
-  const [manualRefreshEnabled, setManualRefreshEnabled] = useState<boolean>(true);
-  
+  const [manualRefreshEnabled, setManualRefreshEnabled] =
+    useState<boolean>(true);
+
   // Ref to track if we should recalculate the price
   const lastCalculationTimeRef = useRef<number>(0);
   // Ref to track the latest input values for debouncing
-  const lastInputValuesRef = useRef({ fromCurrency, toCurrency, amount, orderType });
+  const lastInputValuesRef = useRef({
+    fromCurrency,
+    toCurrency,
+    amount,
+    orderType,
+  });
   // Track if we are handling an amount change specifically
   const isAmountChangeRef = useRef(false);
   // Track if this is a currency change operation
@@ -54,16 +65,20 @@ export const BridgeForm = () => {
   useEffect(() => {
     if (lastPriceData && lastPriceData.data) {
       const { from, to } = lastPriceData.data;
-      
+
       if (from && to) {
         const fromRate = parseFloat(from.rate?.toString() || "0").toFixed(8);
-        const fromUsdValue = from.usd ? parseFloat(from.usd.toString()).toFixed(2) : "0.00";
+        const fromUsdValue = from.usd
+          ? parseFloat(from.usd.toString()).toFixed(2)
+          : "0.00";
         setFromExchangeRate({ rate: fromRate, usdValue: fromUsdValue });
-        
+
         const toRate = parseFloat(to.rate?.toString() || "0").toFixed(8);
-        const toUsdValue = to.usd ? parseFloat(to.usd.toString()).toFixed(2) : "0.00";
+        const toUsdValue = to.usd
+          ? parseFloat(to.usd.toString()).toFixed(2)
+          : "0.00";
         setToExchangeRate({ rate: toRate, usdValue: toUsdValue });
-        
+
         setLastUpdateTime(new Date());
         lastCalculationTimeRef.current = Date.now();
       }
@@ -72,48 +87,61 @@ export const BridgeForm = () => {
       setToExchangeRate(null);
     }
   }, [lastPriceData]);
-  
+
   // Handle amount changes specifically - always recalculate for amount changes
   const handleAmountChange = (newAmount: string) => {
     setAmount(newAmount);
     isAmountChangeRef.current = true;
   };
-  
+
   // Handle from currency changes - trigger recalculation
   const handleFromCurrencyChange = (currency: string) => {
     setFromCurrency(currency);
     isCurrencyChangeRef.current = true;
   };
-  
+
   // Handle to currency changes - trigger recalculation
   const handleToCurrencyChange = (currency: string) => {
     setToCurrency(currency);
     isCurrencyChangeRef.current = true;
   };
-  
+
   // Recalculate price when input values change
   useEffect(() => {
     // Check if any input values have changed
-    const inputsChanged = 
+    const inputsChanged =
       fromCurrency !== lastInputValuesRef.current.fromCurrency ||
       toCurrency !== lastInputValuesRef.current.toCurrency ||
       amount !== lastInputValuesRef.current.amount ||
       orderType !== lastInputValuesRef.current.orderType;
-    
+
     // Only calculate if inputs changed and there's an amount
-    if (inputsChanged && fromCurrency && toCurrency && amount && parseFloat(amount) > 0 && !isCalculating) {
+    if (
+      inputsChanged &&
+      fromCurrency &&
+      toCurrency &&
+      amount &&
+      parseFloat(amount) > 0 &&
+      !isCalculating
+    ) {
       const currentTime = Date.now();
-      const timeSinceLastCalculation = currentTime - lastCalculationTimeRef.current;
-      
+      const timeSinceLastCalculation =
+        currentTime - lastCalculationTimeRef.current;
+
       // Update the latest input values
-      lastInputValuesRef.current = { fromCurrency, toCurrency, amount, orderType };
-      
-      // If this is an amount change, or a currency change, or a calculation has never been done, 
+      lastInputValuesRef.current = {
+        fromCurrency,
+        toCurrency,
+        amount,
+        orderType,
+      };
+
+      // If this is an amount change, or a currency change, or a calculation has never been done,
       // or it's been more than 2 minutes, do the calculation
       if (
-        isAmountChangeRef.current || 
-        isCurrencyChangeRef.current || 
-        lastCalculationTimeRef.current === 0 || 
+        isAmountChangeRef.current ||
+        isCurrencyChangeRef.current ||
+        lastCalculationTimeRef.current === 0 ||
         timeSinceLastCalculation >= 120000
       ) {
         calculateReceiveAmount();
@@ -121,7 +149,14 @@ export const BridgeForm = () => {
         isCurrencyChangeRef.current = false; // Reset the flag
       }
     }
-  }, [fromCurrency, toCurrency, amount, orderType, calculateReceiveAmount, isCalculating]);
+  }, [
+    fromCurrency,
+    toCurrency,
+    amount,
+    orderType,
+    calculateReceiveAmount,
+    isCalculating,
+  ]);
 
   const handleBridgeAssets = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -184,7 +219,7 @@ export const BridgeForm = () => {
       setFromCurrency(toCurrency);
       setToCurrency(fromCurrency);
       setAmount(""); // Reset amount when swapping
-      
+
       // Force a recalculation on next render after swap
       lastCalculationTimeRef.current = 0;
     } else {
@@ -207,7 +242,7 @@ export const BridgeForm = () => {
 
   return (
     <div className="glass-card p-4 sm:p-8 rounded-lg mb-8 sm:mb-12">
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6 mb-6 sm:mb-8 relative">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6  relative">
         <CurrencySelector
           label="Send"
           value={fromCurrency}
@@ -218,17 +253,21 @@ export const BridgeForm = () => {
           isLoadingCurrencies={isLoadingCurrencies}
           borderColor={fromCurrencyObj?.color}
           exchangeRate={fromExchangeRate}
-          minMaxAmounts={lastPriceData?.data.from ? { 
-            min: lastPriceData.data.from.min, 
-            max: lastPriceData.data.from.max 
-          } : undefined}
+          minMaxAmounts={
+            lastPriceData?.data.from
+              ? {
+                  min: lastPriceData.data.from.min,
+                  max: lastPriceData.data.from.max,
+                }
+              : undefined
+          }
         />
 
-        <div className="flex flex-col items-center justify-center">
+        <div className="flex flex-col items-center justify-center h-10">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-full bg-secondary/50 hover:bg-secondary my-1 mt-8"
+            className="h-8 w-8 rounded-full bg-secondary/50 hover:bg-secondary my-1 -mt-4"
             onClick={handleSwapCurrencies}
           >
             <ArrowLeftRight className="h-4 w-4 text-[#0FA0CE]" />
@@ -257,19 +296,19 @@ export const BridgeForm = () => {
         </Alert>
       )}
 
-      {lastUpdateTime && (
+      {/* {lastUpdateTime && (
         <div className="text-xs text-center text-gray-400 mb-4">
-          Rates last updated: {lastUpdateTime.toLocaleTimeString()} 
-          <Button 
-            variant="link" 
-            className="text-xs text-[#0FA0CE] ml-2 p-0 h-auto" 
+          Rates last updated: {lastUpdateTime.toLocaleTimeString()}
+          <Button
+            variant="link"
+            className="text-xs text-[#0FA0CE] ml-2 p-0 h-auto"
             onClick={handleRefreshRate}
             disabled={!manualRefreshEnabled}
           >
             {manualRefreshEnabled ? "Refresh manually" : "Wait 2m to refresh"}
           </Button>
         </div>
-      )}
+      )} */}
 
       <div className="space-y-4 sm:space-y-6">
         <DestinationAddressInput

@@ -1,4 +1,3 @@
-
 import {
   Select,
   SelectContent,
@@ -68,18 +67,18 @@ export const CurrencySelector = ({
       if (typingTimeout) {
         clearTimeout(typingTimeout);
       }
-      
+
       // Set typing state to true
       setIsTyping(true);
-      
+
       // Start a new timeout
       const timeout = setTimeout(() => {
         setIsTyping(false);
       }, 1500); // 1.5 seconds after user stops typing
-      
+
       // Save the timeout ID
       setTypingTimeout(timeout as unknown as number);
-      
+
       onAmountChange(value);
     }
   };
@@ -92,13 +91,13 @@ export const CurrencySelector = ({
   // Further filter currencies by search term
   const searchedCurrencies = filteredCurrencies.filter((currency) => {
     if (!searchTerm) return true;
-    
+
     const search = searchTerm.toLowerCase();
     return (
-      (currency.name?.toLowerCase().includes(search)) ||
-      (currency.code?.toLowerCase().includes(search)) ||
-      (currency.coin?.toLowerCase().includes(search)) ||
-      (currency.network?.toLowerCase().includes(search))
+      currency.name?.toLowerCase().includes(search) ||
+      currency.code?.toLowerCase().includes(search) ||
+      currency.coin?.toLowerCase().includes(search) ||
+      currency.network?.toLowerCase().includes(search)
     );
   });
 
@@ -143,13 +142,15 @@ export const CurrencySelector = ({
   }, [filteredCurrencies, value, onChange, isReceiveSide]);
 
   // Create a style object for the border color
-  const borderStyle = borderColor ? {
-    borderColor: borderColor,
-    borderWidth: '2px',
-  } : {};
+  const borderStyle = borderColor
+    ? {
+        borderColor: borderColor,
+        borderWidth: "2px",
+      }
+    : {};
 
   // Get the selected currency object
-  const selectedCurrency = availableCurrencies.find(c => c.code === value);
+  const selectedCurrency = availableCurrencies.find((c) => c.code === value);
 
   // Reset search when dropdown closes
   useEffect(() => {
@@ -179,8 +180,8 @@ export const CurrencySelector = ({
           disabled={isLoadingCurrencies}
           onOpenChange={setIsOpen}
         >
-          <SelectTrigger 
-            className="h-[3.5rem] sm:h-[4.5rem] px-3 sm:px-4 bg-secondary/30 text-sm sm:text-base transition-all duration-200" 
+          <SelectTrigger
+            className="h-[3.5rem] sm:h-[4.5rem] px-3 sm:px-4 bg-secondary/30 text-sm sm:text-base transition-all duration-200"
             style={borderStyle}
           >
             <div className="flex flex-col w-full">
@@ -207,12 +208,12 @@ export const CurrencySelector = ({
                     ) : estimatedAmount ? (
                       <>
                         <span>{estimatedAmount}</span>
-                        {timeRemaining && (
+                        {/* {timeRemaining && (
                           <span className="flex items-center text-xs text-[#0FA0CE]">
                             <Clock className="h-3 w-3 mr-1" />
                             {timeRemaining}s
                           </span>
-                        )}
+                        )} */}
                       </>
                     ) : (
                       "0.00"
@@ -251,7 +252,7 @@ export const CurrencySelector = ({
                 />
               </div>
             </div>
-            
+
             {/* Exchange rate if available */}
             {exchangeRate && value && (
               <div className="px-3 py-2 border-b border-white/10 text-xs text-muted-foreground">
@@ -260,14 +261,17 @@ export const CurrencySelector = ({
                   <span>Exchange Rate</span>
                 </div>
                 <div className="font-mono">
-                  {exchangeRate.invert 
-                    ? `1 ${selectedCurrency?.code} = ${exchangeRate.rate} ${isReceiveSide ? "send" : "receive"} ($${exchangeRate.usdValue})`
-                    : `1 ${isReceiveSide ? "send" : "receive"} = ${exchangeRate.rate} ${selectedCurrency?.code} ($${exchangeRate.usdValue})`
-                  }
+                  {exchangeRate.invert
+                    ? `1 ${selectedCurrency?.code} = ${exchangeRate.rate} ${
+                        isReceiveSide ? "send" : "receive"
+                      } ($${exchangeRate.usdValue})`
+                    : `1 ${isReceiveSide ? "send" : "receive"} = ${
+                        exchangeRate.rate
+                      } ${selectedCurrency?.code} ($${exchangeRate.usdValue})`}
                 </div>
               </div>
             )}
-            
+
             {/* Currency list */}
             {isLoadingCurrencies ? (
               <SelectItem value="loading" disabled>
@@ -275,7 +279,9 @@ export const CurrencySelector = ({
               </SelectItem>
             ) : searchedCurrencies.length === 0 ? (
               <SelectItem value="none" disabled>
-                {searchTerm ? "No matching currencies" : "No currencies available"}
+                {searchTerm
+                  ? "No matching currencies"
+                  : "No currencies available"}
               </SelectItem>
             ) : (
               searchedCurrencies
@@ -314,39 +320,54 @@ export const CurrencySelector = ({
           </SelectContent>
         </Select>
       </div>
-      
-      {/* Show either min/max values when typing or exchange rate when not typing */}
-      {!isReceiveSide && value && selectedCurrency && (
-        <>
-          {/* Show min/max when typing or focused */}
-          {(isTyping || isAmountFocused) && minMaxAmounts ? (
-            <div className="mt-1.5 flex gap-2">
-              <div className="bg-[#221F26] rounded-md px-2.5 py-1 text-xs">
-                <span className="text-[#FFA500]">min: </span>
-                <span className="font-mono text-gray-300">{minMaxAmounts.min} {selectedCurrency.code}</span>
+
+      <div className="h-10">
+        {/* Show either min/max values when typing or exchange rate when not typing */}
+        {!isReceiveSide && value && selectedCurrency && (
+          <>
+            {/* Show min/max when typing or focused */}
+            {(isTyping || isAmountFocused) && minMaxAmounts ? (
+              <div className="mt-1.5 flex gap-2">
+                <div className="bg-[#221F26] rounded-md px-2.5 py-1 text-xs">
+                  <span className="text-[#FFA500]">min: </span>
+                  <span className="font-mono text-gray-300">
+                    {minMaxAmounts.min} {selectedCurrency.code}
+                  </span>
+                </div>
+                <div className="bg-[#221F26] rounded-md px-2.5 py-1 text-xs">
+                  <span className="text-[#FFA500]">max: </span>
+                  <span className="font-mono text-gray-300">
+                    {minMaxAmounts.max} {selectedCurrency.code}
+                  </span>
+                </div>
               </div>
-              <div className="bg-[#221F26] rounded-md px-2.5 py-1 text-xs">
-                <span className="text-[#FFA500]">max: </span>
-                <span className="font-mono text-gray-300">{minMaxAmounts.max} {selectedCurrency.code}</span>
-              </div>
-            </div>
-          ) : (
-            /* Show exchange rate when not typing */
-            exchangeRate && amount && (
-              <div className="mt-1 text-xs text-gray-400 font-mono">
-                {`1 ${selectedCurrency?.code} = ${exchangeRate.rate} ${isReceiveSide ? "send" : "receive"} ($${exchangeRate.usdValue})`}
-              </div>
-            )
-          )}
-        </>
-      )}
-      
-      {/* For receive side, always show exchange rate if available */}
-      {isReceiveSide && value && exchangeRate && estimatedAmount && (
-        <div className="mt-1 text-xs text-gray-400 font-mono">
-          {`1 ${selectedCurrency?.code} = ${exchangeRate.rate} ${isReceiveSide ? "send" : "receive"} ($${exchangeRate.usdValue})`}
-        </div>
-      )}
+            ) : (
+              /* Show exchange rate when not typing */
+              exchangeRate &&
+              amount && (
+                <div className="mt-1 flex items-center text-xs text-gray-400 font-mono gap-1 flex justify-between">
+                  <span>
+                    1 {selectedCurrency?.code} = {exchangeRate.rate}
+                  </span>
+                  <span>
+                    {isReceiveSide ? "receive" : "send"}($
+                    {exchangeRate.usdValue})
+                  </span>
+                </div>
+              )
+            )}
+          </>
+        )}
+
+        {/* For receive side, always show exchange rate if available */}
+        {isReceiveSide && value && exchangeRate && estimatedAmount && (
+          <div className="mt-1 text-xs text-gray-400 font-mono ">
+            {`1 ${selectedCurrency?.code} = ${exchangeRate.rate} ${
+              isReceiveSide ? "receive" : "send"
+            } ($${exchangeRate.usdValue})`}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

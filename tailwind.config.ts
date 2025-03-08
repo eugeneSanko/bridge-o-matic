@@ -48,6 +48,9 @@ export default {
           DEFAULT: "#3B82F6", // Changed to match primary
           foreground: "#FAFAF8",
         },
+        destructive: {
+          DEFAULT: "red",
+        },
       },
       borderRadius: {
         lg: "1rem",

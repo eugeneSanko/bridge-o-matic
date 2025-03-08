@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { QrCode, Copy, Clipboard } from "lucide-react";
@@ -39,14 +38,16 @@ export const DestinationAddressInput = ({
   };
 
   // Create a style object for the border color
-  const borderStyle = borderColor ? {
-    borderColor: borderColor,
-    borderWidth: '2px',
-  } : {};
+  const borderStyle = borderColor
+    ? {
+        borderColor: borderColor,
+        borderWidth: "2px",
+      }
+    : {};
 
   // Create dynamic placeholder based on receiving currency
-  const placeholder = receivingCurrency 
-    ? `Enter ${receivingCurrency} wallet address` 
+  const placeholder = receivingCurrency
+    ? `Enter ${receivingCurrency} wallet address`
     : "Enter receiving wallet address";
 
   return (
@@ -58,7 +59,7 @@ export const DestinationAddressInput = ({
         <Input
           type="text"
           placeholder={placeholder}
-          className="h-[3.5rem] sm:h-[4.5rem] px-3 sm:px-4 bg-secondary/30 pr-24 sm:pr-32 text-sm sm:text-base transition-all duration-200"
+          className="h-[3.5rem] sm:h-[4.5rem] px-3 sm:px-4 bg-secondary/30 pr-24 sm:pr-32 text-sm sm:text-base transition-all duration-200 h-64"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           style={borderStyle}
