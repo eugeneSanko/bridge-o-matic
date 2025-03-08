@@ -1,5 +1,6 @@
+
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Check } from "lucide-react";
 import { TransactionSummary } from "@/components/bridge/TransactionSummary";
 import { toast } from "@/hooks/use-toast";
@@ -21,11 +22,13 @@ interface OrderData {
 }
 
 const BridgeOrderComplete = () => {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get("orderId");
   const [orderDetails, setOrderDetails] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [apiAttempted, setApiAttempted] = useState(false);
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
@@ -35,16 +38,33 @@ const BridgeOrderComplete = () => {
         return;
       }
 
+      if (apiAttempted) {
+        console.log("API already attempted, skipping fetch");
+        return;
+      }
+
+      setApiAttempted(true);
+
       try {
+        console.log("Fetching complete order details for", orderId);
         const result = await invokeFunctionWithRetry('bridge-order', {
-          body: { orderId }
+          body: { orderId },
+          options: { retry: false }
         });
 
         if (!result || result.error) {
           throw new Error(result?.error?.message || "Failed to fetch order details");
         }
 
+        console.log("Order details fetched successfully:", result.data);
         setOrderDetails(result.data);
+        
+        // Verify order is actually completed
+        if (result.data.status !== "completed") {
+          console.log(`Order status is ${result.data.status}, not completed. Redirecting to order page.`);
+          navigate(`/bridge/awaiting-deposit?orderId=${orderId}`);
+          return;
+        }
       } catch (error) {
         console.error("Error fetching order details:", error);
         setError(error instanceof Error ? error.message : "Failed to fetch order details");
@@ -59,7 +79,7 @@ const BridgeOrderComplete = () => {
     };
 
     fetchOrderDetails();
-  }, [orderId]);
+  }, [orderId, apiAttempted, navigate]);
 
   if (loading) {
     return (
@@ -80,7 +100,7 @@ const BridgeOrderComplete = () => {
           <p className="text-gray-300 mb-6">{error || "Order not found"}</p>
           <button 
             className="w-full bg-[#0FA0CE] hover:bg-[#0FA0CE]/90 text-white py-2 px-4 rounded"
-            onClick={() => window.location.href = "/bridge"}
+            onClick={() => navigate("/bridge")}
           >
             Return to Bridge
           </button>
@@ -129,7 +149,7 @@ const BridgeOrderComplete = () => {
         <div className="flex justify-center">
           <button 
             className="bg-[#0FA0CE] hover:bg-[#0FA0CE]/90 text-white py-2 px-8 rounded-lg"
-            onClick={() => window.location.href = "/bridge"}
+            onClick={() => navigate("/bridge")}
           >
             Start New Transaction
           </button>

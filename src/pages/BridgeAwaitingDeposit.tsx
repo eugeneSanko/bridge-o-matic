@@ -32,6 +32,7 @@ const BridgeAwaitingDeposit = () => {
   // Always use static data if no orderId, or if we've had API errors
   const [isUsingStatic, setIsUsingStatic] = useState(!orderId);
   const [apiAttempted, setApiAttempted] = useState(false);
+  const [navigating, setNavigating] = useState(false);
   
   // We need a non-retry version of the hook
   const { orderDetails, loading, error, handleCopyAddress } = useBridgeOrder(
@@ -83,21 +84,32 @@ const BridgeAwaitingDeposit = () => {
       return;
     }
 
-    if (orderDetails?.currentStatus === 'completed') {
-      window.location.href = `/bridge/order-complete?orderId=${orderDetails.orderId}`;
+    // Only navigate to completion page if we have confirmation of completed status
+    // and we're not already navigating
+    if (orderDetails?.currentStatus === 'completed' && !navigating) {
+      console.log("Order is complete, navigating to completion page");
+      setNavigating(true);
+      navigate(`/bridge/order-complete?orderId=${orderDetails.orderId}`);
       return;
     }
 
     if (params.has("status")) {
       const status = params.get("status");
       addLog(`Status from deep link: ${status}`);
+      
+      // If we get a completed status from the deep link, navigate to completion
+      if (status === 'completed' && !navigating) {
+        console.log("Got completed status from deep link");
+        setNavigating(true);
+        navigate(`/bridge/order-complete?orderId=${orderId}`);
+      }
     }
 
     if (params.has("txId")) {
       const txId = params.get("txId");
       addLog(`Transaction ID from deep link: ${txId}`);
     }
-  }, [deepLink, orderDetails?.currentStatus, orderDetails?.orderId, addLog]);
+  }, [deepLink, orderDetails?.currentStatus, orderDetails?.orderId, orderId, addLog, navigate, navigating]);
 
   // Add toggle button to switch between static and dynamic data
   const toggleDataSource = () => {
