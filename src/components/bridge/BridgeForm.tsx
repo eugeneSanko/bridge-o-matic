@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { ArrowRight, ArrowLeftRight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,9 +8,11 @@ import { OrderTypeSelector } from "./OrderTypeSelector";
 import { useBridge } from "@/contexts/BridgeContext";
 import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 
 export const BridgeForm = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const {
     fromCurrency,
@@ -88,7 +91,18 @@ export const BridgeForm = () => {
     if (manualRefreshEnabled) {
       calculateReceiveAmount();
       setManualRefreshEnabled(false);
-      setTimeout(() => setManualRefreshEnabled(true), 120000);
+      toast({
+        title: "Rates refreshed",
+        description: "Rates have been updated. Next refresh available in 2 minutes.",
+        duration: 3000,
+      });
+      setTimeout(() => setManualRefreshEnabled(true), 120000); // 2 minutes
+    } else {
+      toast({
+        title: "Please wait",
+        description: "Rate refresh is available every 2 minutes",
+        duration: 3000,
+      });
     }
   };
 
