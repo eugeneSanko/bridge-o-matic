@@ -32,6 +32,7 @@ export const BridgeForm = () => {
     isLoadingCurrencies,
     lastPriceData,
     amountError,
+    formatNumberWithCommas,
   } = useBridge();
 
   const [fromExchangeRate, setFromExchangeRate] = useState<{
@@ -218,6 +219,7 @@ export const BridgeForm = () => {
         onToCurrencyChange={handleToCurrencyChange}
         onAmountChange={handleAmountChange}
         onSwapCurrencies={handleSwapCurrencies}
+        formatNumberWithCommas={formatNumberWithCommas}
       />
 
       <div className="space-y-4 sm:space-y-6">

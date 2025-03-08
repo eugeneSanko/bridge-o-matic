@@ -30,6 +30,7 @@ interface CurrencyExchangeSectionProps {
   onToCurrencyChange: (currency: string) => void;
   onAmountChange: (amount: string) => void;
   onSwapCurrencies: () => void;
+  formatNumberWithCommas: (value: string | number) => string;
 }
 
 export const CurrencyExchangeSection = ({
@@ -49,8 +50,8 @@ export const CurrencyExchangeSection = ({
   onToCurrencyChange,
   onAmountChange,
   onSwapCurrencies,
+  formatNumberWithCommas,
 }: CurrencyExchangeSectionProps) => {
-  const { formatNumberWithCommas } = useBridge();
   
   const fromCurrencyObj =
     availableCurrencies.find((c) => c.code === fromCurrency) || null;

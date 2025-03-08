@@ -1,4 +1,3 @@
-
 export interface Currency {
   symbol?: string;
   name: string;
@@ -38,6 +37,7 @@ export interface BridgeContextType {
   refreshCurrencies: () => Promise<void>;
   lastPriceData: PriceResponse | null;
   amountError: string | null;
+  formatNumberWithCommas: (value: string | number) => string;
 }
 
 export interface BridgeError extends Error {
