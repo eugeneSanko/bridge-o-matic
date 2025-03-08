@@ -32,22 +32,25 @@ export interface OrderDetails {
   ffOrderToken: string;
 }
 
-export function useBridgeOrder(orderId: string | null) {
+export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = true) {
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(shouldFetch);
   const [error, setError] = useState<string | null>(null);
   const [pollingInterval, setPollingInterval] = useState<number | null>(null);
 
   const fetchOrderDetails = useCallback(async () => {
-    if (!orderId) {
-      setError("No order ID provided");
+    if (!orderId || !shouldFetch) {
       setLoading(false);
       return;
     }
 
     try {
+      console.log("Fetching order details for", orderId, "- shouldFetch:", shouldFetch);
+      
+      // Use {retry: false} to disable automatic retries
       const orderResult = await invokeFunctionWithRetry('bridge-order', {
-        body: { orderId }
+        body: { orderId },
+        options: { retry: false }
       });
 
       if (!orderResult || orderResult.error) {
@@ -60,11 +63,13 @@ export function useBridgeOrder(orderId: string | null) {
         throw new Error("Order doesn't have exchange information");
       }
 
+      // Also disable retries for status check
       const statusData = await invokeFunctionWithRetry(API_CONFIG.FF_STATUS, {
         body: { 
           id: order.ff_order_id, 
           token: order.ff_order_token 
-        }
+        },
+        options: { retry: false }
       });
 
       if (!statusData || statusData.error) {
@@ -118,20 +123,29 @@ export function useBridgeOrder(orderId: string | null) {
       setError(error instanceof Error ? error.message : "An unknown error occurred");
       setLoading(false);
     }
-  }, [orderId]);
+  }, [orderId, shouldFetch]);
 
   useEffect(() => {
-    fetchOrderDetails();
+    if (shouldFetch) {
+      fetchOrderDetails();
+    } else {
+      setLoading(false);
+    }
     
-    const interval = window.setInterval(fetchOrderDetails, 15000);
-    setPollingInterval(interval);
+    // Only set up polling if we want to fetch and have an actual order ID
+    if (shouldFetch && orderId) {
+      const interval = window.setInterval(fetchOrderDetails, 15000);
+      setPollingInterval(interval);
+      
+      return () => {
+        if (pollingInterval) {
+          clearInterval(pollingInterval);
+        }
+      };
+    }
     
-    return () => {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-      }
-    };
-  }, [orderId, fetchOrderDetails]);
+    return undefined;
+  }, [orderId, shouldFetch, fetchOrderDetails]);
 
   const handleCopyAddress = (text: string) => {
     navigator.clipboard.writeText(text)

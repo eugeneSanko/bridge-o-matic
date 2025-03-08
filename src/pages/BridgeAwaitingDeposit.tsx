@@ -29,9 +29,16 @@ const BridgeAwaitingDeposit = () => {
     ffOrderToken: "testtoken123456789",
   };
 
-  // If we have a real orderId from the URL, use actual data, otherwise use static data
+  // Always use static data if no orderId, or if we've had API errors
   const [isUsingStatic, setIsUsingStatic] = useState(!orderId);
-  const { orderDetails, loading, error, handleCopyAddress } = useBridgeOrder(isUsingStatic ? null : orderId);
+  const [apiAttempted, setApiAttempted] = useState(false);
+  
+  // We need a non-retry version of the hook
+  const { orderDetails, loading, error, handleCopyAddress } = useBridgeOrder(
+    isUsingStatic ? null : orderId, 
+    !apiAttempted  // Only fetch if we haven't attempted yet
+  );
+  
   const { deepLink, logs, addLog } = useDeepLink();
 
   // Check if we have orderId and show appropriate message
@@ -41,10 +48,29 @@ const BridgeAwaitingDeposit = () => {
         title: "Missing Order ID",
         description: "Using demo data instead of a real order",
       });
+      setIsUsingStatic(true);
     } else {
       console.log(`Processing order: ${orderId}`);
     }
   }, [orderId]);
+
+  // When real API was attempted, mark it
+  useEffect(() => {
+    if (!isUsingStatic && !apiAttempted && (loading || error || orderDetails)) {
+      setApiAttempted(true);
+      
+      // If we get an error, switch to static data
+      if (error) {
+        console.log("API error detected, switching to static data");
+        setIsUsingStatic(true);
+        toast({
+          title: "Connection Error",
+          description: "Could not fetch order details. Using demo data instead.",
+          variant: "destructive"
+        });
+      }
+    }
+  }, [isUsingStatic, apiAttempted, loading, error, orderDetails]);
 
   useEffect(() => {
     if (!deepLink) return;
@@ -76,6 +102,10 @@ const BridgeAwaitingDeposit = () => {
   // Add toggle button to switch between static and dynamic data
   const toggleDataSource = () => {
     setIsUsingStatic(!isUsingStatic);
+    // Reset API attempted flag when toggling back to dynamic data
+    if (isUsingStatic) {
+      setApiAttempted(false);
+    }
   };
 
   if (!isUsingStatic && loading) {
