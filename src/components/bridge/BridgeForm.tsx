@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ArrowRight, ArrowLeftRight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CurrencySelector } from "./CurrencySelector";
@@ -40,6 +40,11 @@ export const BridgeForm = () => {
   const [toExchangeRate, setToExchangeRate] = useState<{rate: string; usdValue: string;} | null>(null);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
   const [manualRefreshEnabled, setManualRefreshEnabled] = useState<boolean>(true);
+  
+  // Ref to track if we should recalculate the price
+  const lastCalculationTimeRef = useRef<number>(0);
+  // Ref to track the latest input values for debouncing
+  const lastInputValuesRef = useRef({ fromCurrency, toCurrency, amount, orderType });
 
   // Update exchange rates when price data changes
   useEffect(() => {
@@ -56,6 +61,7 @@ export const BridgeForm = () => {
         setToExchangeRate({ rate: toRate, usdValue: toUsdValue });
         
         setLastUpdateTime(new Date());
+        lastCalculationTimeRef.current = Date.now();
       }
     } else {
       setFromExchangeRate(null);
@@ -63,10 +69,27 @@ export const BridgeForm = () => {
     }
   }, [lastPriceData]);
   
-  // Recalculate price when input values change
+  // Recalculate price when input values change, but not more than once every 2 minutes
   useEffect(() => {
-    if (fromCurrency && toCurrency && amount && parseFloat(amount) > 0 && !isCalculating) {
-      calculateReceiveAmount();
+    // Check if any input values have changed
+    const inputsChanged = 
+      fromCurrency !== lastInputValuesRef.current.fromCurrency ||
+      toCurrency !== lastInputValuesRef.current.toCurrency ||
+      amount !== lastInputValuesRef.current.amount ||
+      orderType !== lastInputValuesRef.current.orderType;
+    
+    // Only calculate if inputs changed and there's an amount
+    if (inputsChanged && fromCurrency && toCurrency && amount && parseFloat(amount) > 0 && !isCalculating) {
+      const currentTime = Date.now();
+      const timeSinceLastCalculation = currentTime - lastCalculationTimeRef.current;
+      
+      // Update the latest input values
+      lastInputValuesRef.current = { fromCurrency, toCurrency, amount, orderType };
+      
+      // If a calculation has never been done, or it's been more than 2 minutes, do the calculation
+      if (lastCalculationTimeRef.current === 0 || timeSinceLastCalculation >= 120000) {
+        calculateReceiveAmount();
+      }
     }
   }, [fromCurrency, toCurrency, amount, orderType, calculateReceiveAmount, isCalculating]);
 
@@ -75,6 +98,11 @@ export const BridgeForm = () => {
     e.stopPropagation();
 
     if (isSubmitting) return;
+
+    // Always calculate latest rate before submitting
+    if (fromCurrency && toCurrency && amount && parseFloat(amount) > 0) {
+      await calculateReceiveAmount();
+    }
 
     setIsSubmitting(true);
     try {
@@ -126,6 +154,9 @@ export const BridgeForm = () => {
       setFromCurrency(toCurrency);
       setToCurrency(fromCurrency);
       setAmount(""); // Reset amount when swapping
+      
+      // Force a recalculation on next render after swap
+      lastCalculationTimeRef.current = 0;
     } else {
       toast({
         title: "Cannot swap currencies",
