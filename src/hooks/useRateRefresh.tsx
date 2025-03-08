@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
-export const useRateRefresh = (calculateReceiveAmount: () => Promise<void>) => {
+export const useRateRefresh = (calculateReceiveAmount: () => Promise<void> | void) => {
   const { toast } = useToast();
   const [manualRefreshEnabled, setManualRefreshEnabled] = useState<boolean>(true);
 
