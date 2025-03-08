@@ -1,10 +1,11 @@
 
 import { Button } from "@/components/ui/button";
-import { ArrowLeftRight, AlertCircle } from "lucide-react";
+import { ArrowLeftRight, AlertCircle, Loader } from "lucide-react";
 import { CurrencySelector } from "./CurrencySelector";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Currency } from "@/types/bridge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ExchangeRateSkeleton } from "./ExchangeRateSkeleton";
 
 interface CurrencyExchangeSectionProps {
   fromCurrency: string;
@@ -57,19 +58,6 @@ export const CurrencyExchangeSection = ({
   const toCurrencyObj =
     availableCurrencies.find((c) => c.code === toCurrency) || null;
 
-  // Helper function to render exchange rate with skeleton loading state
-  const renderExchangeRate = (rate: string | undefined, currencyCode: string, usdValue: string | undefined) => {
-    if (!rate || !currencyCode) {
-      return (
-        <div className="flex items-center gap-1">
-          <Skeleton className="h-4 w-32" />
-        </div>
-      );
-    }
-    
-    return `1 ${currencyCode} = ${formatNumberWithCommas(rate)} send($${usdValue})`;
-  };
-
   return (
     <>
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6 relative">
@@ -121,8 +109,41 @@ export const CurrencyExchangeSection = ({
         />
       </div>
 
+      {isCalculating && (
+        <div className="mt-2 flex justify-center">
+          <div className="flex items-center text-sm text-[#0FA0CE] gap-2">
+            <Loader className="h-4 w-4 animate-spin" />
+            <span>Updating rates...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Exchange Rate Display */}
+      {fromCurrency && toCurrency && (
+        <div className="mt-4 px-2 py-2 bg-secondary/10 rounded-lg">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            {isCalculating ? (
+              <ExchangeRateSkeleton />
+            ) : (
+              <>
+                <div className="flex items-center text-xs text-gray-300 font-mono">
+                  <span className="mr-1">1 {fromCurrency} = </span>
+                  <span className="font-semibold">{fromExchangeRate?.rate || '0.00000000'}</span>
+                  <span className="ml-1 text-gray-400">send({fromExchangeRate?.usdValue ? `$${fromExchangeRate.usdValue}` : '$0.00'})</span>
+                </div>
+                <div className="flex items-center text-xs text-gray-300 font-mono">
+                  <span className="mr-1">1 {toCurrency} = </span>
+                  <span className="font-semibold">{toExchangeRate?.rate || '0.00000000'}</span>
+                  <span className="ml-1 text-gray-400">receive({toExchangeRate?.usdValue ? `$${toExchangeRate.usdValue}` : '$0.00'})</span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {amountError && (
-        <Alert variant="destructive" className="mb-4">
+        <Alert variant="destructive" className="mb-4 mt-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{amountError}</AlertDescription>
         </Alert>
