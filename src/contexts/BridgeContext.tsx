@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -16,7 +15,7 @@ import { BridgeContextType, TimerConfig, Currency, PriceResponse } from "@/types
  */
 const TIMER_CONFIG: TimerConfig = {
   QUOTE_VALIDITY_MS: 120000, // 120 seconds (2 minutes)
-  TIMER_UPDATE_INTERVAL_MS: 50, // 50ms update interval for smooth countdown
+  TIMER_UPDATE_INTERVAL_MS: 1000, // 1000ms (1 second) update interval, changed from 50ms
   RECALCULATION_THROTTLE_MS: 120000, // 120 seconds (2 minutes) between recalculations
 };
 
@@ -186,18 +185,15 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        // Format the remaining time as seconds with 2 decimal places
+        // Format the remaining time as whole seconds only
         const seconds = Math.floor(timeLeft / 1000);
-        const milliseconds = Math.floor((timeLeft % 1000) / 10);
-        setTimeRemaining(
-          `${seconds}.${milliseconds.toString().padStart(2, "0")}`
-        );
+        setTimeRemaining(seconds.toString());
       };
 
       // Initial update
       updateTimer();
 
-      // Set interval for continuous updates
+      // Set interval for updates every second
       timeRemainingTimerRef.current = setInterval(
         updateTimer,
         TIMER_CONFIG.TIMER_UPDATE_INTERVAL_MS
