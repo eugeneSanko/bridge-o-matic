@@ -1,7 +1,8 @@
+
 import { useState, useCallback } from 'react';
 import { API_CONFIG } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
-import { PriceResponse, BridgeError, Currency, ApiOrderResponse } from "@/types/bridge";
+import { PriceResponse, BridgeError, Currency, ApiOrderResponse, OrderResponse } from "@/types/bridge";
 import CryptoJS from 'crypto-js';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -237,7 +238,7 @@ export function useBridgeService() {
     destination: string, 
     orderType: 'fixed' | 'float',
     initialRate: string
-  ) => {
+  ): Promise<OrderResponse> => {
     try {
       const body = {
         fromCcy: fromCurrency,
