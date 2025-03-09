@@ -41,6 +41,32 @@ export const BridgeForm = () => {
     formatNumberWithCommas,
   } = useBridge();
 
+  // Track form values for error clearing
+  const [formValuesForErrorClearing, setFormValuesForErrorClearing] = useState({
+    fromCurrency,
+    toCurrency,
+    amount,
+    destinationAddress,
+    orderType,
+  });
+
+  // Update tracked form values when they change
+  useEffect(() => {
+    setFormValuesForErrorClearing({
+      fromCurrency,
+      toCurrency,
+      amount,
+      destinationAddress,
+      orderType,
+    });
+    
+    // Clear errors when form values change
+    if (errorMessage) {
+      setErrorMessage(null);
+    }
+    
+  }, [fromCurrency, toCurrency, amount, destinationAddress, orderType, errorMessage]);
+
   const [fromExchangeRate, setFromExchangeRate] = useState<{
     rate: string;
     usdValue: string;
@@ -112,6 +138,7 @@ export const BridgeForm = () => {
     isCurrencyChangeRef.current = true;
     // Clear address error when currency changes
     setAddressError(null);
+    setErrorMessage(null);
   };
 
   const handleOrderTypeChange = (type: 'fixed' | 'float') => {
@@ -367,6 +394,7 @@ export const BridgeForm = () => {
           isSubmitting={isSubmitting}
           onBridgeAssets={handleBridgeAssets}
           errorMessage={errorMessage}
+          formValues={formValuesForErrorClearing}
         />
         
         {/* Add Debug Panel below the form */}

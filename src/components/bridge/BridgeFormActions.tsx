@@ -1,12 +1,20 @@
 
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface BridgeFormActionsProps {
   isFormValid: boolean;
   isSubmitting: boolean;
   onBridgeAssets: (e: React.MouseEvent) => Promise<void>;
   errorMessage?: string | null;
+  formValues?: {
+    fromCurrency: string;
+    toCurrency: string;
+    amount: string;
+    destinationAddress: string;
+    orderType: 'fixed' | 'float';
+  };
 }
 
 export const BridgeFormActions = ({
@@ -14,7 +22,19 @@ export const BridgeFormActions = ({
   isSubmitting,
   onBridgeAssets,
   errorMessage,
+  formValues,
 }: BridgeFormActionsProps) => {
+  const [localErrorMessage, setLocalErrorMessage] = useState<string | null>(null);
+  
+  // Reset local error message when form values change
+  useEffect(() => {
+    if (formValues && errorMessage) {
+      setLocalErrorMessage(null);
+    } else {
+      setLocalErrorMessage(errorMessage || null);
+    }
+  }, [errorMessage, formValues]);
+
   return (
     <div className="space-y-4">
       <Button
@@ -32,9 +52,9 @@ export const BridgeFormActions = ({
         )}
       </Button>
 
-      {errorMessage && (
+      {localErrorMessage && (
         <div className="text-sm text-red-500 text-center p-2 bg-red-50 rounded-md">
-          {errorMessage}
+          {localErrorMessage}
         </div>
       )}
 
