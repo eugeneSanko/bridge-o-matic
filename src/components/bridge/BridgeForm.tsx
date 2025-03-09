@@ -16,7 +16,7 @@ export const BridgeForm = () => {
   const [debugInfo, setDebugInfo] = useState(null);
   const [addressError, setAddressError] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  
+
   const {
     fromCurrency,
     toCurrency,
@@ -56,12 +56,18 @@ export const BridgeForm = () => {
       destinationAddress,
       orderType,
     });
-    
+
     if (errorMessage) {
       setErrorMessage(null);
     }
-    
-  }, [fromCurrency, toCurrency, amount, destinationAddress, orderType, errorMessage]);
+  }, [
+    fromCurrency,
+    toCurrency,
+    amount,
+    destinationAddress,
+    orderType,
+    errorMessage,
+  ]);
 
   const [fromExchangeRate, setFromExchangeRate] = useState<{
     rate: string;
@@ -72,8 +78,10 @@ export const BridgeForm = () => {
     usdValue: string;
   } | null>(null);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
-  
-  const { manualRefreshEnabled, handleRefreshRate } = useRateRefresh(calculateReceiveAmount);
+
+  const { manualRefreshEnabled, handleRefreshRate } = useRateRefresh(
+    calculateReceiveAmount
+  );
 
   const lastCalculationTimeRef = useRef<number>(0);
   const lastInputValuesRef = useRef({
@@ -135,7 +143,7 @@ export const BridgeForm = () => {
     setErrorMessage(null);
   };
 
-  const handleOrderTypeChange = (type: 'fixed' | 'float') => {
+  const handleOrderTypeChange = (type: "fixed" | "float") => {
     setOrderType(type);
     isOrderTypeChangeRef.current = true;
     lastCalculationTimeRef.current = 0;
@@ -214,7 +222,7 @@ export const BridgeForm = () => {
     }
 
     setIsSubmitting(true);
-    
+
     try {
       toast({
         title: "Creating Order",
@@ -222,72 +230,82 @@ export const BridgeForm = () => {
       });
 
       const result = await createBridgeTransaction();
-      
+
       if (result && result.debugInfo) {
         setDebugInfo(result.debugInfo);
       }
-      
+
       if (result && result.code !== undefined && result.code !== 0) {
-        if (result.code === 301 || (result.msg && result.msg.includes("Invalid address"))) {
-          setAddressError("Invalid address for selected cryptocurrency network");
+        if (
+          result.code === 301 ||
+          (result.msg && result.msg.includes("Invalid address"))
+        ) {
+          setAddressError(
+            "Invalid address for selected cryptocurrency network"
+          );
           toast({
             title: "Invalid Address",
-            description: "The destination address is not valid for the selected cryptocurrency network.",
-            variant: "destructive"
+            description:
+              "The destination address is not valid for the selected cryptocurrency network.",
+            variant: "destructive",
           });
-        } 
-        else if (result.code === 500 && result.msg === "Order not found") {
+        } else if (result.code === 500 && result.msg === "Order not found") {
           setErrorMessage("Order not found. Please try again.");
           toast({
             title: "Order Error",
-            description: "Order not found. Please try again with different parameters.",
-            variant: "destructive"
+            description:
+              "Order not found. Please try again with different parameters.",
+            variant: "destructive",
           });
-        }
-        else if (result.msg) {
+        } else if (result.msg) {
           setErrorMessage(result.msg);
           toast({
             title: "Transaction Failed",
             description: result.msg,
-            variant: "destructive"
+            variant: "destructive",
           });
         }
-      }
-      else if (result && result.code === 0) {
+      } else if (result && result.code === 0) {
         toast({
           title: "Order Created",
           description: "Your bridge transaction has been successfully created!",
         });
-        
+
         const redirectParam = result.orderToken || result.orderId;
         navigate(`/bridge/awaiting-deposit?orderId=${redirectParam}`);
       } else {
         toast({
           title: "Transaction Failed",
           description: "Unable to create bridge transaction. Please try again.",
-          variant: "destructive"
+          variant: "destructive",
         });
       }
     } catch (error) {
       console.error("Bridge transaction failed:", error);
-      
-      if (error && typeof error === 'object') {
+
+      if (error && typeof error === "object") {
         if (error.message && error.message.includes("Invalid address")) {
-          setAddressError("Invalid address for selected cryptocurrency network");
+          setAddressError(
+            "Invalid address for selected cryptocurrency network"
+          );
           toast({
             title: "Invalid Address",
-            description: "The destination address is not valid for the selected cryptocurrency network.",
-            variant: "destructive"
+            description:
+              "The destination address is not valid for the selected cryptocurrency network.",
+            variant: "destructive",
           });
         } else {
           toast({
             title: "Transaction Failed",
-            description: error instanceof Error ? error.message : "An error occurred creating the transaction",
-            variant: "destructive"
+            description:
+              error instanceof Error
+                ? error.message
+                : "An error occurred creating the transaction",
+            variant: "destructive",
           });
         }
-        
-        if ('debugInfo' in error) {
+
+        if ("debugInfo" in error) {
           setDebugInfo(error.debugInfo);
         }
       }
@@ -309,7 +327,7 @@ export const BridgeForm = () => {
       setToCurrency(fromCurrency);
       isCurrencyChangeRef.current = true;
       lastCalculationTimeRef.current = 0;
-      
+
       setAddressError(null);
       setErrorMessage(null);
     } else {
@@ -332,10 +350,12 @@ export const BridgeForm = () => {
       !errorMessage
   );
 
-  const selectedToCurrency = availableCurrencies.find(c => c.code === toCurrency);
+  const selectedToCurrency = availableCurrencies.find(
+    (c) => c.code === toCurrency
+  );
 
   return (
-    <div className="glass-card p-4 sm:p-8 rounded-lg mb-8 sm:mb-12">
+    <div className="glass-card p-4 sm:p-8 rounded-lg mb-10 sm:mb-14">
       <CurrencyExchangeSection
         fromCurrency={fromCurrency}
         toCurrency={toCurrency}
@@ -376,11 +396,8 @@ export const BridgeForm = () => {
           errorMessage={errorMessage}
           formValues={formValuesForErrorClearing}
         />
-        
-        <DebugPanel 
-          debugInfo={debugInfo} 
-          isLoading={isSubmitting} 
-        />
+
+        <DebugPanel debugInfo={debugInfo} isLoading={isSubmitting} />
       </div>
     </div>
   );

@@ -1,10 +1,10 @@
-
 import { Button } from "@/components/ui/button";
 import { ArrowLeftRight, AlertCircle } from "lucide-react";
 import { CurrencySelector } from "./CurrencySelector";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Currency } from "@/types/bridge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface CurrencyExchangeSectionProps {
   fromCurrency: string;
@@ -30,7 +30,7 @@ interface CurrencyExchangeSectionProps {
   onAmountChange: (amount: string) => void;
   onSwapCurrencies: () => void;
   formatNumberWithCommas: (value: string | number) => string;
-  orderType: 'fixed' | 'float';
+  orderType: "fixed" | "float";
 }
 
 export const CurrencyExchangeSection = ({
@@ -53,7 +53,6 @@ export const CurrencyExchangeSection = ({
   formatNumberWithCommas,
   orderType,
 }: CurrencyExchangeSectionProps) => {
-  
   const fromCurrencyObj =
     availableCurrencies.find((c) => c.code === fromCurrency) || null;
   const toCurrencyObj =
@@ -61,7 +60,7 @@ export const CurrencyExchangeSection = ({
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6 relative">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-0 sm:gap-6 relative">
         <CurrencySelector
           label="Send"
           value={fromCurrency}
@@ -113,10 +112,21 @@ export const CurrencyExchangeSection = ({
       </div>
 
       {amountError && (
-        <Alert variant="destructive" className="mb-4 mt-2">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{amountError}</AlertDescription>
-        </Alert>
+        <AnimatePresence>
+          {amountError && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+            >
+              <Alert className="mb-4 mt-2" variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{amountError}</AlertDescription>
+              </Alert>
+            </motion.div>
+          )}
+        </AnimatePresence>
       )}
     </>
   );

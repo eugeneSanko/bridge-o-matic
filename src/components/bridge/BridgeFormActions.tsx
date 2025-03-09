@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -13,7 +12,7 @@ interface BridgeFormActionsProps {
     toCurrency: string;
     amount: string;
     destinationAddress: string;
-    orderType: 'fixed' | 'float';
+    orderType: "fixed" | "float";
   };
 }
 
@@ -24,8 +23,10 @@ export const BridgeFormActions = ({
   errorMessage,
   formValues,
 }: BridgeFormActionsProps) => {
-  const [localErrorMessage, setLocalErrorMessage] = useState<string | null>(null);
-  
+  const [localErrorMessage, setLocalErrorMessage] = useState<string | null>(
+    null
+  );
+
   // Reset local error message when form values change
   useEffect(() => {
     if (formValues && errorMessage) {
@@ -38,7 +39,7 @@ export const BridgeFormActions = ({
   return (
     <div className="space-y-4">
       <Button
-        className="w-full h-[3.5rem] sm:h-[4.5rem] text-base sm:text-lg font-medium bg-[#0FA0CE] hover:bg-[#0FA0CE]/90 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full h-[3.5rem] sm:h-[4.5rem] text-base sm:text-lg font-medium bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         onClick={onBridgeAssets}
         disabled={!isFormValid || isSubmitting}
       >

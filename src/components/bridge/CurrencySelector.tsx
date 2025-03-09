@@ -1,4 +1,3 @@
-
 import {
   Select,
   SelectContent,
@@ -7,7 +6,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AddressPlaceholder } from "@/components/bridge/AddressPlaceholder";
-import { Clock, Search, ArrowDownUp, AlertCircle, ChevronDown } from "lucide-react";
+import {
+  Clock,
+  Search,
+  ArrowDownUp,
+  AlertCircle,
+  ChevronDown,
+} from "lucide-react";
 import { Currency } from "@/types/bridge";
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
@@ -37,7 +42,7 @@ interface CurrencySelectorProps {
     max: string;
   };
   formatNumberWithCommas?: (value: string | number) => string;
-  orderType?: 'fixed' | 'float';
+  orderType?: "fixed" | "float";
 }
 
 export const CurrencySelector = ({
@@ -56,7 +61,7 @@ export const CurrencySelector = ({
   exchangeRate,
   minMaxAmounts,
   formatNumberWithCommas = (val) => val.toString(),
-  orderType = 'fixed',
+  orderType = "fixed",
 }: CurrencySelectorProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -64,7 +69,7 @@ export const CurrencySelector = ({
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState<number | null>(null);
   const [showMinMaxInfo, setShowMinMaxInfo] = useState(false);
-  
+
   // Show min/max info while typing or when input is focused
   useEffect(() => {
     if (isTyping || isAmountFocused) {
@@ -178,46 +183,54 @@ export const CurrencySelector = ({
 
   const getCurrencyNetworkText = () => {
     if (!selectedCurrency) return "";
-    
-    if (selectedCurrency.network && 
-        selectedCurrency.network !== selectedCurrency.coin && 
-        selectedCurrency.network !== selectedCurrency.name) {
+
+    if (
+      selectedCurrency.network &&
+      selectedCurrency.network !== selectedCurrency.coin &&
+      selectedCurrency.network !== selectedCurrency.name
+    ) {
       return `(${selectedCurrency.network})`;
     }
     return "";
   };
 
   // Only show approximate symbol for float orders on receive side
-  const shouldShowApproxSymbol = isReceiveSide && orderType === 'float';
+  const shouldShowApproxSymbol = isReceiveSide && orderType === "float";
 
   return (
     <div className="flex-1">
       <div className="flex justify-between items-center mb-2">
-        <label className="text-sm font-medium text-gray-300">
-          {label}
-        </label>
+        <label className="text-sm font-medium text-gray-300">{label}</label>
         {selectedCurrency && (
           <span className="text-sm font-medium text-[#0FA0CE]">
             {selectedCurrency.name} {getCurrencyNetworkText()}
           </span>
         )}
       </div>
-      
+
       <div className="relative">
-        <div 
-          className={`h-[4.5rem] px-4 bg-[#181c2c] border border-[#252a3a] rounded-xl text-lg transition-all duration-200 flex justify-between font-medium overflow-hidden ${!isReceiveSide ? 'cursor-text' : ''}`}
+        <div
+          className={`h-[4.5rem] px-4 bg-[#181c2c] border border-[#252a3a] rounded-xl text-lg transition-all duration-200 flex justify-between font-medium overflow-hidden ${
+            !isReceiveSide ? "cursor-text" : ""
+          }`}
           style={{ borderColor: borderColor || "#252a3a", borderWidth: "1px" }}
         >
           <div className="flex flex-row items-center justify-between w-full">
             <div className="flex flex-col items-start min-w-0 flex-1 mr-2">
               {isReceiveSide ? (
                 <div className="flex items-center w-full">
-                  <span className="text-3xl font-semibold truncate">
+                  <span className="text-3xl font-semibold ">
                     {shouldShowApproxSymbol && (
                       <span className="text-gray-400 mr-1">≈</span>
                     )}
                     {isCalculating ? (
-                      <span className="text-gray-400">Calculating...</span>
+                      <span className="text-gray-400">
+                        <Icon
+                          icon="eos-icons:three-dots-loading"
+                          width={"100"}
+                          height={"100"}
+                        />
+                      </span>
                     ) : estimatedAmount ? (
                       formatDisplayValue(estimatedAmount)
                     ) : (
@@ -239,16 +252,14 @@ export const CurrencySelector = ({
                 </div>
               )}
             </div>
-            
+
             <Select
               value={value}
               onValueChange={onChange}
               disabled={isLoadingCurrencies}
               onOpenChange={setIsOpen}
             >
-              <SelectTrigger 
-                className="flex items-center gap-2 shrink-0 bg-transparent border-none cursor-pointer h-auto p-0 m-0 focus:outline-none focus:ring-0 w-auto"
-              >
+              <SelectTrigger className="flex items-center gap-2 shrink-0 bg-transparent border-none cursor-pointer h-auto p-0 m-0 focus:outline-none focus:ring-0 w-auto">
                 <SelectValue placeholder="Select currency">
                   <div className="flex items-center gap-2">
                     {selectedCurrency?.logo ? (
@@ -260,9 +271,13 @@ export const CurrencySelector = ({
                     ) : (
                       <div
                         className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white"
-                        style={{ backgroundColor: selectedCurrency?.color || "#888" }}
+                        style={{
+                          backgroundColor: selectedCurrency?.color || "#888",
+                        }}
                       >
-                        {selectedCurrency?.coin?.substring(0, 1).toUpperCase() ||
+                        {selectedCurrency?.coin
+                          ?.substring(0, 1)
+                          .toUpperCase() ||
                           selectedCurrency?.code?.substring(0, 1).toUpperCase()}
                       </div>
                     )}
@@ -273,7 +288,7 @@ export const CurrencySelector = ({
                   </div>
                 </SelectValue>
               </SelectTrigger>
-              
+
               <SelectContent className="border border-white/10 max-h-[300px] glass-card bg-[#181c2c] z-50">
                 <div className="sticky top-0 px-2 py-2 bg-[#181c2c] backdrop-blur-md z-10">
                   <div className="relative">
@@ -295,12 +310,14 @@ export const CurrencySelector = ({
                     </div>
                     <div className="font-mono">
                       {exchangeRate.invert
-                        ? `1 ${selectedCurrency?.code} = ${formatDisplayValue(exchangeRate.rate)} ${
+                        ? `1 ${selectedCurrency?.code} = ${formatDisplayValue(
+                            exchangeRate.rate
+                          )} ${isReceiveSide ? "send" : "receive"}`
+                        : `1 ${
                             isReceiveSide ? "send" : "receive"
-                          }`
-                        : `1 ${isReceiveSide ? "send" : "receive"} = ${
-                            formatDisplayValue(exchangeRate.rate)
-                          } ${selectedCurrency?.code}`}
+                          } = ${formatDisplayValue(exchangeRate.rate)} ${
+                            selectedCurrency?.code
+                          }`}
                     </div>
                   </div>
                 )}
@@ -319,7 +336,10 @@ export const CurrencySelector = ({
                   searchedCurrencies
                     .sort((a, b) => (b.priority || 0) - (a.priority || 0))
                     .map((currency) => (
-                      <SelectItem key={currency.code} value={currency.code || ""}>
+                      <SelectItem
+                        key={currency.code}
+                        value={currency.code || ""}
+                      >
                         <div className="flex items-center gap-2">
                           {currency.logo ? (
                             <img
@@ -330,7 +350,9 @@ export const CurrencySelector = ({
                           ) : (
                             <div
                               className="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                              style={{ backgroundColor: currency.color || "#888" }}
+                              style={{
+                                backgroundColor: currency.color || "#888",
+                              }}
                             >
                               {currency.coin?.substring(0, 1).toUpperCase() ||
                                 currency.code?.substring(0, 1).toUpperCase()}
@@ -356,27 +378,35 @@ export const CurrencySelector = ({
       </div>
 
       <div className="h-8 mt-2">
-        {exchangeRate && selectedCurrency && (
-          <div className="text-xs text-gray-400 font-mono flex justify-between">
-            <span>
-              1 {selectedCurrency?.code} ≈ {formatDisplayValue(exchangeRate.rate || "0")} {isReceiveSide ? "send" : "receive"}
-            </span>
-            <span>${exchangeRate.usdValue || "0"}</span>
-          </div>
-        )}
-        
+        {exchangeRate &&
+          selectedCurrency &&
+          !(showMinMaxInfo && minMaxAmounts) && ( // Hide exchange rate when min-max is visible
+            <div className="text-xs text-gray-400 font-mono flex justify-between">
+              <span>
+                1 {selectedCurrency?.code} ≈{" "}
+                {formatDisplayValue(exchangeRate.rate || "0")}{" "}
+                {isReceiveSide ? "receive" : "send"}
+              </span>
+              <span>${exchangeRate.usdValue || "0"}</span>
+            </div>
+          )}
+
         {!isReceiveSide && showMinMaxInfo && minMaxAmounts && (
-          <div className="flex gap-2 mt-1 transition-opacity duration-300">
-            <div className="bg-[#221F26] rounded-md px-2 py-0.5 text-xs">
+          <div
+            className={`flex gap-2 mt-1 transition-all duration-300 overflow-hidden ${
+              showMinMaxInfo ? "opacity-100 max-h-10" : "opacity-0 max-h-0"
+            }`}
+          >
+            <div className="bg-[#221F26] rounded-md px-2 py-1 text-xs">
               <span className="text-[#FFA500]">min: </span>
               <span className="font-mono text-gray-300">
-                {formatDisplayValue(minMaxAmounts.min)} {selectedCurrency?.code}
+                {minMaxAmounts.min} {selectedCurrency.code}
               </span>
             </div>
-            <div className="bg-[#221F26] rounded-md px-2 py-0.5 text-xs">
+            <div className="bg-[#221F26] rounded-md px-2 py-1 text-xs">
               <span className="text-[#FFA500]">max: </span>
               <span className="font-mono text-gray-300">
-                {formatDisplayValue(minMaxAmounts.max)} {selectedCurrency?.code}
+                {minMaxAmounts.max} {selectedCurrency.code}
               </span>
             </div>
           </div>
