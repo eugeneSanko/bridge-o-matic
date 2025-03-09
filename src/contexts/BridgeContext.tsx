@@ -406,7 +406,13 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
         lastPriceData.data.rate || ''
       );
 
-      if (result && result.orderId) {
+      // If the result has an error code (not 0) and a message, pass it along
+      if (result && result.code !== undefined && result.code !== 0 && result.msg) {
+        console.error(`Order creation failed: ${result.msg} (code: ${result.code})`);
+        return result; // Return the error result so UI can handle it
+      }
+
+      if (result && result.orderId && (!result.code || result.code === 0)) {
         // Start monitoring the order status
         startStatusChecking(result.orderId);
 
@@ -420,7 +426,12 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       }
 
       console.error("Order creation failed: No orderId returned");
-      return null;
+      return {
+        orderId: '',
+        code: 500,
+        msg: "Failed to create order",
+        debugInfo: result?.debugInfo
+      };
     } catch (error: any) {
       // Check if this is a specific API error with debugInfo
       if (error && typeof error === 'object' && error.code) {
@@ -434,7 +445,12 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
         variant: "destructive",
       });
       console.error("Bridge transaction error:", error);
-      return null;
+      return {
+        orderId: '',
+        code: 500,
+        msg: error.message || "Failed to create bridge transaction",
+        debugInfo: { error }
+      };
     }
   };
 

@@ -6,12 +6,14 @@ interface BridgeFormActionsProps {
   isFormValid: boolean;
   isSubmitting: boolean;
   onBridgeAssets: (e: React.MouseEvent) => Promise<void>;
+  errorMessage?: string | null;
 }
 
 export const BridgeFormActions = ({
   isFormValid,
   isSubmitting,
   onBridgeAssets,
+  errorMessage,
 }: BridgeFormActionsProps) => {
   return (
     <div className="space-y-4">
@@ -29,6 +31,12 @@ export const BridgeFormActions = ({
           "Bridge Assets"
         )}
       </Button>
+
+      {errorMessage && (
+        <div className="text-sm text-red-500 text-center p-2 bg-red-50 rounded-md">
+          {errorMessage}
+        </div>
+      )}
 
       <p className="text-xs text-center text-gray-400">
         By proceeding, you agree to our Terms of Service

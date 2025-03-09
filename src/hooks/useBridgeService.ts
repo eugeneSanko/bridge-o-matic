@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { API_CONFIG } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
-import { PriceResponse, BridgeError, Currency, ApiOrderResponse } from "@/types/bridge";
+import { PriceResponse, BridgeError, Currency, ApiOrderResponse, OrderResponse } from "@/types/bridge";
 import CryptoJS from 'crypto-js';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -237,7 +237,7 @@ export function useBridgeService() {
     destination: string, 
     orderType: 'fixed' | 'float',
     initialRate: string
-  ) => {
+  ): Promise<OrderResponse> => {
     try {
       const body = {
         fromCcy: fromCurrency,
@@ -256,12 +256,20 @@ export function useBridgeService() {
       
       if (error) {
         console.error('Edge function error:', error);
-        throw new Error(`Edge function error: ${error.message}`);
+        return {
+          orderId: '',
+          code: 500,
+          msg: `Edge function error: ${error.message}`
+        };
       }
       
       if (!data) {
         console.error('No data returned from edge function');
-        throw new Error('No data returned from edge function');
+        return {
+          orderId: '',
+          code: 500,
+          msg: 'No data returned from edge function'
+        };
       }
       
       console.log('Order creation response:', data);
@@ -269,11 +277,19 @@ export function useBridgeService() {
       if (data.code === 0 && data.data) {
         return { 
           orderId: data.data.id || '', 
-          orderToken: data.data.token || '' 
+          orderToken: data.data.token || '',
+          code: data.code,
+          msg: data.msg,
+          debugInfo: data.debugInfo
         };
       } else {
         console.error('API returned an error:', data);
-        throw data;
+        return {
+          orderId: '',
+          code: data.code || 500,
+          msg: data.msg || 'Unknown API error',
+          debugInfo: data.debugInfo
+        };
       }
     } catch (error) {
       console.error('Bridge transaction error:', error);
@@ -282,16 +298,37 @@ export function useBridgeService() {
         console.warn('Generating mock order data due to API error');
         
         if (error && typeof error === 'object' && 'code' in error && error.code === 301) {
-          throw error;
+          return {
+            orderId: '',
+            code: 301,
+            msg: 'Invalid address',
+            debugInfo: { error }
+          };
+        }
+        
+        if (error && typeof error === 'object' && 'code' in error && error.code === 500) {
+          return {
+            orderId: '',
+            code: 500,
+            msg: 'Order not found',
+            debugInfo: { error }
+          };
         }
         
         return { 
           orderId: `FF-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-          orderToken: `${Math.random().toString(36).substring(2, 30)}`
+          orderToken: `${Math.random().toString(36).substring(2, 30)}`,
+          code: 0,
+          msg: 'Success'
         };
       }
       
-      throw error;
+      return {
+        orderId: '',
+        code: 500,
+        msg: error instanceof Error ? error.message : String(error),
+        debugInfo: { error }
+      };
     }
   }, []);
 

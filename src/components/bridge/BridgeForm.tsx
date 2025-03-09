@@ -16,6 +16,7 @@ export const BridgeForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [debugInfo, setDebugInfo] = useState(null);
   const [addressError, setAddressError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   const {
     fromCurrency,
@@ -125,6 +126,10 @@ export const BridgeForm = () => {
     if (addressError) {
       setAddressError(null);
     }
+    // Also clear any general error message
+    if (errorMessage) {
+      setErrorMessage(null);
+    }
   };
 
   useEffect(() => {
@@ -183,13 +188,14 @@ export const BridgeForm = () => {
 
     // Clear previous errors
     setAddressError(null);
+    setErrorMessage(null);
+    setDebugInfo(null);
 
     if (fromCurrency && toCurrency && amount && parseFloat(amount) > 0) {
       await calculateReceiveAmount();
     }
 
     setIsSubmitting(true);
-    setDebugInfo(null);
     
     try {
       toast({
@@ -203,22 +209,40 @@ export const BridgeForm = () => {
       // Store debug info if available
       if (result && result.debugInfo) {
         setDebugInfo(result.debugInfo);
-        
-        // Check for Invalid address error in the API response
-        if (result.code === 301 && result.msg === "Invalid address") {
+      }
+      
+      // Check for error responses (non-zero code)
+      if (result && result.code !== undefined && result.code !== 0) {
+        // Handle "Invalid address" error specifically
+        if (result.code === 301 || (result.msg && result.msg.includes("Invalid address"))) {
           setAddressError("Invalid address for selected cryptocurrency network");
           toast({
             title: "Invalid Address",
             description: "The destination address is not valid for the selected cryptocurrency network.",
             variant: "destructive"
           });
-          setIsSubmitting(false);
-          return;
+        } 
+        // Handle other API errors
+        else if (result.code === 500 && result.msg === "Order not found") {
+          setErrorMessage("Order not found. Please try again.");
+          toast({
+            title: "Order Error",
+            description: "Order not found. Please try again with different parameters.",
+            variant: "destructive"
+          });
+        }
+        // Handle any other API errors with messages
+        else if (result.msg) {
+          setErrorMessage(result.msg);
+          toast({
+            title: "Transaction Failed",
+            description: result.msg,
+            variant: "destructive"
+          });
         }
       }
-      
-      // Only redirect if we have a successful result with an orderId
-      if (result && result.orderId) {
+      // Only redirect if we have a successful result with an orderId and code is 0
+      else if (result && result.orderId && (!result.code || result.code === 0)) {
         toast({
           title: "Order Created",
           description: "Your bridge transaction has been successfully created!",
@@ -281,6 +305,7 @@ export const BridgeForm = () => {
       
       // Clear address error when swapping currencies
       setAddressError(null);
+      setErrorMessage(null);
     } else {
       toast({
         title: "Cannot swap currencies",
@@ -297,7 +322,8 @@ export const BridgeForm = () => {
       parseFloat(amount) > 0 &&
       destinationAddress &&
       !amountError &&
-      !addressError
+      !addressError &&
+      !errorMessage
   );
 
   const selectedToCurrency = availableCurrencies.find(c => c.code === toCurrency);
@@ -340,6 +366,7 @@ export const BridgeForm = () => {
           isFormValid={isFormValid}
           isSubmitting={isSubmitting}
           onBridgeAssets={handleBridgeAssets}
+          errorMessage={errorMessage}
         />
         
         {/* Add Debug Panel below the form */}
