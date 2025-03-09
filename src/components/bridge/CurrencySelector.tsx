@@ -1,3 +1,4 @@
+
 import {
   Select,
   SelectContent,
@@ -5,13 +6,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { AddressPlaceholder } from "@/components/bridge/AddressPlaceholder";
 import { Clock, Search, ArrowDownUp, AlertCircle, ChevronDown } from "lucide-react";
 import { Currency } from "@/types/bridge";
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 
 interface CurrencySelectorProps {
   label: string;
@@ -192,80 +193,82 @@ export const CurrencySelector = ({
       </div>
       
       <div className="relative">
-        <div 
-          className={`h-[4.5rem] px-4 bg-[#181c2c] border-[#252a3a] rounded-xl text-lg transition-all duration-200 flex justify-between font-medium overflow-hidden ${!isReceiveSide ? 'cursor-text' : ''}`}
-          style={{ borderColor: borderColor || "#252a3a", borderWidth: "1px" }}
-        >
-          <div className="flex flex-row items-center justify-between w-full">
-            <div className="flex flex-col items-start min-w-0 flex-1 mr-2">
-              {isReceiveSide ? (
-                <div className="flex items-center w-full">
-                  <span className="text-3xl font-semibold truncate">
-                    {isCalculating ? (
-                      <span className="text-gray-400">≈</span>
-                    ) : (
-                      <span className="text-gray-400 mr-1">≈</span>
-                    )}
-                    {isCalculating ? (
-                      <span className="text-gray-400">Calculating...</span>
-                    ) : estimatedAmount ? (
-                      formatDisplayValue(estimatedAmount)
-                    ) : (
-                      "0"
-                    )}
-                  </span>
-                </div>
-              ) : (
-                <div className="w-full relative flex items-center h-full">
-                  <input
-                    type="text"
-                    placeholder="0"
-                    value={amount || ""}
-                    onChange={(e) => handleAmountChange(e.target.value)}
-                    onFocus={() => setIsAmountFocused(true)}
-                    onBlur={() => setIsAmountFocused(false)}
-                    className="w-full h-full py-5 px-0 text-3xl font-semibold bg-transparent border-none focus:outline-none focus:ring-0"
-                  />
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-2 shrink-0" onClick={() => document.querySelector<HTMLButtonElement>('[data-state]')?.click()}>
-              {selectedCurrency?.logo ? (
-                <img
-                  src={selectedCurrency.logo}
-                  alt={selectedCurrency.name}
-                  className="w-7 h-7 rounded-full"
-                />
-              ) : (
-                <div
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white"
-                  style={{ backgroundColor: selectedCurrency?.color || "#888" }}
-                >
-                  {selectedCurrency?.coin?.substring(0, 1).toUpperCase() ||
-                    selectedCurrency?.code?.substring(0, 1).toUpperCase()}
-                </div>
-              )}
-              <span className="text-xl font-medium mr-1">
-                {selectedCurrency?.symbol || selectedCurrency?.code}
-              </span>
-              <ChevronDown className="h-5 w-5 opacity-70" />
-            </div>
-          </div>
-        </div>
-
         <Select
           value={value}
           onValueChange={onChange}
           disabled={isLoadingCurrencies}
           onOpenChange={setIsOpen}
         >
-          <SelectTrigger className="sr-only">
-            <SelectValue />
-          </SelectTrigger>
+          <div 
+            className={`h-[4.5rem] px-4 bg-[#181c2c] border-[#252a3a] rounded-xl text-lg transition-all duration-200 flex justify-between font-medium overflow-hidden ${!isReceiveSide ? 'cursor-text' : ''}`}
+            style={{ borderColor: borderColor || "#252a3a", borderWidth: "1px" }}
+          >
+            <div className="flex flex-row items-center justify-between w-full">
+              <div className="flex flex-col items-start min-w-0 flex-1 mr-2">
+                {isReceiveSide ? (
+                  <div className="flex items-center w-full">
+                    <span className="text-3xl font-semibold truncate">
+                      {isCalculating ? (
+                        <span className="text-gray-400">≈</span>
+                      ) : (
+                        <span className="text-gray-400 mr-1">≈</span>
+                      )}
+                      {isCalculating ? (
+                        <span className="text-gray-400">Calculating...</span>
+                      ) : estimatedAmount ? (
+                        formatDisplayValue(estimatedAmount)
+                      ) : (
+                        "0"
+                      )}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="w-full relative flex items-center h-full">
+                    <input
+                      type="text"
+                      placeholder="0"
+                      value={amount || ""}
+                      onChange={(e) => handleAmountChange(e.target.value)}
+                      onFocus={() => setIsAmountFocused(true)}
+                      onBlur={() => setIsAmountFocused(false)}
+                      className="w-full h-full py-5 px-0 text-3xl font-semibold bg-transparent border-none focus:outline-none focus:ring-0"
+                    />
+                  </div>
+                )}
+              </div>
+              
+              <SelectTrigger 
+                className="flex items-center gap-2 shrink-0 bg-transparent border-none cursor-pointer h-auto p-0 m-0 focus:outline-none focus:ring-0"
+              >
+                <SelectValue placeholder="Select currency">
+                  <div className="flex items-center gap-2">
+                    {selectedCurrency?.logo ? (
+                      <img
+                        src={selectedCurrency.logo}
+                        alt={selectedCurrency.name}
+                        className="w-7 h-7 rounded-full"
+                      />
+                    ) : (
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white"
+                        style={{ backgroundColor: selectedCurrency?.color || "#888" }}
+                      >
+                        {selectedCurrency?.coin?.substring(0, 1).toUpperCase() ||
+                          selectedCurrency?.code?.substring(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                    <span className="text-xl font-medium mr-1">
+                      {selectedCurrency?.symbol || selectedCurrency?.code}
+                    </span>
+                    <ChevronDown className="h-5 w-5 opacity-70" />
+                  </div>
+                </SelectValue>
+              </SelectTrigger>
+            </div>
+          </div>
           
-          <SelectContent className="border border-white/10 max-h-[300px] glass-card">
-            <div className="sticky top-0 px-2 py-2 bg-background/80 backdrop-blur-md z-10">
+          <SelectContent className="border border-white/10 max-h-[300px] glass-card bg-[#181c2c] z-50">
+            <div className="sticky top-0 px-2 py-2 bg-[#181c2c] backdrop-blur-md z-10">
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
