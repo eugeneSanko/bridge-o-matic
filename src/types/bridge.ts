@@ -1,3 +1,4 @@
+
 export interface Currency {
   symbol?: string;
   name: string;
@@ -84,6 +85,8 @@ export interface OrderResponse {
   orderId: string;
   orderToken?: string;
   debugInfo?: any;
+  code?: number;
+  msg?: string;
 }
 
 export interface ApiOrderResponse {

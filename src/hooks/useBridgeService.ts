@@ -273,7 +273,12 @@ export function useBridgeService() {
         };
       } else {
         console.error('API returned an error:', data);
-        throw data;
+        return {
+          orderId: '',
+          code: data.code,
+          msg: data.msg,
+          debugInfo: data.debugInfo
+        };
       }
     } catch (error) {
       console.error('Bridge transaction error:', error);
@@ -282,7 +287,12 @@ export function useBridgeService() {
         console.warn('Generating mock order data due to API error');
         
         if (error && typeof error === 'object' && 'code' in error && error.code === 301) {
-          throw error;
+          return {
+            orderId: '',
+            code: 301, 
+            msg: 'Invalid address',
+            debugInfo: (error as any).debugInfo || {}
+          };
         }
         
         return { 
