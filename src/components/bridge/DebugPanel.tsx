@@ -51,7 +51,7 @@ export const DebugPanel = ({ debugInfo, isLoading = false }: DebugPanelProps) =>
                     <div>URL: {debugInfo.requestDetails?.url}</div>
                     <Button 
                       variant="ghost" 
-                      size="xs" 
+                      size="sm" 
                       className="h-5 px-1" 
                       onClick={(e) => {
                         e.stopPropagation();
@@ -76,7 +76,7 @@ export const DebugPanel = ({ debugInfo, isLoading = false }: DebugPanelProps) =>
                     <div className="truncate">Signature: {debugInfo.signatureInfo?.signature}</div>
                     <Button 
                       variant="ghost" 
-                      size="xs" 
+                      size="sm" 
                       className="h-5 px-1 ml-2 flex-shrink-0" 
                       onClick={(e) => {
                         e.stopPropagation();
@@ -95,7 +95,7 @@ export const DebugPanel = ({ debugInfo, isLoading = false }: DebugPanelProps) =>
                 <div className="bg-black/30 p-3 rounded-md font-mono overflow-x-auto relative">
                   <Button 
                     variant="ghost" 
-                    size="xs" 
+                    size="sm" 
                     className="absolute top-2 right-2 h-5 px-1" 
                     onClick={(e) => {
                       e.stopPropagation();
@@ -118,7 +118,7 @@ export const DebugPanel = ({ debugInfo, isLoading = false }: DebugPanelProps) =>
                     <div>Status: {debugInfo.responseDetails?.status}</div>
                     <Button 
                       variant="ghost" 
-                      size="xs" 
+                      size="sm" 
                       className="h-5 px-1" 
                       onClick={(e) => {
                         e.stopPropagation();
