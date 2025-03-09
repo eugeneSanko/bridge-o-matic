@@ -1,4 +1,3 @@
-
 import {
   Select,
   SelectContent,
@@ -63,14 +62,13 @@ export const CurrencySelector = ({
   const [typingTimeout, setTypingTimeout] = useState<number | null>(null);
   const [showMinMaxInfo, setShowMinMaxInfo] = useState(false);
 
-  // Add effect to animate min/max amounts appearance
   useEffect(() => {
     if (isTyping || isAmountFocused) {
       setShowMinMaxInfo(true);
     } else {
       const timer = setTimeout(() => {
         setShowMinMaxInfo(false);
-      }, 300); // Delay hiding to allow for animation
+      }, 300);
       return () => clearTimeout(timer);
     }
   }, [isTyping, isAmountFocused]);
@@ -172,7 +170,6 @@ export const CurrencySelector = ({
   const getCurrencyNetworkText = () => {
     if (!selectedCurrency) return "";
     
-    // Show network in parentheses if it exists and is different from the coin
     if (selectedCurrency.network && 
         selectedCurrency.network !== selectedCurrency.coin && 
         selectedCurrency.network !== selectedCurrency.name) {
@@ -195,72 +192,76 @@ export const CurrencySelector = ({
       </div>
       
       <div className="relative">
+        <div 
+          className={`h-[4.5rem] px-4 bg-[#181c2c] border-[#252a3a] rounded-xl text-lg transition-all duration-200 flex justify-between font-medium overflow-hidden ${!isReceiveSide ? 'cursor-text' : ''}`}
+          style={{ borderColor: borderColor || "#252a3a", borderWidth: "1px" }}
+        >
+          <div className="flex flex-row items-center justify-between w-full">
+            <div className="flex flex-col items-start min-w-0 flex-1 mr-2">
+              {isReceiveSide ? (
+                <div className="flex items-center w-full">
+                  <span className="text-3xl font-semibold truncate">
+                    {isCalculating ? (
+                      <span className="text-gray-400">≈</span>
+                    ) : (
+                      <span className="text-gray-400 mr-1">≈</span>
+                    )}
+                    {isCalculating ? (
+                      <span className="text-gray-400">Calculating...</span>
+                    ) : estimatedAmount ? (
+                      formatDisplayValue(estimatedAmount)
+                    ) : (
+                      "0"
+                    )}
+                  </span>
+                </div>
+              ) : (
+                <div className="w-full relative flex items-center h-full">
+                  <input
+                    type="text"
+                    placeholder="0"
+                    value={amount || ""}
+                    onChange={(e) => handleAmountChange(e.target.value)}
+                    onFocus={() => setIsAmountFocused(true)}
+                    onBlur={() => setIsAmountFocused(false)}
+                    className="w-full h-full py-5 px-0 text-3xl font-semibold bg-transparent border-none focus:outline-none focus:ring-0"
+                  />
+                </div>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-2 shrink-0" onClick={() => document.querySelector<HTMLButtonElement>('[data-state]')?.click()}>
+              {selectedCurrency?.logo ? (
+                <img
+                  src={selectedCurrency.logo}
+                  alt={selectedCurrency.name}
+                  className="w-7 h-7 rounded-full"
+                />
+              ) : (
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white"
+                  style={{ backgroundColor: selectedCurrency?.color || "#888" }}
+                >
+                  {selectedCurrency?.coin?.substring(0, 1).toUpperCase() ||
+                    selectedCurrency?.code?.substring(0, 1).toUpperCase()}
+                </div>
+              )}
+              <span className="text-xl font-medium mr-1">
+                {selectedCurrency?.symbol || selectedCurrency?.code}
+              </span>
+              <ChevronDown className="h-5 w-5 opacity-70" />
+            </div>
+          </div>
+        </div>
+
         <Select
           value={value}
           onValueChange={onChange}
           disabled={isLoadingCurrencies}
           onOpenChange={setIsOpen}
         >
-          <SelectTrigger
-            className="h-[4.5rem] px-4 bg-[#181c2c] border-[#252a3a] rounded-xl text-lg transition-all duration-200 flex justify-between font-medium"
-            style={{ borderColor: borderColor || "#252a3a", borderWidth: "1px" }}
-          >
-            <div className="flex flex-row items-center justify-between w-full">
-              <div className="flex flex-col items-start min-w-0 flex-1 mr-2">
-                {isReceiveSide ? (
-                  <div className="flex items-center w-full">
-                    <span className="text-3xl font-semibold truncate">
-                      {isCalculating ? (
-                        <span className="text-gray-400">≈</span>
-                      ) : (
-                        <span className="text-gray-400 mr-1">≈</span>
-                      )}
-                      {isCalculating ? (
-                        <span className="text-gray-400">Calculating...</span>
-                      ) : estimatedAmount ? (
-                        formatDisplayValue(estimatedAmount)
-                      ) : (
-                        "0"
-                      )}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="w-full relative">
-                    <Input
-                      type="text"
-                      placeholder="0"
-                      value={amount || ""}
-                      onChange={(e) => handleAmountChange(e.target.value)}
-                      onFocus={() => setIsAmountFocused(true)}
-                      onBlur={() => setIsAmountFocused(false)}
-                      className="w-full h-10 px-0 text-3xl font-semibold bg-transparent border-none focus:outline-none focus:ring-0"
-                    />
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex items-center gap-2 shrink-0">
-                {selectedCurrency?.logo ? (
-                  <img
-                    src={selectedCurrency.logo}
-                    alt={selectedCurrency.name}
-                    className="w-7 h-7 rounded-full"
-                  />
-                ) : (
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white"
-                    style={{ backgroundColor: selectedCurrency?.color || "#888" }}
-                  >
-                    {selectedCurrency?.coin?.substring(0, 1).toUpperCase() ||
-                      selectedCurrency?.code?.substring(0, 1).toUpperCase()}
-                  </div>
-                )}
-                <span className="text-xl font-medium mr-1">
-                  {selectedCurrency?.symbol || selectedCurrency?.code}
-                </span>
-                <ChevronDown className="h-5 w-5 opacity-70" />
-              </div>
-            </div>
+          <SelectTrigger className="sr-only">
+            <SelectValue />
           </SelectTrigger>
           
           <SelectContent className="border border-white/10 max-h-[300px] glass-card">
@@ -294,7 +295,6 @@ export const CurrencySelector = ({
               </div>
             )}
 
-            {/* Currency listing section */}
             {isLoadingCurrencies ? (
               <SelectItem value="loading" disabled>
                 <Icon icon="eos-icons:three-dots-loading" />
@@ -344,7 +344,6 @@ export const CurrencySelector = ({
       </div>
 
       <div className="h-8 mt-2">
-        {/* Exchange rate display */}
         {exchangeRate && selectedCurrency && (
           <div className="text-xs text-gray-400 font-mono flex justify-between">
             <span>
@@ -354,7 +353,6 @@ export const CurrencySelector = ({
           </div>
         )}
         
-        {/* Min/Max amounts */}
         {!isReceiveSide && showMinMaxInfo && minMaxAmounts && (
           <div className="flex gap-2 mt-1 transition-opacity duration-300">
             <div className="bg-[#221F26] rounded-md px-2 py-0.5 text-xs">
@@ -375,4 +373,3 @@ export const CurrencySelector = ({
     </div>
   );
 };
-
