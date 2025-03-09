@@ -5,9 +5,11 @@ import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { API_CONFIG } from "@/config/api";
 import CryptoJS from 'crypto-js';
+import { DebugPanel } from "./DebugPanel";
 
 export const BridgeHeader = () => {
   const [isTestingApi, setIsTestingApi] = useState(false);
+  const [testDebugInfo, setTestDebugInfo] = useState<any>(null);
 
   const testApi = async () => {
     setIsTestingApi(true);
@@ -15,8 +17,7 @@ export const BridgeHeader = () => {
       console.log("Starting API test...");
       toast({
         title: "Testing API connection",
-        description:
-          "Please wait while we test the connection to FixedFloat API...",
+        description: "Please wait while we test the connection to FixedFloat API...",
       });
 
       // Generate signature for empty body
@@ -24,17 +25,44 @@ export const BridgeHeader = () => {
       const signature = CryptoJS.HmacSHA256(bodyString, API_CONFIG.FF_API_SECRET).toString();
       console.log("Generated API signature:", signature);
       
-      // Construct a URL that can be safely opened in a new tab
-      const testUrl = 'https://ff.io/api/v2/ccies';
-      console.log("Opening test URL in new tab:", testUrl);
+      // Create test debug info for UI display
+      const debugInfo = {
+        requestDetails: {
+          url: "https://ff.io/api/v2/ccies",
+          method: "POST",
+          requestBody: {},
+          requestBodyString: bodyString,
+        },
+        signatureInfo: {
+          signature: signature,
+          apiKey: API_CONFIG.FF_API_KEY
+        },
+        curlCommand: `curl -X POST \\
+  -H "Accept: application/json" \\
+  -H "X-API-KEY: ${API_CONFIG.FF_API_KEY}" \\
+  -H "X-API-SIGN: ${signature}" \\ 
+  -H "Content-Type: application/json; charset=UTF-8" \\
+  -d '{}' \\ 
+  "https://ff.io/api/v2/ccies" -L`,
+        responseDetails: {
+          status: "Simulated - No direct API call due to CORS",
+          note: "This is a simulated test. To perform a real test, the request needs to be made through the Supabase Edge Function."
+        }
+      };
       
-      // Since we can't do a direct fetch due to CORS, we'll test by logging the API key and signature
+      setTestDebugInfo(debugInfo);
+      
       console.log("Would use API Key:", API_CONFIG.FF_API_KEY);
       console.log("Would use API Signature:", signature);
+      console.log("Simulating order status check due to CORS restrictions");
+      console.log("API Request would include:", {
+        orderId: "TEST-ORDER-ID"
+      });
+      console.log("API Signature:", signature);
       
       toast({
         title: "API Test Information",
-        description: "API signature generated successfully. Direct API calls must be made from a backend service due to CORS restrictions.",
+        description: "API signature generated successfully. Test information is displayed below.",
         variant: "default",
       });
     } catch (error) {
@@ -79,6 +107,10 @@ export const BridgeHeader = () => {
           Creating an order confirms your agreement with the FixedFloat rules.
         </p>
       </div>
+      
+      {testDebugInfo && (
+        <DebugPanel debugInfo={testDebugInfo} isLoading={isTestingApi} />
+      )}
     </>
   );
 };

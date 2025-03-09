@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.0";
 
 // Validate required environment variables
 const API_KEY = Deno.env.get("FF_API_KEY");
@@ -19,26 +18,28 @@ const corsHeaders = {
   "Access-Control-Max-Age": "86400",
 };
 
-// Generate HMAC signature for FixedFloat API
+// Generate HMAC signature for FixedFloat API using the correct Deno crypto API
 function generateSignature(message: string): string {
-  // Use native Deno crypto for synchronous HMAC
+  // Use native Deno crypto for HMAC
   const encoder = new TextEncoder();
   const key = encoder.encode(API_SECRET || "");
   const data = encoder.encode(message);
   
-  // Use Deno's synchronous crypto operations
-  const signature = crypto.subtle.digestSync(
-    "SHA-256",
-    crypto.subtle.hmacKeyInit({
-      name: "HMAC",
-      hash: "SHA-256",
+  // Create HMAC using the correct method
+  const signatureBuffer = crypto.subtle.sign(
+    { name: "HMAC", hash: "SHA-256" },
+    crypto.subtle.importKey(
+      "raw",
       key,
-    }).key,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    ),
     data
   );
-  
-  // Convert to hex string
-  return Array.from(new Uint8Array(signature))
+
+  // Convert ArrayBuffer to Uint8Array and then to hex string
+  return Array.from(new Uint8Array(signatureBuffer))
     .map(b => b.toString(16).padStart(2, "0"))
     .join("");
 }
@@ -80,7 +81,7 @@ serve(async (req) => {
     console.log("Request body:", requestBodyStr);
     
     // Generate signature for the exact string we're sending
-    const signature = generateSignature(requestBodyStr);
+    const signature = await generateSignature(requestBodyStr);
     debugInfo.signatureInfo = {
       signature: signature,
       apiKey: API_KEY
