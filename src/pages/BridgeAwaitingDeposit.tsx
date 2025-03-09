@@ -25,8 +25,8 @@ const BridgeAwaitingDeposit = () => {
     destinationAddress: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
     expiresAt: new Date(Date.now() + 30 * 60000).toISOString(), // 30 minutes from now
     timeRemaining: "29:59",
-    ffOrderId: orderId || "ff1234567890",
-    ffOrderToken: "testtoken123456789",
+    ffOrderId: "ff1234567890",
+    ffOrderToken: orderId || "testtoken123456789", // Use orderId as token if available
   };
 
   // Always use static data if no orderId, or if we've had API errors
@@ -51,7 +51,7 @@ const BridgeAwaitingDeposit = () => {
       });
       setIsUsingStatic(true);
     } else {
-      console.log(`Processing order: ${orderId}`);
+      console.log(`Processing order or token: ${orderId}`);
     }
   }, [orderId]);
 

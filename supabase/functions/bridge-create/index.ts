@@ -190,6 +190,7 @@ serve(async (req) => {
         );
       }
       
+      // Make sure we properly pass along any token from the API response
       // Add debug info to the response
       const enrichedResponse = {
         ...responseData,
