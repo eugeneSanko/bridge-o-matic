@@ -8,11 +8,13 @@ import { DestinationAddressInput } from "./DestinationAddressInput";
 import { OrderTypeSelector } from "./OrderTypeSelector";
 import { BridgeFormActions } from "./BridgeFormActions";
 import { useRateRefresh } from "@/hooks/useRateRefresh";
+import { DebugPanel } from "./DebugPanel";
 
 export const BridgeForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [debugInfo, setDebugInfo] = useState(null);
   
   const {
     fromCurrency,
@@ -166,6 +168,7 @@ export const BridgeForm = () => {
     }
 
     setIsSubmitting(true);
+    setDebugInfo(null);
     
     try {
       toast({
@@ -175,6 +178,11 @@ export const BridgeForm = () => {
 
       // Call the createBridgeTransaction function from context
       const result = await createBridgeTransaction();
+      
+      // Store debug info if available
+      if (result && result.debugInfo) {
+        setDebugInfo(result.debugInfo);
+      }
       
       // Only redirect if we have a successful result with an orderId
       if (result && result.orderId) {
@@ -198,6 +206,11 @@ export const BridgeForm = () => {
         description: error instanceof Error ? error.message : "An error occurred creating the transaction",
         variant: "destructive"
       });
+      
+      // Try to extract debug info from error
+      if (error && typeof error === 'object' && 'debugInfo' in error) {
+        setDebugInfo(error.debugInfo);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -273,6 +286,12 @@ export const BridgeForm = () => {
           isFormValid={isFormValid}
           isSubmitting={isSubmitting}
           onBridgeAssets={handleBridgeAssets}
+        />
+        
+        {/* Add Debug Panel below the form */}
+        <DebugPanel 
+          debugInfo={debugInfo} 
+          isLoading={isSubmitting} 
         />
       </div>
     </div>

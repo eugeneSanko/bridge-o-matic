@@ -26,6 +26,7 @@ function generateSignature(message: string): string {
   const key = encoder.encode(API_SECRET || "");
   const data = encoder.encode(message);
   
+  // Use Deno's synchronous crypto operations
   const signature = crypto.subtle.digestSync(
     "SHA-256",
     crypto.subtle.hmacKeyInit({
@@ -59,6 +60,20 @@ serve(async (req) => {
     const requestData = await req.json();
     const requestBodyStr = JSON.stringify(requestData);
     
+    // Create a detailed debug object
+    const debugInfo = {
+      requestDetails: {
+        url: API_URL,
+        method: "POST",
+        requestBody: requestData,
+        requestBodyString: requestBodyStr,
+      },
+      signatureInfo: {},
+      responseDetails: {},
+      curlCommand: "",
+      error: null
+    };
+    
     console.log("------------------------------------");
     console.log("REQUEST DETAILS:");
     console.log("Request URL:", API_URL);
@@ -66,18 +81,26 @@ serve(async (req) => {
     
     // Generate signature for the exact string we're sending
     const signature = generateSignature(requestBodyStr);
+    debugInfo.signatureInfo = {
+      signature: signature,
+      apiKey: API_KEY
+    };
+    
     console.log("Generated signature:", signature);
     console.log("Using API key:", API_KEY);
     
-    // Log equivalent curl command for debugging
-    console.log("\nEquivalent curl command:");
-    console.log(`curl -X POST \\
+    // Create curl command for debugging
+    const curlCommand = `curl -X POST \\
   -H "Accept: application/json" \\
   -H "X-API-KEY: ${API_KEY}" \\
   -H "X-API-SIGN: ${signature}" \\ 
   -H "Content-Type: application/json; charset=UTF-8" \\
   -d '${requestBodyStr}' \\ 
-  "${API_URL}" -L`);
+  "${API_URL}" -L`;
+    
+    debugInfo.curlCommand = curlCommand;
+    console.log("\nEquivalent curl command:");
+    console.log(curlCommand);
     
     // Make request to FixedFloat API
     const response = await fetch(API_URL, {
@@ -101,17 +124,32 @@ serve(async (req) => {
     console.log("Response body (text):", responseText);
     console.log("------------------------------------");
     
+    // Record response details
+    debugInfo.responseDetails = {
+      status: response.status,
+      headers: Object.fromEntries(response.headers.entries()),
+      body: responseText
+    };
+    
     // Parse response if it's JSON
     let responseData;
     try {
       responseData = JSON.parse(responseText);
     } catch (e) {
       console.error("Failed to parse response as JSON:", e);
+      debugInfo.error = {
+        type: "JSON parsing error",
+        message: e.message,
+        responseText
+      };
+      
+      // Return both the error and debug info
       return new Response(
         JSON.stringify({
           code: 500,
           msg: "Failed to parse response from API",
           error: responseText,
+          debugInfo
         }),
         {
           status: 500,
@@ -123,9 +161,15 @@ serve(async (req) => {
       );
     }
     
-    // Return API response to client
+    // Add debug info to the response
+    const enrichedResponse = {
+      ...responseData,
+      debugInfo
+    };
+    
+    // Return API response to client with debug info
     return new Response(
-      JSON.stringify(responseData),
+      JSON.stringify(enrichedResponse),
       {
         status: 200,
         headers: {
@@ -137,12 +181,20 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error processing request:", error);
     
+    // Create error response with debug info
+    const errorDebugInfo = {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : null,
+      message: error instanceof Error ? error.message : "Unknown error"
+    };
+    
     return new Response(
       JSON.stringify({
         code: 500,
         msg: error instanceof Error ? error.message : "Internal server error",
         data: null,
         error: String(error),
+        debugInfo: errorDebugInfo
       }),
       {
         status: 500,
