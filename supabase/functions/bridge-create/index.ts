@@ -6,6 +6,7 @@ const API_KEY = Deno.env.get("FF_API_KEY");
 const API_SECRET = Deno.env.get("FF_API_SECRET");
 const API_URL = "https://ff.io/api/v2/create";
 
+// Check if API keys are properly configured
 if (!API_KEY || !API_SECRET) {
   console.error("Missing required environment variables: FF_API_KEY and/or FF_API_SECRET");
 }
@@ -22,31 +23,51 @@ const corsHeaders = {
 async function generateSignature(message: string): Promise<string> {
   // Use native Deno crypto for HMAC
   const encoder = new TextEncoder();
-  const keyData = encoder.encode(API_SECRET || "");
+  
+  // Make sure we have a valid API_SECRET before proceeding
+  if (!API_SECRET || API_SECRET.length === 0) {
+    console.error("API_SECRET is empty or undefined. Cannot generate signature.");
+    throw new Error("API secret key is not configured properly");
+  }
+  
+  const keyData = encoder.encode(API_SECRET);
   const messageData = encoder.encode(message);
   
-  // Create HMAC using subtle crypto API
-  const key = await crypto.subtle.importKey(
-    "raw", // format
-    keyData, // key data
-    { 
-      name: "HMAC", 
-      hash: "SHA-256" 
-    },
-    false, // extractable
-    ["sign"] // allowed operations
-  );
+  // Check key length before attempting to create HMAC
+  if (keyData.length === 0) {
+    console.error("Key data length is zero after encoding");
+    throw new Error("API secret key is empty after encoding");
+  }
   
-  const signature = await crypto.subtle.sign(
-    "HMAC", 
-    key, 
-    messageData
-  );
+  console.log(`Using API secret with length: ${keyData.length}`);
   
-  // Convert ArrayBuffer to hex string
-  return Array.from(new Uint8Array(signature))
-    .map(b => b.toString(16).padStart(2, "0"))
-    .join("");
+  try {
+    // Create HMAC using subtle crypto API
+    const key = await crypto.subtle.importKey(
+      "raw", // format
+      keyData, // key data
+      { 
+        name: "HMAC", 
+        hash: "SHA-256" 
+      },
+      false, // extractable
+      ["sign"] // allowed operations
+    );
+    
+    const signature = await crypto.subtle.sign(
+      "HMAC", 
+      key, 
+      messageData
+    );
+    
+    // Convert ArrayBuffer to hex string
+    return Array.from(new Uint8Array(signature))
+      .map(b => b.toString(16).padStart(2, "0"))
+      .join("");
+  } catch (error) {
+    console.error("Error generating signature:", error);
+    throw error;
+  }
 }
 
 serve(async (req) => {
@@ -85,105 +106,122 @@ serve(async (req) => {
     console.log("Request URL:", API_URL);
     console.log("Request body:", requestBodyStr);
     
+    // First verify that we have the required secrets
+    if (!API_KEY || !API_SECRET) {
+      console.error("Missing API keys. Please set FF_API_KEY and FF_API_SECRET in your environment variables.");
+      throw new Error("API keys not configured. Contact administrator.");
+    }
+    
     // Generate signature for the exact string we're sending
-    const signature = await generateSignature(requestBodyStr);
-    debugInfo.signatureInfo = {
-      signature: signature,
-      apiKey: API_KEY
-    };
-    
-    console.log("Generated signature:", signature);
-    console.log("Using API key:", API_KEY);
-    
-    // Create curl command for debugging
-    const curlCommand = `curl -X POST \\
+    try {
+      const signature = await generateSignature(requestBodyStr);
+      debugInfo.signatureInfo = {
+        signature: signature,
+        apiKey: API_KEY
+      };
+      
+      console.log("Generated signature:", signature);
+      console.log("Using API key:", API_KEY);
+      
+      // Create curl command for debugging
+      const curlCommand = `curl -X POST \\
   -H "Accept: application/json" \\
   -H "X-API-KEY: ${API_KEY}" \\
   -H "X-API-SIGN: ${signature}" \\ 
   -H "Content-Type: application/json; charset=UTF-8" \\
   -d '${requestBodyStr}' \\ 
   "${API_URL}" -L`;
-    
-    debugInfo.curlCommand = curlCommand;
-    console.log("\nEquivalent curl command:");
-    console.log(curlCommand);
-    
-    // Make request to FixedFloat API
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Accept": "application/json",
-        "X-API-KEY": API_KEY || "",
-        "X-API-SIGN": signature,
-        "Content-Type": "application/json; charset=UTF-8",
-      },
-      body: requestBodyStr,
-    });
-    
-    // Log response status and headers
-    console.log("\nRESPONSE DETAILS:");
-    console.log("Response status:", response.status);
-    console.log("Response headers:", Object.fromEntries(response.headers.entries()));
-    
-    // Get response body as text first for logging
-    const responseText = await response.text();
-    console.log("Response body (text):", responseText);
-    console.log("------------------------------------");
-    
-    // Record response details
-    debugInfo.responseDetails = {
-      status: response.status,
-      headers: Object.fromEntries(response.headers.entries()),
-      body: responseText
-    };
-    
-    // Parse response if it's JSON
-    let responseData;
-    try {
-      responseData = JSON.parse(responseText);
-    } catch (e) {
-      console.error("Failed to parse response as JSON:", e);
-      debugInfo.error = {
-        type: "JSON parsing error",
-        message: e.message,
-        responseText
+      
+      debugInfo.curlCommand = curlCommand;
+      console.log("\nEquivalent curl command:");
+      console.log(curlCommand);
+      
+      // Make request to FixedFloat API
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "X-API-KEY": API_KEY,
+          "X-API-SIGN": signature,
+          "Content-Type": "application/json; charset=UTF-8",
+        },
+        body: requestBodyStr,
+      });
+      
+      // Log response status and headers
+      console.log("\nRESPONSE DETAILS:");
+      console.log("Response status:", response.status);
+      console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+      
+      // Get response body as text first for logging
+      const responseText = await response.text();
+      console.log("Response body (text):", responseText);
+      console.log("------------------------------------");
+      
+      // Record response details
+      debugInfo.responseDetails = {
+        status: response.status,
+        headers: Object.fromEntries(response.headers.entries()),
+        body: responseText
       };
       
-      // Return both the error and debug info
+      // Parse response if it's JSON
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch (e) {
+        console.error("Failed to parse response as JSON:", e);
+        debugInfo.error = {
+          type: "JSON parsing error",
+          message: e.message,
+          responseText
+        };
+        
+        // Return both the error and debug info
+        return new Response(
+          JSON.stringify({
+            code: 500,
+            msg: "Failed to parse response from API",
+            error: responseText,
+            debugInfo
+          }),
+          {
+            status: 500,
+            headers: {
+              "Content-Type": "application/json",
+              ...corsHeaders,
+            },
+          }
+        );
+      }
+      
+      // Add debug info to the response
+      const enrichedResponse = {
+        ...responseData,
+        debugInfo
+      };
+      
+      // Return API response to client with debug info
       return new Response(
-        JSON.stringify({
-          code: 500,
-          msg: "Failed to parse response from API",
-          error: responseText,
-          debugInfo
-        }),
+        JSON.stringify(enrichedResponse),
         {
-          status: 500,
+          status: 200,
           headers: {
             "Content-Type": "application/json",
             ...corsHeaders,
           },
         }
       );
+    } catch (error) {
+      console.error("Error generating signature:", error);
+      debugInfo.error = {
+        type: "Signature Error",
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      };
+      
+      throw error; // Rethrow to be caught by the outer catch block
     }
-    
-    // Add debug info to the response
-    const enrichedResponse = {
-      ...responseData,
-      debugInfo
-    };
-    
-    // Return API response to client with debug info
-    return new Response(
-      JSON.stringify(enrichedResponse),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          ...corsHeaders,
-        },
-      }
-    );
   } catch (error) {
     console.error("Error processing request:", error);
     
