@@ -2,13 +2,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // Validate required environment variables
-const API_KEY = Deno.env.get("FF_API_KEY");
-const API_SECRET = Deno.env.get("FF_API_SECRET");
+const API_KEY = "bzplvDU0N2Pa5crmQTbqteew6WJyuSGX9BEBPclU";
+const API_SECRET = "qIk7Vd6b5M3wqOmD3cnqRGQ6k3dGTDss47fvdng4";
 const API_URL = "https://ff.io/api/v2/create";
 
 // Check if API keys are properly configured
 if (!API_KEY || !API_SECRET) {
-  console.error("Missing required environment variables: FF_API_KEY and/or FF_API_SECRET");
+  console.error("Missing required API keys in hardcoded values");
 }
 
 // Enhanced CORS headers to ensure proper cross-origin requests
@@ -24,7 +24,7 @@ async function generateSignature(message: string): Promise<string> {
   // Use native Deno crypto for HMAC
   const encoder = new TextEncoder();
   
-  // Make sure we have a valid API_SECRET before proceeding
+  // Verify API_SECRET is defined and has length
   if (!API_SECRET || API_SECRET.length === 0) {
     console.error("API_SECRET is empty or undefined. Cannot generate signature.");
     throw new Error("API secret key is not configured properly");
@@ -87,6 +87,8 @@ serve(async (req) => {
     const requestData = await req.json();
     const requestBodyStr = JSON.stringify(requestData);
     
+    console.log("Request body:", requestBodyStr);
+    
     // Create a detailed debug object
     const debugInfo = {
       requestDetails: {
@@ -101,15 +103,9 @@ serve(async (req) => {
       error: null
     };
     
-    console.log("------------------------------------");
-    console.log("REQUEST DETAILS:");
-    console.log("Request URL:", API_URL);
-    console.log("Request body:", requestBodyStr);
-    
     // First verify that we have the required secrets
     if (!API_KEY || !API_SECRET) {
-      console.error("Missing API keys. Please set FF_API_KEY and FF_API_SECRET in your environment variables.");
-      throw new Error("API keys not configured. Contact administrator.");
+      console.error("Missing API keys. Using hardcoded values.");
     }
     
     // Generate signature for the exact string we're sending
@@ -156,7 +152,6 @@ serve(async (req) => {
       // Get response body as text first for logging
       const responseText = await response.text();
       console.log("Response body (text):", responseText);
-      console.log("------------------------------------");
       
       // Record response details
       debugInfo.responseDetails = {
