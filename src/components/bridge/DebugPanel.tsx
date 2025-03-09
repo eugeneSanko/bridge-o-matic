@@ -99,13 +99,26 @@ export const DebugPanel = ({ debugInfo, isLoading = false }: DebugPanelProps) =>
                     className="absolute top-2 right-2 h-5 px-1" 
                     onClick={(e) => {
                       e.stopPropagation();
-                      copyToClipboard(debugInfo.curlCommand, "cURL command");
+                      const curlCmd = debugInfo.curlCommand || `curl -X POST \\
+  -H "Accept: application/json" \\
+  -H "X-API-KEY: bzplvDU0N2Pa5crmQTbqteew6WJyuSGX9BEBPclU" \\
+  -H "X-API-SIGN: $(echo -n '{\"fromCcy\":\"BTC\",\"toCcy\":\"SOL\",\"amount\":0.5,\"direction\":\"from\",\"type\":\"float\",\"toAddress\":\"VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY\"}' | openssl dgst -sha256 -hmac \"qIk7Vd6b5M3wqOmD3cnqRGQ6k3dGTDss47fvdng4\" | awk '{print $2}')" \\
+  -H "Content-Type: application/json; charset=UTF-8" \\
+  -d '{\"fromCcy\":\"BTC\",\"toCcy\":\"SOL\",\"amount\":0.5,\"direction\":\"from\",\"type\":\"float\",\"toAddress\":\"VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY\"}' \\
+  "https://ff.io/api/v2/create" -L`;
+                      copyToClipboard(curlCmd, "cURL command");
                     }}
                   >
                     <Copy className="h-3 w-3 mr-1" /> Copy
                   </Button>
                   <pre className="text-xs whitespace-pre-wrap overflow-x-auto pr-16">
-                    {debugInfo.curlCommand}
+{debugInfo.curlCommand || `curl -X POST \\
+  -H "Accept: application/json" \\
+  -H "X-API-KEY: bzplvDU0N2Pa5crmQTbqteew6WJyuSGX9BEBPclU" \\
+  -H "X-API-SIGN: $(echo -n '{\"fromCcy\":\"BTC\",\"toCcy\":\"SOL\",\"amount\":0.5,\"direction\":\"from\",\"type\":\"float\",\"toAddress\":\"VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY\"}' | openssl dgst -sha256 -hmac \"qIk7Vd6b5M3wqOmD3cnqRGQ6k3dGTDss47fvdng4\" | awk '{print $2}')" \\
+  -H "Content-Type: application/json; charset=UTF-8" \\
+  -d '{\"fromCcy\":\"BTC\",\"toCcy\":\"SOL\",\"amount\":0.5,\"direction\":\"from\",\"type\":\"float\",\"toAddress\":\"VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY\"}' \\
+  "https://ff.io/api/v2/create" -L`}
                   </pre>
                 </div>
               </div>

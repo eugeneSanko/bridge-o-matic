@@ -19,27 +19,32 @@ const corsHeaders = {
 };
 
 // Generate HMAC signature for FixedFloat API using the correct Deno crypto API
-function generateSignature(message: string): string {
+async function generateSignature(message: string): Promise<string> {
   // Use native Deno crypto for HMAC
   const encoder = new TextEncoder();
-  const key = encoder.encode(API_SECRET || "");
-  const data = encoder.encode(message);
+  const keyData = encoder.encode(API_SECRET || "");
+  const messageData = encoder.encode(message);
   
-  // Create HMAC using the correct method
-  const signatureBuffer = crypto.subtle.sign(
-    { name: "HMAC", hash: "SHA-256" },
-    crypto.subtle.importKey(
-      "raw",
-      key,
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"]
-    ),
-    data
+  // Create HMAC using subtle crypto API
+  const key = await crypto.subtle.importKey(
+    "raw", // format
+    keyData, // key data
+    { 
+      name: "HMAC", 
+      hash: "SHA-256" 
+    },
+    false, // extractable
+    ["sign"] // allowed operations
   );
-
-  // Convert ArrayBuffer to Uint8Array and then to hex string
-  return Array.from(new Uint8Array(signatureBuffer))
+  
+  const signature = await crypto.subtle.sign(
+    "HMAC", 
+    key, 
+    messageData
+  );
+  
+  // Convert ArrayBuffer to hex string
+  return Array.from(new Uint8Array(signature))
     .map(b => b.toString(16).padStart(2, "0"))
     .join("");
 }
