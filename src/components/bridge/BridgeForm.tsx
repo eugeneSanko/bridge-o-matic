@@ -15,6 +15,7 @@ export const BridgeForm = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [debugInfo, setDebugInfo] = useState(null);
+  const [addressError, setAddressError] = useState<string | null>(null);
   
   const {
     fromCurrency,
@@ -88,6 +89,13 @@ export const BridgeForm = () => {
     }
   }, [lastPriceData]);
 
+  // Clear address error when address changes
+  useEffect(() => {
+    if (addressError && destinationAddress) {
+      setAddressError(null);
+    }
+  }, [destinationAddress, addressError]);
+
   const handleAmountChange = (newAmount: string) => {
     setAmount(newAmount);
     isAmountChangeRef.current = true;
@@ -101,12 +109,22 @@ export const BridgeForm = () => {
   const handleToCurrencyChange = (currency: string) => {
     setToCurrency(currency);
     isCurrencyChangeRef.current = true;
+    // Clear address error when currency changes
+    setAddressError(null);
   };
 
   const handleOrderTypeChange = (type: 'fixed' | 'float') => {
     setOrderType(type);
     isOrderTypeChangeRef.current = true;
     lastCalculationTimeRef.current = 0;
+  };
+
+  const handleDestinationAddressChange = (address: string) => {
+    setDestinationAddress(address);
+    // Clear address error when user modifies the address
+    if (addressError) {
+      setAddressError(null);
+    }
   };
 
   useEffect(() => {
@@ -163,6 +181,9 @@ export const BridgeForm = () => {
 
     if (isSubmitting) return;
 
+    // Clear previous errors
+    setAddressError(null);
+
     if (fromCurrency && toCurrency && amount && parseFloat(amount) > 0) {
       await calculateReceiveAmount();
     }
@@ -182,6 +203,18 @@ export const BridgeForm = () => {
       // Store debug info if available
       if (result && result.debugInfo) {
         setDebugInfo(result.debugInfo);
+        
+        // Check for Invalid address error in the API response
+        if (result.code === 301 && result.msg === "Invalid address") {
+          setAddressError("Invalid address for selected cryptocurrency network");
+          toast({
+            title: "Invalid Address",
+            description: "The destination address is not valid for the selected cryptocurrency network.",
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
       }
       
       // Only redirect if we have a successful result with an orderId
@@ -201,15 +234,31 @@ export const BridgeForm = () => {
       }
     } catch (error) {
       console.error("Bridge transaction failed:", error);
-      toast({
-        title: "Transaction Failed",
-        description: error instanceof Error ? error.message : "An error occurred creating the transaction",
-        variant: "destructive"
-      });
       
-      // Try to extract debug info from error
-      if (error && typeof error === 'object' && 'debugInfo' in error) {
-        setDebugInfo(error.debugInfo);
+      // Handle specific API errors
+      if (error && typeof error === 'object') {
+        // @ts-ignore - type checking for error object
+        if (error.message && error.message.includes("Invalid address")) {
+          setAddressError("Invalid address for selected cryptocurrency network");
+          toast({
+            title: "Invalid Address",
+            description: "The destination address is not valid for the selected cryptocurrency network.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Transaction Failed",
+            description: error instanceof Error ? error.message : "An error occurred creating the transaction",
+            variant: "destructive"
+          });
+        }
+        
+        // Try to extract debug info from error
+        // @ts-ignore - dynamic property access
+        if ('debugInfo' in error) {
+          // @ts-ignore - dynamic property access
+          setDebugInfo(error.debugInfo);
+        }
       }
     } finally {
       setIsSubmitting(false);
@@ -229,6 +278,9 @@ export const BridgeForm = () => {
       setToCurrency(fromCurrency);
       isCurrencyChangeRef.current = true;
       lastCalculationTimeRef.current = 0;
+      
+      // Clear address error when swapping currencies
+      setAddressError(null);
     } else {
       toast({
         title: "Cannot swap currencies",
@@ -244,7 +296,8 @@ export const BridgeForm = () => {
       amount &&
       parseFloat(amount) > 0 &&
       destinationAddress &&
-      !amountError
+      !amountError &&
+      !addressError
   );
 
   const selectedToCurrency = availableCurrencies.find(c => c.code === toCurrency);
@@ -274,10 +327,11 @@ export const BridgeForm = () => {
       <div className="space-y-4 sm:space-y-6">
         <DestinationAddressInput
           value={destinationAddress}
-          onChange={setDestinationAddress}
+          onChange={handleDestinationAddressChange}
           borderColor={selectedToCurrency?.color}
           receivingCurrency={toCurrency}
           currencyNetwork={selectedToCurrency?.network}
+          errorMessage={addressError}
         />
 
         <OrderTypeSelector value={orderType} onChange={handleOrderTypeChange} />

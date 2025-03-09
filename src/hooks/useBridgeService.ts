@@ -5,7 +5,6 @@ import { PriceResponse, BridgeError, Currency, ApiOrderResponse } from "@/types/
 import CryptoJS from 'crypto-js';
 import { supabase } from "@/integrations/supabase/client";
 
-// Mock data for development fallback if the API call fails
 const MOCK_CURRENCIES: Currency[] = [
   {
     symbol: "BTC",
@@ -73,12 +72,8 @@ export function useBridgeService() {
   const [lastPriceCheck, setLastPriceCheck] = useState<PriceResponse | null>(null);
   
   const generateApiSignature = (body: any = {}) => {
-    // Convert the body to a string if it's not empty, or use an empty string
     const bodyString = Object.keys(body).length ? JSON.stringify(body) : '{}';
-    
-    // Generate HMAC SHA256 signature with the API secret
     const signature = CryptoJS.HmacSHA256(bodyString, API_CONFIG.FF_API_SECRET).toString();
-    
     console.log('Generated API signature:', signature);
     return signature;
   };
@@ -87,7 +82,6 @@ export function useBridgeService() {
     try {
       console.log('Fetching available currencies from FixedFloat API via Supabase Edge Function...');
       
-      // Call our Supabase edge function instead of direct API
       const { data, error } = await supabase.functions.invoke('bridge-currencies');
       
       if (error) {
@@ -102,11 +96,9 @@ export function useBridgeService() {
       
       console.log('Edge function response:', data);
       
-      // If the API response is successful and contains currencies
       if (data.code === 0 && data.data && Array.isArray(data.data)) {
-        // Transform the currencies from the API response to our format
         const currenciesArray: Currency[] = data.data.map((currency: any) => ({
-          symbol: currency.code,  // Use code as symbol for compatibility
+          symbol: currency.code,
           name: currency.name || '',
           image: currency.logo || null,
           network: currency.network || null,
@@ -129,7 +121,6 @@ export function useBridgeService() {
     } catch (error) {
       console.error('Error fetching currencies:', error);
       
-      // Fallback to mock data in case of error
       console.warn('Falling back to mock currency data due to API error');
       toast({
         title: "API Error",
@@ -137,7 +128,6 @@ export function useBridgeService() {
         variant: "destructive"
       });
       
-      // Return mock data instead of throwing
       return MOCK_CURRENCIES;
     }
   }, []);
@@ -163,7 +153,6 @@ export function useBridgeService() {
       console.log('Calculating price via Supabase Edge Function...');
       console.log('API Request:', body);
       
-      // Call our Supabase edge function for price calculation
       const { data, error } = await supabase.functions.invoke('bridge-price', {
         body
       });
@@ -180,7 +169,6 @@ export function useBridgeService() {
       
       console.log('Price calculation response:', data);
       
-      // If the API response is successful
       if (data.code === 0) {
         const responseData: PriceResponse = {
           code: data.code,
@@ -199,10 +187,8 @@ export function useBridgeService() {
     } catch (error) {
       console.error('Error calculating amount:', error);
       
-      // For development mode, if the API call fails, create a mock response
       console.warn('Generating mock price data due to API error');
       
-      // Mock response based on the request
       const mockRate = fromCurrency === 'BTC' ? 65000 : 3000;
       const fromAmount = parseFloat(amount);
       const toAmount = fromCurrency === 'BTC' 
@@ -253,7 +239,6 @@ export function useBridgeService() {
     initialRate: string
   ) => {
     try {
-      // Create the request body according to the API format
       const body = {
         fromCcy: fromCurrency,
         toCcy: toCurrency,
@@ -265,7 +250,6 @@ export function useBridgeService() {
       
       console.log('Creating bridge order with parameters:', body);
       
-      // Call our Supabase edge function for order creation
       const { data, error } = await supabase.functions.invoke('bridge-create', {
         body
       });
@@ -282,33 +266,32 @@ export function useBridgeService() {
       
       console.log('Order creation response:', data);
       
-      // If the API response is successful
       if (data.code === 0 && data.data) {
-        // Return the orderId and token
         return { 
           orderId: data.data.id || '', 
           orderToken: data.data.token || '' 
         };
       } else {
         console.error('API returned an error:', data);
-        throw new Error(data.msg || 'Unknown API error');
+        throw data;
       }
     } catch (error) {
-      const bridgeError = error as BridgeError;
       console.error('Bridge transaction error:', error);
       
-      // For development mode, if the API call fails, return a mock response
       if (import.meta.env.DEV) {
         console.warn('Generating mock order data due to API error');
         
-        // Mock successful order creation
+        if (error && typeof error === 'object' && 'code' in error && error.code === 301) {
+          throw error;
+        }
+        
         return { 
           orderId: `FF-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
           orderToken: `${Math.random().toString(36).substring(2, 30)}`
         };
       }
       
-      throw bridgeError;
+      throw error;
     }
   }, []);
 
@@ -316,19 +299,14 @@ export function useBridgeService() {
     try {
       const body = { orderId };
       
-      // Generate signature for the request body
       const signature = generateApiSignature(body);
       
-      // CORS ISSUE: In a production environment, this should be handled by a backend proxy
-      // For development, we'll simulate a response
       console.log('Simulating order status check due to CORS restrictions');
       console.log('API Request would include:', body);
       console.log('API Signature:', signature);
       
-      // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock status response with a specific address for the destination
       return {
         code: 0,
         msg: "Success",
@@ -340,7 +318,7 @@ export function useBridgeService() {
             currency: "BTC"
           },
           to: {
-            address: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e", // Mock destination address
+            address: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
             amount: "230.45",
             currency: "USDT"
           },

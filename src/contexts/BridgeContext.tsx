@@ -422,6 +422,12 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       console.error("Order creation failed: No orderId returned");
       return null;
     } catch (error: any) {
+      // Check if this is a specific API error with debugInfo
+      if (error && typeof error === 'object' && error.code) {
+        console.error("API error:", error);
+        return error; // Return the error object directly so the UI can handle it
+      }
+      
       toast({
         title: "Transaction Failed",
         description: error.message || "Failed to create bridge transaction",
