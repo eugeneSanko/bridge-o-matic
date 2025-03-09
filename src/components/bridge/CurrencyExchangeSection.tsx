@@ -57,19 +57,6 @@ export const CurrencyExchangeSection = ({
   const toCurrencyObj =
     availableCurrencies.find((c) => c.code === toCurrency) || null;
 
-  // Helper function to render exchange rate with skeleton loading state
-  const renderExchangeRate = (rate: string | undefined, currencyCode: string, usdValue: string | undefined) => {
-    if (!rate || !currencyCode) {
-      return (
-        <div className="flex items-center gap-1">
-          <Skeleton className="h-4 w-32" />
-        </div>
-      );
-    }
-    
-    return `1 ${currencyCode} = ${formatNumberWithCommas(rate)} send($${usdValue})`;
-  };
-
   return (
     <>
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6 relative">
@@ -94,14 +81,14 @@ export const CurrencyExchangeSection = ({
           formatNumberWithCommas={formatNumberWithCommas}
         />
 
-        <div className="flex flex-col items-center justify-center h-10">
+        <div className="flex flex-col items-center justify-center">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-full bg-secondary/50 hover:bg-secondary my-1 -mt-4"
+            className="h-12 w-12 rounded-full bg-[#292e43] hover:bg-[#343b54] my-1"
             onClick={onSwapCurrencies}
           >
-            <ArrowLeftRight className="h-4 w-4 text-[#0FA0CE]" />
+            <ArrowLeftRight className="h-6 w-6 text-[#0FA0CE]" />
           </Button>
         </div>
 
@@ -122,7 +109,7 @@ export const CurrencyExchangeSection = ({
       </div>
 
       {amountError && (
-        <Alert variant="destructive" className="mb-4">
+        <Alert variant="destructive" className="mb-4 mt-2">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{amountError}</AlertDescription>
         </Alert>

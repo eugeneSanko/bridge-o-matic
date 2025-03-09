@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { AddressPlaceholder } from "@/components/bridge/AddressPlaceholder";
-import { Clock, Search, ArrowDownUp, AlertCircle } from "lucide-react";
+import { Clock, Search, ArrowDownUp, AlertCircle, ChevronDown } from "lucide-react";
 import { Currency } from "@/types/bridge";
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
@@ -148,13 +148,6 @@ export const CurrencySelector = ({
     }
   }, [filteredCurrencies, value, onChange, isReceiveSide]);
 
-  const borderStyle = borderColor
-    ? {
-        borderColor: borderColor,
-        borderWidth: "2px",
-      }
-    : {};
-
   const selectedCurrency = availableCurrencies.find((c) => c.code === value);
 
   useEffect(() => {
@@ -176,11 +169,31 @@ export const CurrencySelector = ({
     return formatNumberWithCommas(value);
   };
 
+  const getCurrencyNetworkText = () => {
+    if (!selectedCurrency) return "";
+    
+    // Show network in parentheses if it exists and is different from the coin
+    if (selectedCurrency.network && 
+        selectedCurrency.network !== selectedCurrency.coin && 
+        selectedCurrency.network !== selectedCurrency.name) {
+      return `(${selectedCurrency.network})`;
+    }
+    return "";
+  };
+
   return (
     <div className="flex-1">
-      <label className="block text-sm font-medium mb-2 text-gray-300 text-center sm:text-left">
-        {label}
-      </label>
+      <div className="flex justify-between items-center mb-2">
+        <label className="text-sm font-medium text-gray-300">
+          {label}
+        </label>
+        {selectedCurrency && (
+          <span className="text-sm font-medium text-[#0FA0CE]">
+            {selectedCurrency.name} {getCurrencyNetworkText()}
+          </span>
+        )}
+      </div>
+      
       <div className="relative">
         <Select
           value={value}
@@ -189,64 +202,65 @@ export const CurrencySelector = ({
           onOpenChange={setIsOpen}
         >
           <SelectTrigger
-            className="h-[3.5rem] sm:h-[4.5rem] px-3 sm:px-4 bg-secondary/30 text-sm sm:text-base transition-all duration-200"
-            style={borderStyle}
+            className="h-[4.5rem] px-4 bg-[#181c2c] border-[#252a3a] rounded-xl text-lg transition-all duration-200 flex justify-between font-medium"
+            style={{ borderColor: borderColor || "#252a3a", borderWidth: "1px" }}
           >
-            <div className="flex flex-col w-full">
-              <div className="pointer-events-none flex items-center w-full h-10">
-                <SelectValue
-                  placeholder={
-                    isLoadingCurrencies ? (
-                      <Icon icon="eos-icons:three-dots-loading" width={50} />
-                    ) : (
-                      "Select currency"
-                    )
-                  }
-                  className="[&>span]:w-auto [&>span]:!flex-none"
-                />
-              </div>
-              <div className="flex items-center justify-between w-full mt-1">
-                <span className="pointer-events-none text-xs text-gray-400 text-left">
-                  {isReceiveSide ? "You'll receive:" : "You'll send:"}
-                </span>
+            <div className="flex flex-row items-center justify-between w-full">
+              <div className="flex flex-col items-start">
                 {isReceiveSide ? (
-                  <span className="pointer-events-none text-sm flex items-center gap-1">
-                    {isCalculating ? (
-                      <span className="text-gray-400">Calculating...</span>
-                    ) : estimatedAmount ? (
-                      <>
-                        <span>{formatDisplayValue(estimatedAmount)}</span>
-                        {/* {timeRemaining && (
-                          <span className="flex items-center text-xs text-[#0FA0CE]">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {timeRemaining}s
-                          </span>
-                        )} */}
-                      </>
-                    ) : (
-                      "0.00"
-                    )}
-                  </span>
+                  <div className="flex items-center">
+                    <span className="text-3xl font-semibold">
+                      {isCalculating ? (
+                        <span className="text-gray-400">≈</span>
+                      ) : (
+                        <span className="text-gray-400 mr-1">≈</span>
+                      )}
+                      {isCalculating ? (
+                        <span className="text-gray-400">Calculating...</span>
+                      ) : estimatedAmount ? (
+                        formatDisplayValue(estimatedAmount)
+                      ) : (
+                        "0"
+                      )}
+                    </span>
+                  </div>
+                ) : (
+                  <Input
+                    type="text"
+                    placeholder="0"
+                    value={amount || ""}
+                    onChange={(e) => handleAmountChange(e.target.value)}
+                    onFocus={() => setIsAmountFocused(true)}
+                    onBlur={() => setIsAmountFocused(false)}
+                    className="w-full h-10 px-0 text-3xl font-semibold bg-transparent border-none focus:outline-none focus:ring-0"
+                  />
+                )}
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {selectedCurrency?.logo ? (
+                  <img
+                    src={selectedCurrency.logo}
+                    alt={selectedCurrency.name}
+                    className="w-7 h-7 rounded-full"
+                  />
                 ) : (
                   <div
-                    onClick={(e) => e.stopPropagation()}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    className="relative z-10"
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white"
+                    style={{ backgroundColor: selectedCurrency?.color || "#888" }}
                   >
-                    <Input
-                      type="text"
-                      placeholder="0.00"
-                      value={amount || ""}
-                      onChange={(e) => handleAmountChange(e.target.value)}
-                      onFocus={() => setIsAmountFocused(true)}
-                      onBlur={() => setIsAmountFocused(false)}
-                      className="w-24 h-6 px-1 text-right bg-transparent border-none text-sm focus:outline-none focus:ring-0"
-                    />
+                    {selectedCurrency?.coin?.substring(0, 1).toUpperCase() ||
+                      selectedCurrency?.code?.substring(0, 1).toUpperCase()}
                   </div>
                 )}
+                <span className="text-xl font-medium mr-1">
+                  {selectedCurrency?.symbol || selectedCurrency?.code}
+                </span>
+                <ChevronDown className="h-5 w-5 opacity-70" />
               </div>
             </div>
           </SelectTrigger>
+          
           <SelectContent className="border border-white/10 max-h-[300px] glass-card">
             <div className="sticky top-0 px-2 py-2 bg-background/80 backdrop-blur-md z-10">
               <div className="relative">
@@ -278,6 +292,7 @@ export const CurrencySelector = ({
               </div>
             )}
 
+            {/* Currency listing section */}
             {isLoadingCurrencies ? (
               <SelectItem value="loading" disabled>
                 <Icon icon="eos-icons:three-dots-loading" />
@@ -326,68 +341,32 @@ export const CurrencySelector = ({
         </Select>
       </div>
 
-      <div className="h-14 mt-2">
-        {!isReceiveSide && value && selectedCurrency && (
-          <>
-            {/* Animation container for min/max amount display */}
-            <div 
-              className={`transition-all duration-300 overflow-hidden ${
-                showMinMaxInfo ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
-              }`}
-            >
-              {minMaxAmounts && (
-                <div className="flex gap-2 mb-2">
-                  <div className="bg-[#221F26] rounded-md px-2.5 py-1 text-xs">
-                    <span className="text-[#FFA500]">min: </span>
-                    <span className="font-mono text-gray-300">
-                      {formatDisplayValue(minMaxAmounts.min)} {selectedCurrency.code}
-                    </span>
-                  </div>
-                  <div className="bg-[#221F26] rounded-md px-2.5 py-1 text-xs">
-                    <span className="text-[#FFA500]">max: </span>
-                    <span className="font-mono text-gray-300">
-                      {formatDisplayValue(minMaxAmounts.max)} {selectedCurrency.code}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Only show exchange rate when not showing min/max */}
-            {(!showMinMaxInfo && exchangeRate && amount) ? (
-              <div className="flex items-center text-xs text-gray-400 font-mono gap-1 flex justify-between transition-opacity duration-300">
-                {!exchangeRate.rate ? (
-                  <Skeleton className="h-4 w-32" />
-                ) : (
-                  <>
-                    <span>
-                      1 {selectedCurrency?.code} = {formatDisplayValue(exchangeRate.rate)}
-                    </span>
-                    <span>
-                      {isReceiveSide ? "receive" : "send"}($
-                      {exchangeRate.usdValue})
-                    </span>
-                  </>
-                )}
-              </div>
-            ) : null}
-          </>
+      <div className="h-8 mt-2">
+        {/* Exchange rate display */}
+        {exchangeRate && selectedCurrency && (
+          <div className="text-xs text-gray-400 font-mono flex justify-between">
+            <span>
+              1 {selectedCurrency?.code} ≈ {formatDisplayValue(exchangeRate.rate || "0")} {isReceiveSide ? "send" : "receive"}
+            </span>
+            <span>${exchangeRate.usdValue || "0"}</span>
+          </div>
         )}
-
-        {isReceiveSide && value && exchangeRate && estimatedAmount && (
-          <div className="mt-1 flex items-center text-xs text-gray-400 font-mono gap-1 justify-between">
-            {!exchangeRate.rate ? (
-              <Skeleton className="h-4 w-32" />
-            ) : (
-              <>
-                <span>
-                  1 {selectedCurrency?.code} = {formatDisplayValue(exchangeRate.rate)}
-                </span>
-                <span>
-                  {isReceiveSide ? "receive" : "send"}(${exchangeRate.usdValue})
-                </span>
-              </>
-            )}
+        
+        {/* Min/Max amounts */}
+        {!isReceiveSide && showMinMaxInfo && minMaxAmounts && (
+          <div className="flex gap-2 mt-1 transition-opacity duration-300">
+            <div className="bg-[#221F26] rounded-md px-2 py-0.5 text-xs">
+              <span className="text-[#FFA500]">min: </span>
+              <span className="font-mono text-gray-300">
+                {formatDisplayValue(minMaxAmounts.min)} {selectedCurrency?.code}
+              </span>
+            </div>
+            <div className="bg-[#221F26] rounded-md px-2 py-0.5 text-xs">
+              <span className="text-[#FFA500]">max: </span>
+              <span className="font-mono text-gray-300">
+                {formatDisplayValue(minMaxAmounts.max)} {selectedCurrency?.code}
+              </span>
+            </div>
           </div>
         )}
       </div>
