@@ -8,9 +8,34 @@ import CryptoJS from 'crypto-js';
 import { DebugPanel } from "./DebugPanel";
 import { supabase } from "@/integrations/supabase/client";
 
+// Define proper types for debug info
+interface DebugInfo {
+  requestDetails: {
+    url: string;
+    method: string;
+    requestBody: any;
+    requestBodyString: string;
+  };
+  signatureInfo: {
+    signature: string;
+    apiKey: string;
+  };
+  curlCommand: string;
+  responseDetails: {
+    status: string;
+    body: string;
+    headers?: Record<string, string>;
+  };
+  error?: {
+    type: string;
+    message: string;
+    stack?: string;
+  };
+}
+
 export const BridgeHeader = () => {
   const [isTestingApi, setIsTestingApi] = useState(false);
-  const [testDebugInfo, setTestDebugInfo] = useState<any>(null);
+  const [testDebugInfo, setTestDebugInfo] = useState<DebugInfo | null>(null);
 
   const testApi = async () => {
     setIsTestingApi(true);
@@ -47,7 +72,7 @@ export const BridgeHeader = () => {
   "https://ff.io/api/v2/create" -L`;
       
       // Initial debug info with request details
-      const debugInfo = {
+      const debugInfo: DebugInfo = {
         requestDetails: {
           url: "https://ff.io/api/v2/create",
           method: "POST",
@@ -78,7 +103,6 @@ export const BridgeHeader = () => {
         console.error("Edge function error:", error);
         debugInfo.responseDetails = {
           status: `Error: ${error.status || 500}`,
-          headers: {},
           body: JSON.stringify({ error: error.message })
         };
         debugInfo.error = {
@@ -91,9 +115,13 @@ export const BridgeHeader = () => {
         // Update debug info with actual response
         debugInfo.responseDetails = {
           status: data?.debugInfo?.responseDetails?.status || 200,
-          headers: data?.debugInfo?.responseDetails?.headers || {},
           body: data?.debugInfo?.responseDetails?.body || JSON.stringify(data)
         };
+        
+        // If there are headers in the response data, add them
+        if (data?.debugInfo?.responseDetails?.headers) {
+          debugInfo.responseDetails.headers = data.debugInfo.responseDetails.headers;
+        }
         
         // If there's an error in the API response, capture it
         if (data?.error || data?.debugInfo?.error) {
