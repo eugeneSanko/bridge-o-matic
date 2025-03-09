@@ -365,7 +365,8 @@ export const CurrencySelector = ({
           </div>
         )}
         
-        {!isReceiveSide && showMinMaxInfo && minMaxAmounts && (
+        {/* Show min/max values only when not actively typing */}
+        {!isReceiveSide && !isTyping && !isAmountFocused && showMinMaxInfo && minMaxAmounts && (
           <div className="flex gap-2 mt-1 transition-opacity duration-300">
             <div className="bg-[#221F26] rounded-md px-2 py-0.5 text-xs">
               <span className="text-[#FFA500]">min: </span>
@@ -381,7 +382,16 @@ export const CurrencySelector = ({
             </div>
           </div>
         )}
+        
+        {/* Show exchange rate in the format requested by user when typing */}
+        {!isReceiveSide && (isTyping || isAmountFocused) && exchangeRate && selectedCurrency && (
+          <div className="font-mono text-sm text-gray-300 mt-1">
+            1 {selectedCurrency?.code} = {formatDisplayValue(exchangeRate.rate || "0")} receive  
+            <span className="ml-4">${exchangeRate.usdValue}</span>
+          </div>
+        )}
       </div>
     </div>
   );
 };
+
