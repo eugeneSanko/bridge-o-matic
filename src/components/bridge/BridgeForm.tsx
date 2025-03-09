@@ -354,6 +354,7 @@ export const BridgeForm = () => {
         onAmountChange={handleAmountChange}
         onSwapCurrencies={handleSwapCurrencies}
         formatNumberWithCommas={formatNumberWithCommas}
+        orderType={orderType}
       />
 
       <div className="space-y-4 sm:space-y-6">

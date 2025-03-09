@@ -30,6 +30,7 @@ interface CurrencyExchangeSectionProps {
   onAmountChange: (amount: string) => void;
   onSwapCurrencies: () => void;
   formatNumberWithCommas: (value: string | number) => string;
+  orderType: 'fixed' | 'float';
 }
 
 export const CurrencyExchangeSection = ({
@@ -50,6 +51,7 @@ export const CurrencyExchangeSection = ({
   onAmountChange,
   onSwapCurrencies,
   formatNumberWithCommas,
+  orderType,
 }: CurrencyExchangeSectionProps) => {
   
   const fromCurrencyObj =
@@ -79,6 +81,7 @@ export const CurrencyExchangeSection = ({
               : undefined
           }
           formatNumberWithCommas={formatNumberWithCommas}
+          orderType={orderType}
         />
 
         <div className="flex flex-col items-center justify-center">
@@ -105,6 +108,7 @@ export const CurrencyExchangeSection = ({
           borderColor={toCurrencyObj?.color}
           exchangeRate={toExchangeRate}
           formatNumberWithCommas={formatNumberWithCommas}
+          orderType={orderType}
         />
       </div>
 

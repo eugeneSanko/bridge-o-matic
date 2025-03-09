@@ -37,6 +37,7 @@ interface CurrencySelectorProps {
     max: string;
   };
   formatNumberWithCommas?: (value: string | number) => string;
+  orderType?: 'fixed' | 'float';
 }
 
 export const CurrencySelector = ({
@@ -55,6 +56,7 @@ export const CurrencySelector = ({
   exchangeRate,
   minMaxAmounts,
   formatNumberWithCommas = (val) => val.toString(),
+  orderType = 'fixed',
 }: CurrencySelectorProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -62,7 +64,8 @@ export const CurrencySelector = ({
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState<number | null>(null);
   const [showMinMaxInfo, setShowMinMaxInfo] = useState(false);
-
+  
+  // Show min/max info while typing or when input is focused
   useEffect(() => {
     if (isTyping || isAmountFocused) {
       setShowMinMaxInfo(true);
@@ -95,10 +98,12 @@ export const CurrencySelector = ({
     }
   };
 
+  // Filter currencies based on send/receive capability
   const filteredCurrencies = availableCurrencies.filter((currency) =>
     isReceiveSide ? currency.recv === 1 : currency.send === 1
   );
 
+  // Filter currencies based on search term
   const searchedCurrencies = filteredCurrencies.filter((currency) => {
     if (!searchTerm) return true;
 
@@ -111,6 +116,7 @@ export const CurrencySelector = ({
     );
   });
 
+  // Set default currency when currencies are loaded
   useEffect(() => {
     if (filteredCurrencies.length > 0 && !value) {
       if (!isReceiveSide) {
@@ -149,12 +155,14 @@ export const CurrencySelector = ({
 
   const selectedCurrency = availableCurrencies.find((c) => c.code === value);
 
+  // Reset search term when dropdown closes
   useEffect(() => {
     if (!isOpen) {
       setSearchTerm("");
     }
   }, [isOpen]);
 
+  // Clean up typing timeout on unmount
   useEffect(() => {
     return () => {
       if (typingTimeout) {
@@ -179,6 +187,9 @@ export const CurrencySelector = ({
     return "";
   };
 
+  // Only show approximate symbol for float orders on receive side
+  const shouldShowApproxSymbol = isReceiveSide && orderType === 'float';
+
   return (
     <div className="flex-1">
       <div className="flex justify-between items-center mb-2">
@@ -202,9 +213,7 @@ export const CurrencySelector = ({
               {isReceiveSide ? (
                 <div className="flex items-center w-full">
                   <span className="text-3xl font-semibold truncate">
-                    {isCalculating ? (
-                      <span className="text-gray-400">≈</span>
-                    ) : (
+                    {shouldShowApproxSymbol && (
                       <span className="text-gray-400 mr-1">≈</span>
                     )}
                     {isCalculating ? (
@@ -288,10 +297,10 @@ export const CurrencySelector = ({
                       {exchangeRate.invert
                         ? `1 ${selectedCurrency?.code} = ${formatDisplayValue(exchangeRate.rate)} ${
                             isReceiveSide ? "send" : "receive"
-                          } ($${exchangeRate.usdValue})`
+                          }`
                         : `1 ${isReceiveSide ? "send" : "receive"} = ${
                             formatDisplayValue(exchangeRate.rate)
-                          } ${selectedCurrency?.code} ($${exchangeRate.usdValue})`}
+                          } ${selectedCurrency?.code}`}
                     </div>
                   </div>
                 )}
