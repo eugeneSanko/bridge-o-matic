@@ -7,9 +7,10 @@ interface AddressDetailsProps {
   depositAddress: string;
   destinationAddress: string;
   onCopyClick: () => void;
+  addressAlt?: string | null;
 }
 
-export const AddressDetails = ({ depositAddress, destinationAddress, onCopyClick }: AddressDetailsProps) => {
+export const AddressDetails = ({ depositAddress, destinationAddress, onCopyClick, addressAlt }: AddressDetailsProps) => {
   const hasAddress = depositAddress && depositAddress !== "Generating deposit address..." && depositAddress !== "Generating address...";
   
   const formatAddress = (address: string) => {
@@ -42,6 +43,13 @@ export const AddressDetails = ({ depositAddress, destinationAddress, onCopyClick
             </Button>
           </div>
         </div>
+
+        {addressAlt && (
+          <div className="py-4 px-6 bg-secondary/20 rounded-lg text-sm text-gray-300">
+            <p className="mb-2 text-[#0FA0CE] font-semibold">Alternative Address:</p>
+            <p className="font-mono break-all">{addressAlt}</p>
+          </div>
+        )}
 
         <div className="py-4 px-6 bg-secondary/20 rounded-lg text-sm text-gray-300">
           <p>The exchange rate will be fixed after your deposit is detected and confirmed by the network.</p>

@@ -7,12 +7,14 @@ interface QRCodeSectionProps {
   depositAddress?: string;
   depositAmount?: string;
   fromCurrency?: string;
+  tag?: number | null;
 }
 
 export const QRCodeSection = ({ 
   depositAddress = "", 
   depositAmount = "",
-  fromCurrency = ""
+  fromCurrency = "",
+  tag = null
 }: QRCodeSectionProps) => {
   const [qrType, setQrType] = useState<'address' | 'with-amount'>('address');
   const [qrCodeSrc, setQrCodeSrc] = useState<string>('');
@@ -29,15 +31,20 @@ export const QRCodeSection = ({
         qrData = `bitcoin:${depositAddress}?amount=${depositAmount}`;
       } else if (fromCurrency === 'eth') {
         qrData = `ethereum:${depositAddress}?value=${depositAmount}`;
+      } else if (fromCurrency === 'xrp' && tag) {
+        qrData = `${depositAddress}?amount=${depositAmount}&dt=${tag}`;
       } else {
         qrData = `${depositAddress}?amount=${depositAmount}`;
       }
+    } else if (tag && fromCurrency === 'xrp') {
+      // Add destination tag to address-only QR code for XRP
+      qrData = `${depositAddress}?dt=${tag}`;
     }
     
     // Use QR code API to generate code
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrData)}&size=200x200&margin=10`;
     setQrCodeSrc(qrUrl);
-  }, [depositAddress, depositAmount, fromCurrency, qrType]);
+  }, [depositAddress, depositAmount, fromCurrency, qrType, tag]);
 
   const hasAddress = depositAddress && depositAddress !== "Generating deposit address...";
 
