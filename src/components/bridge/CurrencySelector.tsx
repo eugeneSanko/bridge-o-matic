@@ -206,10 +206,10 @@ export const CurrencySelector = ({
             style={{ borderColor: borderColor || "#252a3a", borderWidth: "1px" }}
           >
             <div className="flex flex-row items-center justify-between w-full">
-              <div className="flex flex-col items-start">
+              <div className="flex flex-col items-start min-w-0 flex-1 mr-2">
                 {isReceiveSide ? (
-                  <div className="flex items-center">
-                    <span className="text-3xl font-semibold">
+                  <div className="flex items-center w-full">
+                    <span className="text-3xl font-semibold truncate">
                       {isCalculating ? (
                         <span className="text-gray-400">≈</span>
                       ) : (
@@ -225,19 +225,21 @@ export const CurrencySelector = ({
                     </span>
                   </div>
                 ) : (
-                  <Input
-                    type="text"
-                    placeholder="0"
-                    value={amount || ""}
-                    onChange={(e) => handleAmountChange(e.target.value)}
-                    onFocus={() => setIsAmountFocused(true)}
-                    onBlur={() => setIsAmountFocused(false)}
-                    className="w-full h-10 px-0 text-3xl font-semibold bg-transparent border-none focus:outline-none focus:ring-0"
-                  />
+                  <div className="w-full relative">
+                    <Input
+                      type="text"
+                      placeholder="0"
+                      value={amount || ""}
+                      onChange={(e) => handleAmountChange(e.target.value)}
+                      onFocus={() => setIsAmountFocused(true)}
+                      onBlur={() => setIsAmountFocused(false)}
+                      className="w-full h-10 px-0 text-3xl font-semibold bg-transparent border-none focus:outline-none focus:ring-0"
+                    />
+                  </div>
                 )}
               </div>
               
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 {selectedCurrency?.logo ? (
                   <img
                     src={selectedCurrency.logo}
@@ -373,3 +375,4 @@ export const CurrencySelector = ({
     </div>
   );
 };
+
