@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +16,7 @@ export const BridgeForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [debugInfo, setDebugInfo] = useState(null);
   const [addressError, setAddressError] = useState<string | null>(null);
+  const [orderError, setOrderError] = useState<string | null>(null);
   
   const {
     fromCurrency,
@@ -178,6 +180,7 @@ export const BridgeForm = () => {
     if (isSubmitting) return;
 
     setAddressError(null);
+    setOrderError(null);
 
     if (fromCurrency && toCurrency && amount && parseFloat(amount) > 0) {
       await calculateReceiveAmount();
@@ -207,6 +210,17 @@ export const BridgeForm = () => {
           setIsSubmitting(false);
           return;
         }
+        
+        if (result.code === 500 && result.msg === "Order not found") {
+          setOrderError("Order not found");
+          toast({
+            title: "Order Error",
+            description: "Order not found. Please try again later.",
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
       }
       
       if (result && result.orderId) {
@@ -231,6 +245,13 @@ export const BridgeForm = () => {
           toast({
             title: "Invalid Address",
             description: "The destination address is not valid for the selected cryptocurrency network.",
+            variant: "destructive"
+          });
+        } else if (error.message && error.message.includes("Order not found")) {
+          setOrderError("Order not found");
+          toast({
+            title: "Order Error",
+            description: "Order not found. Please try again later.",
             variant: "destructive"
           });
         } else {
@@ -281,7 +302,8 @@ export const BridgeForm = () => {
       parseFloat(amount) > 0 &&
       destinationAddress &&
       !amountError &&
-      !addressError
+      !addressError &&
+      !orderError
   );
 
   const selectedToCurrency = availableCurrencies.find(c => c.code === toCurrency);
@@ -324,6 +346,7 @@ export const BridgeForm = () => {
           isFormValid={isFormValid}
           isSubmitting={isSubmitting}
           onBridgeAssets={handleBridgeAssets}
+          errorMessage={orderError}
         />
         
         <DebugPanel 
