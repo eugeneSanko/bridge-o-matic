@@ -295,6 +295,16 @@ export function useBridgeService() {
           };
         }
         
+        if (error && typeof error === 'object' && 'message' in error && 
+            (error as any).message.includes('Order not found')) {
+          return {
+            orderId: '',
+            code: 500,
+            msg: 'Order not found',
+            debugInfo: (error as any).debugInfo || {}
+          };
+        }
+        
         return { 
           orderId: `FF-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
           orderToken: `${Math.random().toString(36).substring(2, 30)}`

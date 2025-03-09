@@ -423,7 +423,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       return null;
     } catch (error: any) {
       // Check if this is a specific API error with debugInfo
-      if (error && typeof error === 'object' && error.code) {
+      if (error && typeof error === 'object' && (error.code !== undefined || error.debugInfo)) {
         console.error("API error:", error);
         return error; // Return the error object directly so the UI can handle it
       }
