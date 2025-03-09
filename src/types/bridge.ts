@@ -1,4 +1,3 @@
-
 export interface Currency {
   symbol?: string;
   name: string;
@@ -32,7 +31,7 @@ export interface BridgeContextType {
   setDestinationAddress: (address: string) => void;
   setOrderType: (type: 'fixed' | 'float') => void;
   calculateReceiveAmount: () => void;
-  createBridgeTransaction: () => Promise<{ orderId: string, code?: number, msg?: string, debugInfo?: any } | null>;
+  createBridgeTransaction: () => Promise<{ orderId: string, debugInfo?: any } | null>;
   availableCurrencies: Currency[];
   isLoadingCurrencies: boolean;
   refreshCurrencies: () => Promise<void>;
@@ -85,8 +84,6 @@ export interface OrderResponse {
   orderId: string;
   orderToken?: string;
   debugInfo?: any;
-  code?: number;
-  msg?: string;
 }
 
 export interface ApiOrderResponse {
@@ -154,4 +151,3 @@ export interface AuthTestResult {
   }>;
   error?: string;
 }
-

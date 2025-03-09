@@ -1,8 +1,7 @@
-
 import { useState, useCallback } from 'react';
 import { API_CONFIG } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
-import { PriceResponse, BridgeError, Currency, ApiOrderResponse, OrderResponse } from "@/types/bridge";
+import { PriceResponse, BridgeError, Currency, ApiOrderResponse } from "@/types/bridge";
 import CryptoJS from 'crypto-js';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -238,7 +237,7 @@ export function useBridgeService() {
     destination: string, 
     orderType: 'fixed' | 'float',
     initialRate: string
-  ): Promise<OrderResponse> => {
+  ) => {
     try {
       const body = {
         fromCcy: fromCurrency,
@@ -274,12 +273,7 @@ export function useBridgeService() {
         };
       } else {
         console.error('API returned an error:', data);
-        return {
-          orderId: '',
-          code: data.code,
-          msg: data.msg,
-          debugInfo: data.debugInfo
-        };
+        throw data;
       }
     } catch (error) {
       console.error('Bridge transaction error:', error);
@@ -288,22 +282,7 @@ export function useBridgeService() {
         console.warn('Generating mock order data due to API error');
         
         if (error && typeof error === 'object' && 'code' in error && error.code === 301) {
-          return {
-            orderId: '',
-            code: 301, 
-            msg: 'Invalid address',
-            debugInfo: (error as any).debugInfo || {}
-          };
-        }
-        
-        if (error && typeof error === 'object' && 'message' in error && 
-            (error as any).message.includes('Order not found')) {
-          return {
-            orderId: '',
-            code: 500,
-            msg: 'Order not found',
-            debugInfo: (error as any).debugInfo || {}
-          };
+          throw error;
         }
         
         return { 
