@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { API_CONFIG, invokeFunctionWithRetry } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -15,6 +16,9 @@ export interface OrderData {
   deposit_address: string;
   initial_rate: number;
   expiration_time: string;
+  tag?: number | null;
+  tagName?: string | null;
+  addressAlt?: string | null;
 }
 
 export interface OrderDetails {
@@ -29,6 +33,9 @@ export interface OrderDetails {
   timeRemaining: string | null;
   ffOrderId: string;
   ffOrderToken: string;
+  tag?: number | null;
+  tagName?: string | null;
+  addressAlt?: string | null;
 }
 
 export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = true) {
@@ -46,31 +53,33 @@ export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = tr
     try {
       console.log("Fetching order details for", orderId, "- shouldFetch:", shouldFetch);
       
-      // For direct API use-case, the orderId is actually the FF token
-      // We just need to use this token for FF status API calls in a real implementation
+      // For direct API use-case, the orderId parameter is actually the FF token
+      // We just need to use this token for FF status API calls
+
+      // In a real implementation with a server component, you would:
+      // 1. Use the FF token to query the order status from FF API
+      // 2. Update your local database with the latest status
       
-      // Simulate order details using the token as both the ID and token
+      // For demo, simulate order details with realistic values from FF API response
       const staticOrderData = {
         id: "static-" + Math.random().toString(36).substring(2, 10),
-        ff_order_id: orderId, 
-        ff_order_token: orderId, // Use the same value for both in our test implementation
-        from_currency: "XTZ",
+        ff_order_id: "FF-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
+        ff_order_token: orderId, // The token from FF API is passed as orderId
+        from_currency: "XRP",
         to_currency: "SOL",
         amount: 50,
         destination_address: "VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY",
         status: "NEW",
         created_at: new Date().toISOString(),
-        deposit_address: "tz1huvXtMGiVv1WzFoGddKUUYBknz4McpTLW",
-        initial_rate: 0.005291,
-        expiration_time: new Date(Date.now() + 600000).toISOString() // 10 minutes from now
+        deposit_address: "rffGCKC7Mk4cQ5aUGg8pfRe3MPC7Cy8gfe",
+        initial_rate: 0.016718,
+        expiration_time: new Date(Date.now() + 600000).toISOString(), // 10 minutes from now
+        tag: 387226,
+        tagName: "Destination tag",
+        addressAlt: "X7oTDuA4BXetP9LkG7KtgDsPK9CdCkY4AJShwsCEHTBGYkB"
       };
 
-      // In a real implementation, you would:
-      // 1. Look up the order in your database using the token as an identifier
-      // 2. If not found, create a new order record with the token
-      // 3. Then call the FF API to get the latest status
-
-      // For demo, set orderDetails directly from the static data
+      // Calculate time remaining for order expiration
       const expirationTime = new Date(staticOrderData.expiration_time);
       const now = new Date();
       const diffMs = expirationTime.getTime() - now.getTime();
@@ -93,7 +102,10 @@ export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = tr
         ffOrderToken: staticOrderData.ff_order_token,
         destinationAddress: staticOrderData.destination_address,
         expiresAt: staticOrderData.expiration_time,
-        timeRemaining
+        timeRemaining,
+        tag: staticOrderData.tag,
+        tagName: staticOrderData.tagName,
+        addressAlt: staticOrderData.addressAlt
       });
       
       setLoading(false);

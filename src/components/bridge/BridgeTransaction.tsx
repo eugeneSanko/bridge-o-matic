@@ -31,16 +31,20 @@ export const BridgeTransaction = ({ orderDetails, onCopyAddress }: BridgeTransac
             orderType="fixed"
             timeRemaining={orderDetails.timeRemaining}
             onCopyClick={() => onCopyAddress(orderDetails.ffOrderId || orderDetails.orderId)}
+            tag={orderDetails.tag}
+            tagName={orderDetails.tagName}
           />
           <AddressDetails 
             depositAddress={orderDetails.depositAddress}
             destinationAddress={orderDetails.destinationAddress}
             onCopyClick={() => onCopyAddress(orderDetails.depositAddress)}
+            addressAlt={orderDetails.addressAlt}
           />
           <QRCodeSection 
             depositAddress={orderDetails.depositAddress}
             depositAmount={orderDetails.depositAmount}
             fromCurrency={orderDetails.fromCurrency}
+            tag={orderDetails.tag}
           />
         </div>
 

@@ -1,5 +1,5 @@
 
-import { Copy, Clock, Calendar } from "lucide-react";
+import { Copy, Clock, Calendar, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface OrderDetailsProps {
@@ -7,9 +7,11 @@ interface OrderDetailsProps {
   orderType: string;
   timeRemaining: string | null;
   onCopyClick: () => void;
+  tag?: number | null;
+  tagName?: string | null;
 }
 
-export const OrderDetails = ({ orderId, orderType, timeRemaining, onCopyClick }: OrderDetailsProps) => {
+export const OrderDetails = ({ orderId, orderType, timeRemaining, onCopyClick, tag, tagName }: OrderDetailsProps) => {
   const formatDate = (date: Date) => {
     return date.toISOString().replace('T', ' ').substring(0, 16) + ' UTC';
   };
@@ -26,6 +28,17 @@ export const OrderDetails = ({ orderId, orderType, timeRemaining, onCopyClick }:
             </Button>
           </div>
         </div>
+        
+        {tag && tagName && (
+          <div>
+            <div className="text-sm text-gray-400 mb-2">{tagName}</div>
+            <div className="flex items-center gap-2">
+              <Tag className="h-4 w-4 text-[#0FA0CE]" />
+              <span className="font-mono font-medium">{tag}</span>
+            </div>
+          </div>
+        )}
+        
         <div>
           <div className="text-sm text-gray-400 mb-2">Time Remaining</div>
           <div className="flex items-center gap-2 text-[#0FA0CE]">
@@ -33,10 +46,12 @@ export const OrderDetails = ({ orderId, orderType, timeRemaining, onCopyClick }:
             <span className="font-medium text-lg">{timeRemaining || "Waiting..."}</span>
           </div>
         </div>
+        
         <div>
           <div className="text-sm text-gray-400 mb-2">Order Type</div>
           <div className="font-medium">{orderType === 'fixed' ? 'Fixed Flow' : 'Float Rate'}</div>
         </div>
+        
         <div>
           <div className="text-sm text-gray-400 mb-2">Created</div>
           <div className="flex items-center gap-2">

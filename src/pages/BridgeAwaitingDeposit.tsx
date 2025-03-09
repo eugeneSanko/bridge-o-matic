@@ -16,17 +16,20 @@ const BridgeAwaitingDeposit = () => {
   
   // Static order details for demo purposes
   const staticOrderDetails: OrderDetails = {
-    depositAddress: "3P3QsMVK89JBNqZQv5zMAKG8FK3kJM4rjt",
-    depositAmount: "0.05",
-    currentStatus: "pending", // Options: pending, processing, exchanging, sending, completed
-    fromCurrency: "btc",
-    toCurrency: "eth",
-    orderId: orderId || "demo123456789",
-    destinationAddress: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
+    depositAddress: "rffGCKC7Mk4cQ5aUGg8pfRe3MPC7Cy8gfe",
+    depositAmount: "50.00",
+    currentStatus: "NEW", // Options: NEW, PENDING, EXCHANGE, WITHDRAW, DONE, EMERGENCY, WAIT
+    fromCurrency: "XRP",
+    toCurrency: "SOL",
+    orderId: "5ADGED",
+    destinationAddress: "VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY",
     expiresAt: new Date(Date.now() + 30 * 60000).toISOString(), // 30 minutes from now
-    timeRemaining: "29:59",
-    ffOrderId: "ff1234567890",
-    ffOrderToken: orderId || "testtoken123456789", // Use orderId as token if available
+    timeRemaining: "9:59",
+    ffOrderId: "5ADGED",
+    ffOrderToken: orderId || "rjVP3qI0SWY5jZVEKHc6hnNKkm0xqoBGJKSx64o8", // Use orderId as token if available
+    tag: 387226,
+    tagName: "Destination tag",
+    addressAlt: "X7oTDuA4BXetP9LkG7KtgDsPK9CdCkY4AJShwsCEHTBGYkB"
   };
 
   // Always use static data if no orderId, or if we've had API errors
@@ -51,7 +54,7 @@ const BridgeAwaitingDeposit = () => {
       });
       setIsUsingStatic(true);
     } else {
-      console.log(`Processing order or token: ${orderId}`);
+      console.log(`Processing order token: ${orderId}`);
     }
   }, [orderId]);
 
