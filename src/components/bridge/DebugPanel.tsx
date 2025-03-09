@@ -123,7 +123,7 @@ export const DebugPanel = ({ debugInfo, isLoading = false }: DebugPanelProps) =>
                 </div>
               </div>
               
-              {/* Response Section */}
+              {/* Response Section - Enhanced */}
               <div className="space-y-2">
                 <div className="font-medium text-[#0FA0CE]">Response Details</div>
                 <div className="bg-black/30 p-3 rounded-md font-mono overflow-x-auto">
@@ -135,15 +135,51 @@ export const DebugPanel = ({ debugInfo, isLoading = false }: DebugPanelProps) =>
                       className="h-5 px-1" 
                       onClick={(e) => {
                         e.stopPropagation();
-                        copyToClipboard(debugInfo.responseDetails?.body, "Response body");
+                        copyToClipboard(debugInfo.responseDetails?.body || "", "Response body");
                       }}
                     >
                       <Copy className="h-3 w-3 mr-1" /> Copy
                     </Button>
                   </div>
-                  <pre className="mt-2 text-xs overflow-x-auto">
-                    {debugInfo.responseDetails?.body}
-                  </pre>
+                  
+                  {/* Headers section */}
+                  {debugInfo.responseDetails?.headers && (
+                    <div className="mt-2">
+                      <div className="text-xs text-[#0FA0CE] mb-1">Headers:</div>
+                      <pre className="text-xs overflow-x-auto bg-black/20 p-2 rounded">
+                        {JSON.stringify(debugInfo.responseDetails.headers, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                  
+                  {/* Body section with improved formatting */}
+                  <div className="mt-2">
+                    <div className="text-xs text-[#0FA0CE] mb-1">Response Body:</div>
+                    {debugInfo.responseDetails?.body ? (
+                      <div className="overflow-x-auto bg-black/20 p-2 rounded">
+                        {(() => {
+                          try {
+                            // Try to parse and format JSON
+                            const parsed = JSON.parse(debugInfo.responseDetails.body);
+                            return (
+                              <pre className="text-xs whitespace-pre-wrap">
+                                {JSON.stringify(parsed, null, 2)}
+                              </pre>
+                            );
+                          } catch (e) {
+                            // If not valid JSON, display as text
+                            return (
+                              <pre className="text-xs whitespace-pre-wrap">
+                                {debugInfo.responseDetails.body}
+                              </pre>
+                            );
+                          }
+                        })()}
+                      </div>
+                    ) : (
+                      <div className="text-gray-400 italic">No response body available</div>
+                    )}
+                  </div>
                 </div>
               </div>
               
@@ -152,8 +188,16 @@ export const DebugPanel = ({ debugInfo, isLoading = false }: DebugPanelProps) =>
                 <div className="space-y-2">
                   <div className="font-medium text-red-500">Error</div>
                   <div className="bg-red-900/20 p-3 rounded-md font-mono overflow-x-auto">
-                    <div>Type: {debugInfo.error.type}</div>
-                    <div>Message: {debugInfo.error.message}</div>
+                    <div>Type: {debugInfo.error.type || 'Unknown Error'}</div>
+                    <div>Message: {debugInfo.error.message || debugInfo.error}</div>
+                    {debugInfo.error.stack && (
+                      <div className="mt-2">
+                        <div className="text-xs text-red-400 mb-1">Stack Trace:</div>
+                        <pre className="text-xs overflow-x-auto bg-black/20 p-2 rounded whitespace-pre-wrap">
+                          {debugInfo.error.stack}
+                        </pre>
+                      </div>
+                    )}
                     {debugInfo.error.responseText && (
                       <pre className="mt-2 text-xs overflow-x-auto">
                         {debugInfo.error.responseText}
