@@ -23,9 +23,10 @@ const BridgeAwaitingDeposit = () => {
   const [manualStatusCheckAttempted, setManualStatusCheckAttempted] = useState(false);
   const [statusCheckDebugInfo, setStatusCheckDebugInfo] = useState(null);
   const [statusCheckError, setStatusCheckError] = useState(null);
+  const [isExpired, setIsExpired] = useState(false);
   
   // Set forceApiCheck to true to always attempt API call
-  const { orderDetails, loading, error, handleCopyAddress } = useBridgeOrder(
+  const { orderDetails, loading, error, handleCopyAddress, updateOrderStatus } = useBridgeOrder(
     orderId, 
     true, // Always try to fetch from API
     true  // Force API check even if we have local data
@@ -45,6 +46,24 @@ const BridgeAwaitingDeposit = () => {
       console.log(`Processing order ID: ${orderId} with token: ${token}`);
     }
   }, [orderId, token]);
+
+  // Handle order expiration
+  const handleOrderExpiration = () => {
+    console.log("Order has expired, updating status");
+    setIsExpired(true);
+    
+    // Update the local status
+    if (updateOrderStatus) {
+      updateOrderStatus("EXPIRED");
+    }
+    
+    // Show toast notification
+    toast({
+      title: "Deposit Window Expired",
+      description: "The time to make a deposit has expired",
+      variant: "destructive"
+    });
+  };
 
   // Manual status check function that uses our bridge-status function
   const checkOrderStatus = async () => {
@@ -79,6 +98,11 @@ const BridgeAwaitingDeposit = () => {
         // If we get a successful response, handle status updates
         const status = data.data.status;
         console.log(`Order status from API: ${status}`);
+        
+        // Check for expired status
+        if (status === 'EXPIRED' && !isExpired) {
+          handleOrderExpiration();
+        }
         
         // If the order is complete, navigate to the completion page
         if (status === 'DONE' && !navigating) {
@@ -208,7 +232,8 @@ const BridgeAwaitingDeposit = () => {
     <>
       <BridgeTransaction 
         orderDetails={orderDetails} 
-        onCopyAddress={handleCopyAddress} 
+        onCopyAddress={handleCopyAddress}
+        onExpiration={handleOrderExpiration}
       />
       {statusCheckDebugInfo && (
         <div className="mt-8">

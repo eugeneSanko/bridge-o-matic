@@ -116,10 +116,6 @@ export function useBridgeOrder(
             
             const currentStatus = statusMap[apiStatus] || apiStatus.toLowerCase();
             
-            // Ensure orderType is correctly typed
-            const orderType: "fixed" | "float" = 
-              apiResponse.data.type?.toLowerCase() === 'float' ? 'float' : 'fixed';
-            
             // If we have bridge data, update it with the latest status
             if (bridgeData) {
               bridgeData.status = currentStatus;
@@ -243,6 +239,39 @@ export function useBridgeOrder(
     }
   }, [orderId, shouldFetch, forceApiCheck]);
 
+  // Function to update order status manually
+  const updateOrderStatus = useCallback((newStatus: string) => {
+    console.log(`Manually updating order status to: ${newStatus}`);
+    
+    // Update in-memory order details
+    setOrderDetails(prevDetails => {
+      if (!prevDetails) return null;
+      
+      const updatedDetails = {
+        ...prevDetails,
+        currentStatus: newStatus.toLowerCase(),
+        rawApiResponse: prevDetails.rawApiResponse ? 
+          { ...prevDetails.rawApiResponse, status: newStatus } : 
+          undefined
+      };
+      
+      // Also update in localStorage
+      const storedDataStr = localStorage.getItem('bridge_transaction_data');
+      if (storedDataStr) {
+        try {
+          const bridgeData = JSON.parse(storedDataStr);
+          bridgeData.status = newStatus.toLowerCase();
+          localStorage.setItem('bridge_transaction_data', JSON.stringify(bridgeData));
+          console.log("Updated bridge data in localStorage");
+        } catch (e) {
+          console.error("Error updating stored bridge data:", e);
+        }
+      }
+      
+      return updatedDetails;
+    });
+  }, []);
+
   // Helper function to calculate time remaining
   const calculateTimeRemaining = (expiresAtStr: string | null): string | null => {
     if (!expiresAtStr) return null;
@@ -293,6 +322,10 @@ export function useBridgeOrder(
       if (diffMs <= 0) {
         clearInterval(timer);
         setOrderDetails(prev => prev ? { ...prev, timeRemaining: "0:00" } : null);
+        
+        // Update the status to expired when the timer reaches zero
+        updateOrderStatus("EXPIRED");
+        
         return;
       }
       
@@ -304,7 +337,7 @@ export function useBridgeOrder(
     }, 1000);
     
     return () => clearInterval(timer);
-  }, [orderDetails?.expiresAt]);
+  }, [orderDetails?.expiresAt, updateOrderStatus]);
 
   const handleCopyAddress = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -327,6 +360,7 @@ export function useBridgeOrder(
     orderDetails,
     loading,
     error,
-    handleCopyAddress
+    handleCopyAddress,
+    updateOrderStatus
   };
 }
