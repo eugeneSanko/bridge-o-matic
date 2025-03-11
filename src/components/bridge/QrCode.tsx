@@ -1,6 +1,6 @@
 
 import React from 'react';
-import QRCodeReact from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface QrCodeProps {
   value: string;
@@ -9,7 +9,7 @@ interface QrCodeProps {
 export const QrCode = ({ value }: QrCodeProps) => {
   return (
     <div className="bg-white p-4 rounded-lg inline-block">
-      <QRCodeReact 
+      <QRCodeSVG 
         value={value} 
         size={200}
         level="H"
