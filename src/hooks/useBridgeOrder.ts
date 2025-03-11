@@ -66,8 +66,8 @@ export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = tr
       
       // For demo, simulate order details with realistic values from FF API response
       const staticOrderData: OrderData = {
-        id: "8ER2UF",
-        ff_order_id: "8ER2UF",
+        id: "PEFREY", // Changed to match the bridge create payload ID
+        ff_order_id: "PEFREY", // Changed to match the bridge create payload ID
         ff_order_token: orderId, // The token from FF API is passed as orderId
         from_currency: "USDT",
         to_currency: "SOL",
@@ -75,9 +75,9 @@ export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = tr
         destination_address: "8VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY",
         status: "NEW",
         created_at: new Date().toISOString(),
-        deposit_address: "0xa489b15fa7cfcd230951ad2db01f6b58eaca9f70",
+        deposit_address: "0x48f6bf4b24bc374943d7a45c0811908ccd1c2eea", // Updated deposit address from payload
         initial_rate: 0.016718,
-        expiration_time: new Date(Date.now() + 600000).toISOString(), // 10 minutes from now
+        expiration_time: new Date(Date.now() + 1200000).toISOString(), // 20 minutes from now (1200000ms)
         type: "float",
         receive_amount: "0.39840800",
         tag: null,

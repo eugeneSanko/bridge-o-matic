@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder, OrderDetails } from "@/hooks/useBridgeOrder";
@@ -17,18 +16,18 @@ const BridgeAwaitingDeposit = () => {
   // Use the token directly from the URL query parameters
   const token = searchParams.get("token") || (orderId || "");
   
-  // Static order details for demo purposes
+  // Static order details for demo purposes - updated to match bridge create payload
   const staticOrderDetails: OrderDetails = {
-    depositAddress: "0xa489b15fa7cfcd230951ad2db01f6b58eaca9f70",
+    depositAddress: "0x48f6bf4b24bc374943d7a45c0811908ccd1c2eea", // From bridge create payload
     depositAmount: "50.00",
     currentStatus: "NEW", // Options: NEW, PENDING, EXCHANGE, WITHDRAW, DONE, EMERGENCY, WAIT
     fromCurrency: "USDT",
     toCurrency: "SOL",
-    orderId: "8ER2UF",
+    orderId: "PEFREY", // From bridge create payload
     destinationAddress: "8VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY",
     expiresAt: new Date(Date.now() + 20 * 60000).toISOString(), // 20 minutes from now
     timeRemaining: "20:00",
-    ffOrderId: "8ER2UF",
+    ffOrderId: "PEFREY", // From bridge create payload
     ffOrderToken: token,
     tag: null,
     tagName: null,

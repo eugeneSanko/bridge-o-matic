@@ -1,4 +1,3 @@
-
 import { ArrowRight } from "lucide-react";
 import { AddressPlaceholder } from "./AddressPlaceholder";
 
@@ -9,6 +8,7 @@ interface TransactionSummaryProps {
   destinationAddress: string;
   receiveAmount?: string;
   orderType?: "fixed" | "float";
+  depositAddress?: string;
 }
 
 export const TransactionSummary = ({ 
@@ -17,9 +17,9 @@ export const TransactionSummary = ({
   amount, 
   destinationAddress,
   receiveAmount,
-  orderType = "fixed"
+  orderType = "fixed",
+  depositAddress = ""
 }: TransactionSummaryProps) => {
-  // Determine currency symbols for visual display (fallback)
   const getCurrencyIcon = (currency: string) => {
     const lowerCurrency = currency.toLowerCase();
     if (lowerCurrency === 'btc') return '₿';
@@ -28,11 +28,9 @@ export const TransactionSummary = ({
     return currency.toUpperCase().substring(0, 1);
   };
 
-  // Get currency image URLs using the correct FF.io asset path format
   const getCurrencyImageUrl = (currency: string) => {
     const lowerCurrency = currency.toLowerCase();
     
-    // Special handling for common currencies using their official logo paths
     if (lowerCurrency === 'btc') return 'https://ff.io/assets/images/coins/svg/btc.svg';
     if (lowerCurrency === 'eth') return 'https://ff.io/assets/images/coins/svg/eth_dark.svg';
     if (lowerCurrency === 'sol') return 'https://ff.io/assets/images/coins/svg/sol.svg';
@@ -40,11 +38,9 @@ export const TransactionSummary = ({
     if (lowerCurrency === 'usdc') return 'https://ff.io/assets/images/coins/svg/usdceth.svg';
     if (lowerCurrency === 'usdttrc') return 'https://ff.io/assets/images/coins/svg/usdttrc.svg';
     
-    // For other currencies, use a generic path pattern
     return `https://ff.io/assets/images/coins/svg/${lowerCurrency}.svg`;
   };
 
-  // Determine background colors based on currency
   const getCurrencyColor = (currency: string) => {
     const lowerCurrency = currency.toLowerCase();
     if (lowerCurrency === 'btc') return 'bg-[#F7931A]';
@@ -56,7 +52,6 @@ export const TransactionSummary = ({
     return 'bg-[#0FA0CE]';
   };
 
-  // Format address for display
   const formatAddress = (address: string) => {
     if (!address) return '';
     if (address.length <= 16) return address;
@@ -78,7 +73,6 @@ export const TransactionSummary = ({
                 alt={fromCurrency}
                 className="w-full h-full object-contain p-2"
                 onError={(e) => {
-                  // Fallback to text symbol if image fails to load
                   (e.target as HTMLImageElement).style.display = 'none';
                   (e.target as HTMLImageElement).parentElement!.innerText = getCurrencyIcon(fromCurrency);
                 }}
@@ -87,7 +81,7 @@ export const TransactionSummary = ({
             <div>
               <div className="text-2xl md:text-3xl font-bold mb-2">{amount} {fromCurrency?.toUpperCase()}</div>
               <div className="text-sm text-gray-400 font-mono">
-                Send funds to: {formatAddress(destinationAddress)}
+                Send funds to: {formatAddress(depositAddress || destinationAddress)}
               </div>
             </div>
           </div>
@@ -106,7 +100,6 @@ export const TransactionSummary = ({
                 alt={toCurrency}
                 className="w-full h-full object-contain p-2"
                 onError={(e) => {
-                  // Fallback to text symbol if image fails to load
                   (e.target as HTMLImageElement).style.display = 'none';
                   (e.target as HTMLImageElement).parentElement!.innerText = getCurrencyIcon(toCurrency);
                 }}

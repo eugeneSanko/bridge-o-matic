@@ -25,6 +25,7 @@ export const BridgeTransaction = ({ orderDetails, onCopyAddress }: BridgeTransac
           destinationAddress={orderDetails.destinationAddress}
           receiveAmount={orderDetails.receiveAmount}
           orderType={orderDetails.orderType}
+          depositAddress={orderDetails.depositAddress} // Pass deposit address 
         />
 
         <div className="grid grid-cols-12 gap-6 mb-12">
