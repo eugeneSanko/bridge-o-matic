@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { API_CONFIG, invokeFunctionWithRetry, generateFixedFloatSignature } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -148,8 +147,9 @@ export function useBridgeOrder(
               expiresAt: apiResponse.data.time?.expiration ? 
                          new Date(apiResponse.data.time.expiration * 1000).toISOString() : 
                          bridgeData?.expiresAt,
+              // Use the raw timeLeft value instead of calculating it from expiresAt
               timeRemaining: apiResponse.data.time?.left ? 
-                             calculateTimeRemaining(new Date(Date.now() + apiResponse.data.time.left * 1000).toISOString()) : 
+                             calculateTimeRemaining(apiResponse.data.time.left) : 
                              calculateTimeRemaining(bridgeData?.expiresAt),
               tag: bridgeData?.tag || apiResponse.data.from.tag || null,
               tagName: bridgeData?.tagName || apiResponse.data.from.tagName || null,
@@ -244,10 +244,18 @@ export function useBridgeOrder(
   }, [orderId, shouldFetch, forceApiCheck]);
 
   // Helper function to calculate time remaining
-  const calculateTimeRemaining = (expiresAtStr: string | null): string | null => {
-    if (!expiresAtStr) return null;
+  const calculateTimeRemaining = (input: string | number | null): string | null => {
+    if (input === null) return null;
     
-    const expirationTime = new Date(expiresAtStr);
+    // If input is a number, treat it as seconds remaining
+    if (typeof input === 'number') {
+      const minutes = Math.floor(input / 60);
+      const seconds = Math.floor(input % 60);
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    // Otherwise treat as ISO string date
+    const expirationTime = new Date(input);
     const now = new Date();
     const diffMs = expirationTime.getTime() - now.getTime();
     

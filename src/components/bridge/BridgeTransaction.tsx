@@ -21,10 +21,17 @@ export const BridgeTransaction = ({
   // Extract the original API status if available from the raw response
   const apiStatus = orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
   
+  // Extract the time left from the raw API response (in seconds)
+  const timeLeft = orderDetails.rawApiResponse?.time?.left || null;
+  
   // Log the raw API response for debugging if available
   React.useEffect(() => {
     if (orderDetails.rawApiResponse) {
       console.log("Raw API response:", orderDetails.rawApiResponse);
+      if (orderDetails.rawApiResponse.time) {
+        console.log("Time info:", orderDetails.rawApiResponse.time);
+        console.log("Time left:", orderDetails.rawApiResponse.time.left);
+      }
     }
   }, [orderDetails.rawApiResponse]);
 
@@ -53,6 +60,7 @@ export const BridgeTransaction = ({
             onCopyClick={() => onCopyAddress(orderDetails.orderId)}
             tag={orderDetails.tag}
             tagName={orderDetails.tagName}
+            timeLeft={timeLeft}
           />
           <AddressDetails
             depositAddress={orderDetails.depositAddress}

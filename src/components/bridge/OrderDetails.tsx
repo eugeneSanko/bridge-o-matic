@@ -12,6 +12,7 @@ interface OrderDetailsProps {
   tagName?: string | null;
   expiresAt?: string | null;
   currentStatus?: string;
+  timeLeft?: number | null;
 }
 
 export const OrderDetails = ({ 
@@ -22,7 +23,8 @@ export const OrderDetails = ({
   tag, 
   tagName,
   expiresAt,
-  currentStatus = "NEW"
+  currentStatus = "NEW",
+  timeLeft
 }: OrderDetailsProps) => {
   const [localTimeRemaining, setLocalTimeRemaining] = useState(timeRemaining || "20:00");
   const [timerColor, setTimerColor] = useState("#9b87f5"); // Start with purple
@@ -30,7 +32,50 @@ export const OrderDetails = ({
   
   // Calculate and update countdown timer
   useEffect(() => {
-    if (!expiresAt && !timeRemaining) {
+    // If we have a timeLeft value from the API, use it directly
+    if (timeLeft !== undefined && timeLeft !== null) {
+      console.log(`Using API timeLeft value: ${timeLeft} seconds`);
+      
+      // Initialize with the current timeLeft value
+      let secondsRemaining = timeLeft;
+      
+      const updateTimer = () => {
+        const minutes = Math.floor(secondsRemaining / 60);
+        const seconds = secondsRemaining % 60;
+        const newTimeRemaining = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        // Update the timer text
+        setLocalTimeRemaining(newTimeRemaining);
+        
+        // Update colors based on time remaining
+        if (minutes <= 5) {
+          setTimerColor("#ea384c"); // Red when less than 5 minutes
+        } else if (minutes <= 10) {
+          setTimerColor("#F97316"); // Orange when less than 10 minutes
+        } else {
+          setTimerColor("#9b87f5"); // Purple otherwise
+        }
+        
+        // Check if timer has expired
+        if (secondsRemaining <= 0) {
+          clearInterval(intervalId);
+          setIsExpired(true);
+          setTimerColor("#ea384c");
+          return;
+        }
+        
+        // Decrement the timer
+        secondsRemaining -= 1;
+      };
+      
+      // Initial update
+      updateTimer();
+      
+      // Set up interval to update every second
+      const intervalId = setInterval(updateTimer, 1000);
+      
+      return () => clearInterval(intervalId);
+    } else if (!expiresAt && !timeRemaining) {
       // Start with 20 minutes if no expiration time provided
       const endTime = new Date(Date.now() + 20 * 60000);
       
@@ -97,7 +142,7 @@ export const OrderDetails = ({
       
       return () => clearInterval(intervalId);
     }
-  }, [expiresAt, timeRemaining]);
+  }, [expiresAt, timeRemaining, timeLeft]);
 
   const formatDate = (date: Date) => {
     return date.toISOString().replace('T', ' ').substring(0, 16) + ' UTC';
