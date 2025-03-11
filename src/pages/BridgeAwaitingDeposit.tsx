@@ -14,32 +14,37 @@ const BridgeAwaitingDeposit = () => {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get("orderId");
   
+  // Use the token directly from the URL query parameters
+  const token = searchParams.get("token") || (orderId || "");
+  
   // Static order details for demo purposes
   const staticOrderDetails: OrderDetails = {
-    depositAddress: "rffGCKC7Mk4cQ5aUGg8pfRe3MPC7Cy8gfe",
+    depositAddress: "0xa489b15fa7cfcd230951ad2db01f6b58eaca9f70",
     depositAmount: "50.00",
     currentStatus: "NEW", // Options: NEW, PENDING, EXCHANGE, WITHDRAW, DONE, EMERGENCY, WAIT
-    fromCurrency: "XRP",
+    fromCurrency: "USDT",
     toCurrency: "SOL",
-    orderId: "5ADGED",
-    destinationAddress: "VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY",
+    orderId: "8ER2UF",
+    destinationAddress: "8VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY",
     expiresAt: new Date(Date.now() + 30 * 60000).toISOString(), // 30 minutes from now
-    timeRemaining: "9:59",
-    ffOrderId: "5ADGED",
-    ffOrderToken: orderId || "rjVP3qI0SWY5jZVEKHc6hnNKkm0xqoBGJKSx64o8", // Use orderId as token if available
-    tag: 387226,
-    tagName: "Destination tag",
-    addressAlt: "X7oTDuA4BXetP9LkG7KtgDsPK9CdCkY4AJShwsCEHTBGYkB"
+    timeRemaining: "29:59",
+    ffOrderId: "8ER2UF",
+    ffOrderToken: token,
+    tag: null,
+    tagName: null,
+    addressAlt: null,
+    orderType: "float",
+    receiveAmount: "0.39840800"
   };
 
   // Always use static data if no orderId, or if we've had API errors
-  const [isUsingStatic, setIsUsingStatic] = useState(!orderId);
+  const [isUsingStatic, setIsUsingStatic] = useState(!token);
   const [apiAttempted, setApiAttempted] = useState(false);
   const [navigating, setNavigating] = useState(false);
   
   // We need a non-retry version of the hook
   const { orderDetails, loading, error, handleCopyAddress } = useBridgeOrder(
-    isUsingStatic ? null : orderId, 
+    isUsingStatic ? null : token, 
     !apiAttempted  // Only fetch if we haven't attempted yet
   );
   
@@ -47,16 +52,16 @@ const BridgeAwaitingDeposit = () => {
 
   // Check if we have orderId and show appropriate message
   useEffect(() => {
-    if (!orderId) {
+    if (!token) {
       toast({
-        title: "Missing Order ID",
+        title: "Missing Order Token",
         description: "Using demo data instead of a real order",
       });
       setIsUsingStatic(true);
     } else {
-      console.log(`Processing order token: ${orderId}`);
+      console.log(`Processing order token: ${token}`);
     }
-  }, [orderId]);
+  }, [token]);
 
   // When real API was attempted, mark it
   useEffect(() => {

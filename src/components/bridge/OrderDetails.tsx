@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 interface OrderDetailsProps {
   orderId: string;
-  orderType: string;
+  orderType: "fixed" | "float";
   timeRemaining: string | null;
   onCopyClick: () => void;
   tag?: number | null;
@@ -22,7 +22,7 @@ export const OrderDetails = ({ orderId, orderType, timeRemaining, onCopyClick, t
         <div>
           <div className="text-sm text-gray-400 mb-2">Order ID</div>
           <div className="flex items-center gap-2">
-            <span className="font-mono font-medium text-lg">{orderId.substring(0, 6)}</span>
+            <span className="font-mono font-medium text-lg">{orderId}</span>
             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onCopyClick}>
               <Copy className="h-4 w-4" />
             </Button>
@@ -42,14 +42,16 @@ export const OrderDetails = ({ orderId, orderType, timeRemaining, onCopyClick, t
         <div>
           <div className="text-sm text-gray-400 mb-2">Time Remaining</div>
           <div className="flex items-center gap-2 text-[#0FA0CE]">
-            <Clock className="h-5 w-5" />
+            <Clock className="h-5 w-5 animate-pulse" />
             <span className="font-medium text-lg">{timeRemaining || "Waiting..."}</span>
           </div>
         </div>
         
         <div>
           <div className="text-sm text-gray-400 mb-2">Order Type</div>
-          <div className="font-medium">{orderType === 'fixed' ? 'Fixed Flow' : 'Float Rate'}</div>
+          <div className="font-medium capitalize">
+            {orderType === 'fixed' ? 'Fixed Flow (1% fee)' : 'Float Rate (0.5% fee)'}
+          </div>
         </div>
         
         <div>

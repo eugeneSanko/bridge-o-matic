@@ -7,13 +7,17 @@ interface TransactionSummaryProps {
   toCurrency: string;
   amount: string;
   destinationAddress: string;
+  receiveAmount?: string;
+  orderType?: "fixed" | "float";
 }
 
 export const TransactionSummary = ({ 
   fromCurrency, 
   toCurrency, 
   amount, 
-  destinationAddress 
+  destinationAddress,
+  receiveAmount,
+  orderType = "fixed"
 }: TransactionSummaryProps) => {
   // Determine currency symbols for visual display
   const getCurrencyIcon = (currency: string) => {
@@ -73,9 +77,8 @@ export const TransactionSummary = ({
             </div>
             <div>
               <div className="text-2xl md:text-3xl font-bold mb-2">
-                {/* Exact amount will be determined upon completion */}
-                {/* Showing the currency only */}
-                {toCurrency?.toUpperCase()}
+                {orderType === "float" && <span className="text-gray-400 mr-1">≈</span>}
+                {receiveAmount || ""} {toCurrency?.toUpperCase()}
               </div>
               <div className="text-sm text-gray-400 font-mono">{formatAddress(destinationAddress)}</div>
             </div>

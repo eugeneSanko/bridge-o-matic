@@ -19,6 +19,8 @@ export interface OrderData {
   tag?: number | null;
   tagName?: string | null;
   addressAlt?: string | null;
+  type?: "fixed" | "float";
+  receive_amount?: string;
 }
 
 export interface OrderDetails {
@@ -36,6 +38,8 @@ export interface OrderDetails {
   tag?: number | null;
   tagName?: string | null;
   addressAlt?: string | null;
+  orderType: "fixed" | "float";
+  receiveAmount?: string;
 }
 
 export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = true) {
@@ -62,21 +66,20 @@ export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = tr
       
       // For demo, simulate order details with realistic values from FF API response
       const staticOrderData = {
-        id: "static-" + Math.random().toString(36).substring(2, 10),
-        ff_order_id: "FF-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
+        id: "8ER2UF",
+        ff_order_id: "8ER2UF",
         ff_order_token: orderId, // The token from FF API is passed as orderId
-        from_currency: "XRP",
+        from_currency: "USDT",
         to_currency: "SOL",
         amount: 50,
-        destination_address: "VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY",
+        destination_address: "8VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY",
         status: "NEW",
         created_at: new Date().toISOString(),
-        deposit_address: "rffGCKC7Mk4cQ5aUGg8pfRe3MPC7Cy8gfe",
+        deposit_address: "0xa489b15fa7cfcd230951ad2db01f6b58eaca9f70",
         initial_rate: 0.016718,
         expiration_time: new Date(Date.now() + 600000).toISOString(), // 10 minutes from now
-        tag: 387226,
-        tagName: "Destination tag",
-        addressAlt: "X7oTDuA4BXetP9LkG7KtgDsPK9CdCkY4AJShwsCEHTBGYkB"
+        type: "float",
+        receive_amount: "0.39840800"
       };
 
       // Calculate time remaining for order expiration
@@ -105,7 +108,9 @@ export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = tr
         timeRemaining,
         tag: staticOrderData.tag,
         tagName: staticOrderData.tagName,
-        addressAlt: staticOrderData.addressAlt
+        addressAlt: staticOrderData.addressAlt,
+        orderType: staticOrderData.type || "fixed",
+        receiveAmount: staticOrderData.receive_amount
       });
       
       setLoading(false);
@@ -137,6 +142,31 @@ export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = tr
     
     return undefined;
   }, [orderId, shouldFetch, fetchOrderDetails]);
+
+  // Add a timer to update the time remaining every second
+  useEffect(() => {
+    if (!orderDetails || !orderDetails.expiresAt) return;
+
+    const timer = setInterval(() => {
+      const expirationTime = new Date(orderDetails.expiresAt!);
+      const now = new Date();
+      const diffMs = expirationTime.getTime() - now.getTime();
+      
+      if (diffMs <= 0) {
+        clearInterval(timer);
+        setOrderDetails(prev => prev ? { ...prev, timeRemaining: "0:00" } : null);
+        return;
+      }
+      
+      const diffMinutes = Math.floor(diffMs / 60000);
+      const diffSeconds = Math.floor((diffMs % 60000) / 1000);
+      const newTimeRemaining = `${diffMinutes}:${diffSeconds.toString().padStart(2, '0')}`;
+      
+      setOrderDetails(prev => prev ? { ...prev, timeRemaining: newTimeRemaining } : null);
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [orderDetails?.expiresAt]);
 
   const handleCopyAddress = (text: string) => {
     navigator.clipboard.writeText(text)

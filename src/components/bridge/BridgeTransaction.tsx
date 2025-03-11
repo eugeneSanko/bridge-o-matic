@@ -23,14 +23,16 @@ export const BridgeTransaction = ({ orderDetails, onCopyAddress }: BridgeTransac
           toCurrency={orderDetails.toCurrency}
           amount={orderDetails.depositAmount}
           destinationAddress={orderDetails.destinationAddress}
+          receiveAmount={orderDetails.receiveAmount}
+          orderType={orderDetails.orderType}
         />
 
         <div className="grid grid-cols-12 gap-6 mb-12">
           <OrderDetails 
-            orderId={orderDetails.ffOrderId || orderDetails.orderId}
-            orderType="fixed"
+            orderId={orderDetails.orderId}
+            orderType={orderDetails.orderType}
             timeRemaining={orderDetails.timeRemaining}
-            onCopyClick={() => onCopyAddress(orderDetails.ffOrderId || orderDetails.orderId)}
+            onCopyClick={() => onCopyAddress(orderDetails.orderId)}
             tag={orderDetails.tag}
             tagName={orderDetails.tagName}
           />
@@ -39,6 +41,7 @@ export const BridgeTransaction = ({ orderDetails, onCopyAddress }: BridgeTransac
             destinationAddress={orderDetails.destinationAddress}
             onCopyClick={() => onCopyAddress(orderDetails.depositAddress)}
             addressAlt={orderDetails.addressAlt}
+            orderType={orderDetails.orderType}
           />
           <QRCodeSection 
             depositAddress={orderDetails.depositAddress}

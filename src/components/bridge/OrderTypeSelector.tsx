@@ -1,11 +1,14 @@
+
 interface OrderTypeSelectorProps {
   value: "fixed" | "float";
   onChange: (value: "fixed" | "float") => void;
+  disabled?: boolean;
 }
 
 export const OrderTypeSelector = ({
   value,
   onChange,
+  disabled = false,
 }: OrderTypeSelectorProps) => {
   return (
     <div>
@@ -18,6 +21,7 @@ export const OrderTypeSelector = ({
             value === "fixed" ? "bg-primary text-white" : "text-gray-400"
           } font-medium transition-all duration-200 rounded-md`}
           onClick={() => onChange("fixed")}
+          disabled={disabled}
         >
           Fixed Flow 1%
         </button>
@@ -26,6 +30,7 @@ export const OrderTypeSelector = ({
             value === "float" ? "bg-primary text-white" : "text-gray-400"
           } font-medium transition-all duration-200 rounded-md`}
           onClick={() => onChange("float")}
+          disabled={disabled}
         >
           Float Rate .5%
         </button>

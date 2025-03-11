@@ -8,9 +8,16 @@ interface AddressDetailsProps {
   destinationAddress: string;
   onCopyClick: () => void;
   addressAlt?: string | null;
+  orderType: "fixed" | "float";
 }
 
-export const AddressDetails = ({ depositAddress, destinationAddress, onCopyClick, addressAlt }: AddressDetailsProps) => {
+export const AddressDetails = ({ 
+  depositAddress, 
+  destinationAddress, 
+  onCopyClick, 
+  addressAlt,
+  orderType
+}: AddressDetailsProps) => {
   const hasAddress = depositAddress && depositAddress !== "Generating deposit address..." && depositAddress !== "Generating address...";
   
   const formatAddress = (address: string) => {
@@ -52,8 +59,17 @@ export const AddressDetails = ({ depositAddress, destinationAddress, onCopyClick
         )}
 
         <div className="py-4 px-6 bg-secondary/20 rounded-lg text-sm text-gray-300">
-          <p>The exchange rate will be fixed after your deposit is detected and confirmed by the network.</p>
-          <p className="mt-2">Please send the exact amount to the address above to complete your exchange.</p>
+          {orderType === 'fixed' ? (
+            <>
+              <p>The exchange rate is fixed for this transaction. Your final amount is guaranteed as long as you send the exact amount.</p>
+              <p className="mt-2">Please send the exact amount to the address above to complete your exchange.</p>
+            </>
+          ) : (
+            <>
+              <p>The exchange rate will be determined at the moment your deposit is confirmed by the network.</p>
+              <p className="mt-2">Market fluctuations may affect the final amount you receive.</p>
+            </>
+          )}
         </div>
 
         <div>
