@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { API_CONFIG, invokeFunctionWithRetry, generateFixedFloatSignature } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -152,6 +153,9 @@ export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = tr
       
       // If we don't have API data or the API call failed, use the stored data as fallback
       if (bridgeData) {
+        // Ensure orderType is correctly typed
+        const orderType: "fixed" | "float" = bridgeData.type?.toLowerCase() === 'float' ? 'float' : 'fixed';
+        
         setOrderDetails({
           depositAddress: bridgeData.depositAddress,
           depositAmount: bridgeData.amount,
@@ -167,7 +171,7 @@ export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = tr
           tag: bridgeData.tag || null,
           tagName: bridgeData.tagName || null,
           addressAlt: bridgeData.addressAlt || null,
-          orderType: bridgeData.type || "fixed",
+          orderType: orderType,
           receiveAmount: bridgeData.receiveAmount
         });
         

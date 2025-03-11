@@ -8,23 +8,31 @@ interface ProgressStepsProps {
 export const ProgressSteps = ({
   currentStatus = "pending",
 }: ProgressStepsProps) => {
-  // Map status to step index
+  // Map FF.io API status to step index
   const getActiveStepIndex = (status: string): number => {
     // Lowercase the status for case-insensitive comparison
     const lowerStatus = status?.toLowerCase() || "pending";
     
-    const statusMap: Record<string, number> = {
-      // API statuses (uppercase)
+    // Define direct mappings from FF.io API statuses
+    const apiStatusMap: Record<string, number> = {
+      // FF.io API status codes (original case)
+      "NEW": 0,      // Awaiting deposit
+      "PENDING": 1,  // Transaction received, pending confirmation
+      "EXCHANGE": 1, // Transaction confirmed, exchange in progress
+      "WITHDRAW": 2, // Sending funds
+      "DONE": 3,     // Order completed
+      "EXPIRED": 0,  // Order expired
+      "EMERGENCY": 3 // Emergency, customer choice required
+    };
+    
+    // Our app-specific status codes (lowercase)
+    const appStatusMap: Record<string, number> = {
       "new": 0,
-      "pending": 1,
-      "exchange": 1,
-      "exchanging": 1,
-      "withdraw": 2,
-      "sending": 2,
-      "done": 3,
-      "completed": 3,
-      // App-specific statuses (lowercase)
+      "pending": 0,
       "processing": 1,
+      "exchanging": 1,
+      "sending": 2,
+      "completed": 3,
       "expired": 0,
       "refunding": 1,
       "refunded": 3,
@@ -32,12 +40,24 @@ export const ProgressSteps = ({
       "emergency": 3,
       "unknown": 0,
     };
-
-    return statusMap[lowerStatus] || 0;
+    
+    // First check if it's a direct FF.io API status
+    if (status in apiStatusMap) {
+      return apiStatusMap[status];
+    }
+    
+    // Then check if it's our app status
+    return appStatusMap[lowerStatus] || 0;
   };
 
   // Returns appropriate visual status indicators
   const getStatusType = (status: string): string => {
+    // First check uppercase FF.io API statuses
+    if (status === "DONE") return "completed";
+    if (status === "EMERGENCY") return "failed";
+    if (status === "EXPIRED") return "refunded";
+    
+    // Then check lowercase app statuses
     const lowerStatus = status?.toLowerCase() || "pending";
     
     if (["done", "completed"].includes(lowerStatus)) {

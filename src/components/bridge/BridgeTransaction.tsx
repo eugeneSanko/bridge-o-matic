@@ -18,6 +18,9 @@ export const BridgeTransaction = ({
   orderDetails,
   onCopyAddress,
 }: BridgeTransactionProps) => {
+  // Extract the original API status if available from the raw response
+  const apiStatus = orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
+  
   // Log the raw API response for debugging if available
   React.useEffect(() => {
     if (orderDetails.rawApiResponse) {
@@ -38,7 +41,7 @@ export const BridgeTransaction = ({
           depositAddress={orderDetails.depositAddress}
         />
 
-        <ProgressSteps currentStatus={orderDetails.currentStatus} />
+        <ProgressSteps currentStatus={apiStatus} />
 
         <div className="grid grid-cols-12 gap-6 mb-12">
           <OrderDetails
