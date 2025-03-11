@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { API_CONFIG, invokeFunctionWithRetry, generateFixedFloatSignature } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -88,6 +89,7 @@ export function useBridgeOrder(
           
           console.log("API request parameters:", apiRequestBody);
           
+          // Make the API call via Supabase Edge Function
           const { data: apiResponse, error: apiError } = await supabase.functions.invoke('bridge-status', {
             body: apiRequestBody
           });
@@ -113,6 +115,10 @@ export function useBridgeOrder(
             };
             
             const currentStatus = statusMap[apiStatus] || apiStatus.toLowerCase();
+            
+            // Ensure orderType is correctly typed
+            const orderType: "fixed" | "float" = 
+              apiResponse.data.type?.toLowerCase() === 'float' ? 'float' : 'fixed';
             
             // If we have bridge data, update it with the latest status
             if (bridgeData) {
@@ -148,7 +154,7 @@ export function useBridgeOrder(
               tag: bridgeData?.tag || apiResponse.data.from.tag || null,
               tagName: bridgeData?.tagName || apiResponse.data.from.tagName || null,
               addressAlt: bridgeData?.addressAlt || apiResponse.data.from.addressAlt || null,
-              orderType: bridgeData?.type === 'float' ? 'float' : 'fixed',
+              orderType: orderType,
               receiveAmount: bridgeData?.receiveAmount || apiResponse.data.to.amount,
               rawApiResponse: apiResponse.data
             });
@@ -158,9 +164,11 @@ export function useBridgeOrder(
           }
         } catch (apiError) {
           console.error("Error when fetching from API:", apiError);
+          // Only set error if we don't have fallback data
           if (!bridgeData) {
             setError(apiError instanceof Error ? apiError.message : "An unknown error occurred");
           }
+          // Continue to fallback if API fails and we have stored data
         }
       }
       
@@ -235,38 +243,7 @@ export function useBridgeOrder(
     }
   }, [orderId, shouldFetch, forceApiCheck]);
 
-  const updateOrderStatus = useCallback((newStatus: string) => {
-    console.log(`Manually updating order status to: ${newStatus}`);
-    
-    // Update in-memory order details
-    setOrderDetails(prevDetails => {
-      if (!prevDetails) return null;
-      
-      const updatedDetails = {
-        ...prevDetails,
-        currentStatus: newStatus.toLowerCase(),
-        rawApiResponse: prevDetails.rawApiResponse ? 
-          { ...prevDetails.rawApiResponse, status: newStatus } : 
-          undefined
-      };
-      
-      // Also update in localStorage
-      const storedDataStr = localStorage.getItem('bridge_transaction_data');
-      if (storedDataStr) {
-        try {
-          const bridgeData = JSON.parse(storedDataStr);
-          bridgeData.status = newStatus.toLowerCase();
-          localStorage.setItem('bridge_transaction_data', JSON.stringify(bridgeData));
-          console.log("Updated bridge data in localStorage");
-        } catch (e) {
-          console.error("Error updating stored bridge data:", e);
-        }
-      }
-      
-      return updatedDetails;
-    });
-  }, []);
-
+  // Helper function to calculate time remaining
   const calculateTimeRemaining = (expiresAtStr: string | null): string | null => {
     if (!expiresAtStr) return null;
     
@@ -290,6 +267,7 @@ export function useBridgeOrder(
       setLoading(false);
     }
     
+    // Only set up polling if we want to fetch and have an actual order ID
     if (shouldFetch && orderId) {
       const interval = window.setInterval(fetchOrderDetails, 15000);
       setPollingInterval(interval);
@@ -315,9 +293,6 @@ export function useBridgeOrder(
       if (diffMs <= 0) {
         clearInterval(timer);
         setOrderDetails(prev => prev ? { ...prev, timeRemaining: "0:00" } : null);
-        
-        updateOrderStatus("EXPIRED");
-        
         return;
       }
       
@@ -329,7 +304,7 @@ export function useBridgeOrder(
     }, 1000);
     
     return () => clearInterval(timer);
-  }, [orderDetails?.expiresAt, updateOrderStatus]);
+  }, [orderDetails?.expiresAt]);
 
   const handleCopyAddress = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -352,7 +327,6 @@ export function useBridgeOrder(
     orderDetails,
     loading,
     error,
-    handleCopyAddress,
-    updateOrderStatus
+    handleCopyAddress
   };
 }

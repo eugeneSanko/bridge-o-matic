@@ -16,50 +16,23 @@ const FF_API_SECRET = Deno.env.get("FF_API_SECRET") || "qIk7Vd6b5M3wqOmD3cnqRGQ6
 async function generateSignature(body: any): Promise<string> {
   const encoder = new TextEncoder();
   const bodyStr = JSON.stringify(body);
-  
-  // Log the input values for debugging
-  console.log("Generating signature for body:", bodyStr);
-  console.log("Using API secret with length:", FF_API_SECRET.length);
-  
-  // Ensure FF_API_SECRET is not empty
-  if (!FF_API_SECRET || FF_API_SECRET.length === 0) {
-    throw new Error("API Secret is empty or undefined");
-  }
-  
   const key = encoder.encode(FF_API_SECRET);
   const message = encoder.encode(bodyStr);
   
-  // Double-check key length after encoding
-  if (key.length === 0) {
-    console.error("Key length is zero after encoding");
-    throw new Error("Key length is zero after encoding");
+  // Ensure FF_API_SECRET is not empty
+  if (FF_API_SECRET.length === 0) {
+    throw new Error("API Secret is empty or undefined");
   }
   
-  try {
-    // Import the key for HMAC
-    const cryptoKey = await crypto.subtle.importKey(
-      "raw", 
-      key, 
-      { name: "HMAC", hash: "SHA-256" }, 
-      false, 
-      ["sign"]
-    );
-    
-    // Sign the message
-    const signatureBuffer = await crypto.subtle.sign(
-      "HMAC", 
-      cryptoKey, 
-      message
-    );
-    
-    // Convert to hex
-    return Array.from(new Uint8Array(signatureBuffer))
+  return crypto.subtle.importKey(
+    "raw", key, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  ).then((key) => {
+    return crypto.subtle.sign("HMAC", key, message);
+  }).then((signature) => {
+    return Array.from(new Uint8Array(signature))
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
-  } catch (error) {
-    console.error("Error in signature generation:", error);
-    throw error;
-  }
+  });
 }
 
 serve(async (req) => {

@@ -12,7 +12,6 @@ interface OrderDetailsProps {
   tagName?: string | null;
   expiresAt?: string | null;
   currentStatus?: string;
-  onExpiration?: () => void;
 }
 
 export const OrderDetails = ({ 
@@ -23,8 +22,7 @@ export const OrderDetails = ({
   tag, 
   tagName,
   expiresAt,
-  currentStatus = "NEW",
-  onExpiration
+  currentStatus = "NEW"
 }: OrderDetailsProps) => {
   const [localTimeRemaining, setLocalTimeRemaining] = useState(timeRemaining || "20:00");
   const [timerColor, setTimerColor] = useState("#9b87f5"); // Start with purple
@@ -45,7 +43,6 @@ export const OrderDetails = ({
           setLocalTimeRemaining("0:00");
           setTimerColor("#ea384c");
           setIsExpired(true);
-          if (onExpiration) onExpiration();
           return;
         }
         
@@ -79,7 +76,6 @@ export const OrderDetails = ({
           setLocalTimeRemaining("0:00");
           setTimerColor("#ea384c");
           setIsExpired(true);
-          if (onExpiration) onExpiration();
           return;
         }
         
@@ -101,19 +97,7 @@ export const OrderDetails = ({
       
       return () => clearInterval(intervalId);
     }
-  }, [expiresAt, timeRemaining, onExpiration]);
-
-  // Check if status is already expired or failed
-  useEffect(() => {
-    if (currentStatus === "EXPIRED" || 
-        currentStatus === "expired" || 
-        currentStatus === "FAILED" || 
-        currentStatus === "failed" ||
-        currentStatus === "EMERGENCY") {
-      setIsExpired(true);
-      setTimerColor("#ea384c");
-    }
-  }, [currentStatus]);
+  }, [expiresAt, timeRemaining]);
 
   const formatDate = (date: Date) => {
     return date.toISOString().replace('T', ' ').substring(0, 16) + ' UTC';

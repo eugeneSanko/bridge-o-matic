@@ -1,111 +1,79 @@
-import { OrderDetails } from "@/components/bridge/OrderDetails";
-import { BridgeHeader } from "@/components/bridge/BridgeHeader";
-import { ProgressSteps } from "@/components/bridge/ProgressSteps";
-import { QrCode } from "@/components/bridge/QrCode";
+
+import React from "react";
+import { TransactionSummary } from "./TransactionSummary";
+import { OrderDetails } from "./OrderDetails";
+import { AddressDetails } from "./AddressDetails";
+import { QRCodeSection } from "./QRCodeSection";
+import { ProgressSteps } from "./ProgressSteps";
+import { InformationSection } from "./InformationSection";
+import { NotificationSection } from "./NotificationSection";
 import { OrderDetails as OrderDetailsType } from "@/hooks/useBridgeOrder";
 
-export interface OrderDetails {
-  depositAddress: string;
-  depositAmount: string;
-  currentStatus: string;
-  fromCurrency: string;
-  toCurrency: string;
-  orderId: string;
-  destinationAddress: string;
-  expiresAt: string | null;
-  timeRemaining: string | null;
-  ffOrderId: string;
-  ffOrderToken: string;
-  tag?: number | null;
-  tagName?: string | null;
-  addressAlt?: string | null;
-  orderType: "fixed" | "float";
-  receiveAmount?: string;
-  rawApiResponse?: any; // Store raw API response for debugging
-}
-
-export function BridgeTransaction({ 
-  orderDetails, 
-  onCopyAddress,
-  onExpiration
-}: { 
+interface BridgeTransactionProps {
   orderDetails: OrderDetailsType;
   onCopyAddress: (text: string) => void;
-  onExpiration?: () => void;
-}) {
+}
+
+export const BridgeTransaction = ({
+  orderDetails,
+  onCopyAddress,
+}: BridgeTransactionProps) => {
+  // Extract the original API status if available from the raw response
+  const apiStatus = orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
   
+  // Log the raw API response for debugging if available
+  React.useEffect(() => {
+    if (orderDetails.rawApiResponse) {
+      console.log("Raw API response:", orderDetails.rawApiResponse);
+    }
+  }, [orderDetails.rawApiResponse]);
+
   return (
-    <div className="container max-w-6xl mx-auto px-4 mb-16">
-      <div className="mb-6">
-        <BridgeHeader />
-      </div>
-      
-      {/* Progress Steps */}
-      <ProgressSteps currentStatus={orderDetails.currentStatus} />
-      
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        {/* Left column - Order Details */}
-        <OrderDetails 
-          orderId={orderDetails.orderId}
+    <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
+      <div className="max-w-6xl mx-auto">
+        <TransactionSummary
+          fromCurrency={orderDetails.fromCurrency}
+          toCurrency={orderDetails.toCurrency}
+          amount={orderDetails.depositAmount}
+          destinationAddress={orderDetails.destinationAddress}
+          receiveAmount={orderDetails.receiveAmount}
           orderType={orderDetails.orderType}
-          timeRemaining={orderDetails.timeRemaining}
-          onCopyClick={() => onCopyAddress(orderDetails.orderId)}
-          tag={orderDetails.tag}
-          tagName={orderDetails.tagName}
-          expiresAt={orderDetails.expiresAt}
-          currentStatus={orderDetails.currentStatus || orderDetails.rawApiResponse?.status}
-          onExpiration={onExpiration}
+          depositAddress={orderDetails.depositAddress}
         />
-        
-        {/* Right column - QR and Payment Address */}
-        <div className="col-span-1 xl:col-span-8 glass-card p-6 rounded-xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* QR Code */}
-            <div className="col-span-1">
-              <div className="text-sm text-gray-400 mb-2">Scan QR code to deposit</div>
-              <QrCode value={orderDetails.depositAddress} />
-            </div>
-            
-            {/* Payment Address */}
-            <div className="col-span-1">
-              <div className="text-sm text-gray-400 mb-2">Deposit Address</div>
-              <div className="flex items-center gap-2">
-                <span className="font-mono font-medium text-lg">{orderDetails.depositAddress}</span>
-                <button 
-                  className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                  type="button"
-                  onClick={() => onCopyAddress(orderDetails.depositAddress)}
-                >
-                  Copy
-                </button>
-              </div>
-              
-              {orderDetails.tag && orderDetails.tagName && (
-                <div className="mt-4">
-                  <div className="text-sm text-gray-400 mb-2">{orderDetails.tagName}</div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-medium">{orderDetails.tag}</span>
-                    <button 
-                      className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                      type="button"
-                      onClick={() => onCopyAddress(String(orderDetails.tag))}
-                    >
-                      Copy
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              <div className="mt-4">
-                <div className="text-sm text-gray-400 mb-2">Deposit Amount</div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono font-medium">{orderDetails.depositAmount} {orderDetails.fromCurrency}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+
+        <ProgressSteps currentStatus={apiStatus} />
+
+        <div className="grid grid-cols-12 gap-6 mb-12">
+          <OrderDetails
+            orderId={orderDetails.orderId}
+            orderType={orderDetails.orderType}
+            timeRemaining={orderDetails.timeRemaining}
+            expiresAt={orderDetails.expiresAt}
+            currentStatus={apiStatus} 
+            onCopyClick={() => onCopyAddress(orderDetails.orderId)}
+            tag={orderDetails.tag}
+            tagName={orderDetails.tagName}
+          />
+          <AddressDetails
+            depositAddress={orderDetails.depositAddress}
+            destinationAddress={orderDetails.destinationAddress}
+            onCopyClick={() => onCopyAddress(orderDetails.depositAddress)}
+            addressAlt={orderDetails.addressAlt}
+            orderType={orderDetails.orderType}
+          />
+          <QRCodeSection
+            depositAddress={orderDetails.depositAddress}
+            depositAmount={orderDetails.depositAmount}
+            fromCurrency={orderDetails.fromCurrency}
+            tag={orderDetails.tag}
+          />
+        </div>
+
+        <div className="grid grid-cols-12 gap-6">
+          <InformationSection />
+          <NotificationSection />
         </div>
       </div>
     </div>
   );
-}
+};
