@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Copy, Clock, Calendar, Tag, AlertCircle } from "lucide-react";
+import { Copy, Clock, Calendar, Tag, AlertCircle, TimerOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface OrderDetailsProps {
@@ -52,20 +52,16 @@ export const OrderDetails = ({
       setLocalTimeRemaining(formattedTime);
       
       // Update colors based on time remaining
-      if (minutes <= 5) {
+      if (secondsRemaining <= 0) {
+        setTimerColor("#ea384c"); // Red when expired
+        setIsExpired(true);
+        return;
+      } else if (minutes <= 5) {
         setTimerColor("#ea384c"); // Red when less than 5 minutes
       } else if (minutes <= 10) {
         setTimerColor("#F97316"); // Orange when less than 10 minutes
       } else {
         setTimerColor("#9b87f5"); // Purple otherwise
-      }
-      
-      // Check if timer has expired
-      if (secondsRemaining <= 0) {
-        clearInterval(intervalId);
-        setIsExpired(true);
-        setTimerColor("#ea384c");
-        return;
       }
     };
     
@@ -75,8 +71,8 @@ export const OrderDetails = ({
     // Set up interval to update every second
     const intervalId = setInterval(() => {
       setSecondsRemaining(prev => {
-        if (prev === null || prev <= 0) return 0;
-        return prev - 1;
+        const newValue = prev !== null ? prev - 1 : 0;
+        return Math.max(0, newValue); // Don't go below zero
       });
       updateTimerDisplay();
     }, 1000);
@@ -164,8 +160,14 @@ export const OrderDetails = ({
         <div>
           <div className="text-sm text-gray-400 mb-2">Time Remaining</div>
           <div className="flex items-center gap-2" style={{ color: timerColor }}>
-            <Clock className="h-5 w-5 animate-pulse" />
-            <span className="font-medium text-lg transition-colors duration-300">{localTimeRemaining || "Waiting..."}</span>
+            {isExpired ? (
+              <TimerOff className="h-5 w-5" />
+            ) : (
+              <Clock className="h-5 w-5 animate-pulse" />
+            )}
+            <span className="font-medium text-lg transition-colors duration-300">
+              {isExpired ? "Expired" : localTimeRemaining || "Waiting..."}
+            </span>
           </div>
         </div>
         

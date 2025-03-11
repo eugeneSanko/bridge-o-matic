@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
 import { AddressDetails } from "./AddressDetails";
@@ -24,6 +24,26 @@ export const BridgeTransaction = ({
   // Extract the time left from the raw API response (in seconds)
   const timeLeft = orderDetails.rawApiResponse?.time?.left || null;
   
+  // Check if order is expired based on time left
+  const [isExpired, setIsExpired] = useState(false);
+  
+  // Check for expired status
+  useEffect(() => {
+    // Check if the API status is already EXPIRED
+    if (apiStatus === "EXPIRED" || orderDetails.currentStatus === "expired") {
+      setIsExpired(true);
+      return;
+    }
+    
+    // Check if the timer has run out (timeLeft is 0 or negative)
+    if (timeLeft !== null && timeLeft <= 0) {
+      setIsExpired(true);
+      return;
+    }
+    
+    setIsExpired(false);
+  }, [apiStatus, orderDetails.currentStatus, timeLeft]);
+  
   // Log the raw API response for debugging if available
   React.useEffect(() => {
     if (orderDetails.rawApiResponse) {
@@ -34,6 +54,9 @@ export const BridgeTransaction = ({
       }
     }
   }, [orderDetails.rawApiResponse]);
+
+  // Use the expired status to update the displayed status
+  const displayStatus = isExpired ? "EXPIRED" : apiStatus;
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
@@ -48,7 +71,7 @@ export const BridgeTransaction = ({
           depositAddress={orderDetails.depositAddress}
         />
 
-        <ProgressSteps currentStatus={apiStatus} />
+        <ProgressSteps currentStatus={displayStatus} />
 
         <div className="grid grid-cols-12 gap-6 mb-12">
           <OrderDetails
@@ -56,7 +79,7 @@ export const BridgeTransaction = ({
             orderType={orderDetails.orderType}
             timeRemaining={orderDetails.timeRemaining}
             expiresAt={orderDetails.expiresAt}
-            currentStatus={apiStatus} 
+            currentStatus={displayStatus} 
             onCopyClick={() => onCopyAddress(orderDetails.orderId)}
             tag={orderDetails.tag}
             tagName={orderDetails.tagName}

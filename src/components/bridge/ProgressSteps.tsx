@@ -1,5 +1,5 @@
 
-import { Loader2, Clock, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Loader2, Clock, ArrowRight, CheckCircle2, TimerOff } from "lucide-react";
 
 interface ProgressStepsProps {
   currentStatus?: string;
@@ -55,7 +55,7 @@ export const ProgressSteps = ({
     // First check uppercase FF.io API statuses
     if (status === "DONE") return "completed";
     if (status === "EMERGENCY") return "failed";
-    if (status === "EXPIRED") return "refunded";
+    if (status === "EXPIRED") return "expired";
     
     // Then check lowercase app statuses
     const lowerStatus = status?.toLowerCase() || "pending";
@@ -64,7 +64,9 @@ export const ProgressSteps = ({
       return "completed";
     } else if (["failed", "emergency"].includes(lowerStatus)) {
       return "failed";
-    } else if (["refunded", "expired"].includes(lowerStatus)) {
+    } else if (["expired"].includes(lowerStatus)) {
+      return "expired";
+    } else if (["refunded"].includes(lowerStatus)) {
       return "refunded";
     }
     
@@ -72,13 +74,18 @@ export const ProgressSteps = ({
   };
 
   const activeStep = getActiveStepIndex(currentStatus);
+  const statusType = getStatusType(currentStatus);
+
+  // For expired status, modify the first step icon and text
+  const isExpired = statusType === "expired" || currentStatus === "EXPIRED" || currentStatus?.toLowerCase() === "expired";
 
   const steps = [
     {
-      label: "Awaiting deposit",
-      icon: Loader2,
+      label: isExpired ? "Deposit expired" : "Awaiting deposit",
+      icon: isExpired ? TimerOff : Loader2,
       active: activeStep === 0,
       completed: activeStep > 0,
+      status: isExpired ? "expired" : "",
     },
     {
       label: "Awaiting confirmations",
@@ -97,7 +104,7 @@ export const ProgressSteps = ({
       icon: CheckCircle2,
       active: activeStep === 3,
       completed: false,
-      status: getStatusType(currentStatus),
+      status: statusType !== "expired" ? statusType : "",
     },
   ];
 
@@ -114,6 +121,8 @@ export const ProgressSteps = ({
                   ? "text-red-500"
                   : step.status === "refunded"
                   ? "text-yellow-500"
+                  : step.status === "expired"
+                  ? "text-red-500"  
                   : step.status === "completed"
                   ? "text-green-500"
                   : step.active
@@ -139,6 +148,11 @@ export const ProgressSteps = ({
               {step.status === "refunded" && (
                 <div className="text-xs text-yellow-500 mt-1">
                   Funds refunded
+                </div>
+              )}
+              {step.status === "expired" && (
+                <div className="text-xs text-red-500 mt-1">
+                  Time window expired
                 </div>
               )}
               {i < 3 && (
