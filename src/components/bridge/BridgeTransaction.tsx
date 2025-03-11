@@ -1,4 +1,3 @@
-
 import React from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
@@ -14,22 +13,27 @@ interface BridgeTransactionProps {
   onCopyAddress: (text: string) => void;
 }
 
-export const BridgeTransaction = ({ orderDetails, onCopyAddress }: BridgeTransactionProps) => {
+export const BridgeTransaction = ({
+  orderDetails,
+  onCopyAddress,
+}: BridgeTransactionProps) => {
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
       <div className="max-w-6xl mx-auto">
-        <TransactionSummary 
+        <TransactionSummary
           fromCurrency={orderDetails.fromCurrency}
           toCurrency={orderDetails.toCurrency}
           amount={orderDetails.depositAmount}
           destinationAddress={orderDetails.destinationAddress}
           receiveAmount={orderDetails.receiveAmount}
           orderType={orderDetails.orderType}
-          depositAddress={orderDetails.depositAddress} // Pass deposit address 
+          depositAddress={orderDetails.depositAddress} // Pass deposit address
         />
 
+        <ProgressSteps currentStatus={orderDetails.currentStatus} />
+
         <div className="grid grid-cols-12 gap-6 mb-12">
-          <OrderDetails 
+          <OrderDetails
             orderId={orderDetails.orderId}
             orderType={orderDetails.orderType}
             timeRemaining={orderDetails.timeRemaining}
@@ -39,22 +43,20 @@ export const BridgeTransaction = ({ orderDetails, onCopyAddress }: BridgeTransac
             tag={orderDetails.tag}
             tagName={orderDetails.tagName}
           />
-          <AddressDetails 
+          <AddressDetails
             depositAddress={orderDetails.depositAddress}
             destinationAddress={orderDetails.destinationAddress}
             onCopyClick={() => onCopyAddress(orderDetails.depositAddress)}
             addressAlt={orderDetails.addressAlt}
             orderType={orderDetails.orderType}
           />
-          <QRCodeSection 
+          <QRCodeSection
             depositAddress={orderDetails.depositAddress}
             depositAmount={orderDetails.depositAmount}
             fromCurrency={orderDetails.fromCurrency}
             tag={orderDetails.tag}
           />
         </div>
-
-        <ProgressSteps currentStatus={orderDetails.currentStatus} />
 
         <div className="grid grid-cols-12 gap-6">
           <InformationSection />

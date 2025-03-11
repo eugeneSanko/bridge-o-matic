@@ -220,7 +220,7 @@ export const CurrencySelector = ({
               {isReceiveSide ? (
                 <div className="flex items-center w-full">
                   <span className="text-3xl font-semibold ">
-                    {shouldShowApproxSymbol && (
+                    {shouldShowApproxSymbol && !isCalculating && (
                       <span className="text-gray-400 mr-1">≈</span>
                     )}
                     {isCalculating ? (
@@ -384,10 +384,12 @@ export const CurrencySelector = ({
             <div className="text-xs text-gray-400 font-mono flex justify-between">
               <span>
                 1 {selectedCurrency?.code} ≈{" "}
-                {formatDisplayValue(exchangeRate.rate || "0")}{" "}
-                {isReceiveSide ? "receive" : "send"}
+                {formatDisplayValue(exchangeRate.rate || "0")}
               </span>
-              <span>${exchangeRate.usdValue || "0"}</span>
+              <span>
+                {isReceiveSide ? "receive" : "send"} $
+                {exchangeRate.usdValue || "0"}
+              </span>
             </div>
           )}
 
