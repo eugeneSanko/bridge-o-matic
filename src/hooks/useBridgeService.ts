@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { API_CONFIG } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -280,6 +281,7 @@ export function useBridgeService() {
           orderToken: data.data.token || '',
           code: data.code,
           msg: data.msg,
+          data: data.data,
           debugInfo: data.debugInfo
         };
       } else {
@@ -315,11 +317,32 @@ export function useBridgeService() {
           };
         }
         
+        const mockOrderId = `FF-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+        const mockOrderToken = `${Math.random().toString(36).substring(2, 30)}`;
+        
         return { 
-          orderId: `FF-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-          orderToken: `${Math.random().toString(36).substring(2, 30)}`,
+          orderId: mockOrderId,
+          orderToken: mockOrderToken,
           code: 0,
-          msg: 'Success'
+          msg: 'Success',
+          data: {
+            id: mockOrderId,
+            token: mockOrderToken,
+            type: orderType,
+            status: "NEW",
+            from: {
+              address: "0x48f6bf4b24bc374943d7a45c0811908ccd1c2eea",
+              tag: null,
+              tagName: null,
+              addressAlt: null
+            },
+            to: {
+              address: destination
+            },
+            time: {
+              expiration: Math.floor(Date.now() / 1000) + 1200
+            }
+          }
         };
       }
       

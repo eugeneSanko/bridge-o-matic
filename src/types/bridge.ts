@@ -87,6 +87,24 @@ export interface OrderResponse {
   debugInfo?: any;
   code?: number;
   msg?: string;
+  data?: {
+    id: string;
+    token: string;
+    type: string;
+    status: string;
+    from?: {
+      address: string;
+      tag?: string | null;
+      tagName?: string | null;
+      addressAlt?: string | null;
+    };
+    to?: {
+      address: string;
+    };
+    time?: {
+      expiration: number;
+    };
+  };
 }
 
 export interface ApiOrderResponse {
