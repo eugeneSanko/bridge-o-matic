@@ -25,7 +25,7 @@ export const OrderDetails = ({
   currentStatus = "NEW"
 }: OrderDetailsProps) => {
   const [localTimeRemaining, setLocalTimeRemaining] = useState(timeRemaining || "20:00");
-  const [timerColor, setTimerColor] = useState("#0FA0CE");
+  const [timerColor, setTimerColor] = useState("#9b87f5"); // Start with purple
   const [isExpired, setIsExpired] = useState(false);
   
   // Calculate and update countdown timer
@@ -56,7 +56,7 @@ export const OrderDetails = ({
         } else if (diffMinutes <= 10) {
           setTimerColor("#F97316"); // Orange when less than 10 minutes
         } else {
-          setTimerColor("#0FA0CE"); // Blue otherwise
+          setTimerColor("#9b87f5"); // Purple otherwise
         }
         
         setLocalTimeRemaining(newTimeRemaining);
@@ -89,7 +89,7 @@ export const OrderDetails = ({
         } else if (diffMinutes <= 10) {
           setTimerColor("#F97316"); // Orange when less than 10 minutes
         } else {
-          setTimerColor("#0FA0CE"); // Blue otherwise
+          setTimerColor("#9b87f5"); // Purple otherwise (for 20-10 mins)
         }
         
         setLocalTimeRemaining(newTimeRemaining);
@@ -144,7 +144,7 @@ export const OrderDetails = ({
           <div>
             <div className="text-sm text-gray-400 mb-2">{tagName}</div>
             <div className="flex items-center gap-2">
-              <Tag className="h-4 w-4 text-[#0FA0CE]" />
+              <Tag className="h-4 w-4 text-[#9b87f5]" />
               <span className="font-mono font-medium">{tag}</span>
             </div>
           </div>

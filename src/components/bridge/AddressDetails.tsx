@@ -53,7 +53,7 @@ export const AddressDetails = ({
 
         {addressAlt && (
           <div className="py-4 px-6 bg-secondary/20 rounded-lg text-sm text-gray-300">
-            <p className="mb-2 text-[#0FA0CE] font-semibold">Alternative Address:</p>
+            <p className="mb-2 text-[#9b87f5] font-semibold">Alternative Address:</p>
             <p className="font-mono break-all">{addressAlt}</p>
           </div>
         )}
