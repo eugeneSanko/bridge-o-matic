@@ -1,3 +1,4 @@
+
 import { ArrowRight } from "lucide-react";
 import { AddressPlaceholder } from "./AddressPlaceholder";
 
@@ -81,7 +82,7 @@ export const TransactionSummary = ({
             <div>
               <div className="text-2xl md:text-3xl font-bold mb-2">{amount} {fromCurrency?.toUpperCase()}</div>
               <div className="text-sm text-gray-400 font-mono">
-                Send funds to: {formatAddress(depositAddress || destinationAddress)}
+                Send funds to: {depositAddress ? formatAddress(depositAddress) : 'Generating address...'}
               </div>
             </div>
           </div>

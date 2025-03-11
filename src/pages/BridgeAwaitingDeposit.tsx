@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder, OrderDetails } from "@/hooks/useBridgeOrder";
@@ -16,18 +17,59 @@ const BridgeAwaitingDeposit = () => {
   // Use the token directly from the URL query parameters
   const token = searchParams.get("token") || (orderId || "");
   
+  // Get real order ID from bridge create response logs if available
+  const [realOrderId, setRealOrderId] = useState<string | null>(null);
+  const [depositAddress, setDepositAddress] = useState<string | null>(null);
+  
+  // Try to extract order details from edge function logs if available
+  useEffect(() => {
+    // Check if there are any edge function logs in localStorage
+    const bridgeCreateLogsStr = localStorage.getItem("bridge_create_logs");
+    if (bridgeCreateLogsStr) {
+      try {
+        const logs = JSON.parse(bridgeCreateLogsStr);
+        
+        // Parse the response body from the logs
+        if (logs && logs.length > 0 && logs[0].event_message) {
+          const responseMatch = logs[0].event_message.match(/Response body \(text\): (.*)/);
+          if (responseMatch && responseMatch[1]) {
+            const responseData = JSON.parse(responseMatch[1]);
+            
+            console.log("Found bridge creation response:", responseData);
+            
+            if (responseData.code === 0 && responseData.data) {
+              // Extract order ID from response
+              if (responseData.data.id) {
+                console.log("Setting real order ID to:", responseData.data.id);
+                setRealOrderId(responseData.data.id);
+              }
+              
+              // Extract deposit address from response
+              if (responseData.data.from && responseData.data.from.address) {
+                console.log("Setting deposit address to:", responseData.data.from.address);
+                setDepositAddress(responseData.data.from.address);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing bridge create logs:", error);
+      }
+    }
+  }, []);
+  
   // Static order details for demo purposes - updated to match bridge create payload
   const staticOrderDetails: OrderDetails = {
-    depositAddress: "0x48f6bf4b24bc374943d7a45c0811908ccd1c2eea", // From bridge create payload
+    depositAddress: depositAddress || "0x48f6bf4b24bc374943d7a45c0811908ccd1c2eea",
     depositAmount: "50.00",
     currentStatus: "NEW", // Options: NEW, PENDING, EXCHANGE, WITHDRAW, DONE, EMERGENCY, WAIT
     fromCurrency: "USDT",
     toCurrency: "SOL",
-    orderId: "PEFREY", // From bridge create payload
+    orderId: realOrderId || "PEFREY", // Use real order ID if available
     destinationAddress: "8VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY",
     expiresAt: new Date(Date.now() + 20 * 60000).toISOString(), // 20 minutes from now
     timeRemaining: "20:00",
-    ffOrderId: "PEFREY", // From bridge create payload
+    ffOrderId: realOrderId || "PEFREY", // Use real order ID if available
     ffOrderToken: token,
     tag: null,
     tagName: null,

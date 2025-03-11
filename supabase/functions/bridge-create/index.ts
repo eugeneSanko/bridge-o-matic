@@ -197,15 +197,19 @@ serve(async (req) => {
         debugInfo
       };
       
+      // Add special log header to store the response for later use
+      const logHeaders = {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+        "X-Bridge-Create-Logs": "true"
+      };
+      
       // Return API response to client with debug info
       return new Response(
         JSON.stringify(enrichedResponse),
         {
           status: 200,
-          headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders,
-          },
+          headers: logHeaders,
         }
       );
     } catch (error) {
