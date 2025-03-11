@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { API_CONFIG, invokeFunctionWithRetry } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -57,63 +56,52 @@ export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = tr
     try {
       console.log("Fetching order details for", orderId, "- shouldFetch:", shouldFetch);
       
-      // For direct API use-case, the orderId parameter is actually the FF token
-      // We just need to use this token for FF status API calls
-
-      // In a real implementation with a server component, you would:
-      // 1. Use the FF token to query the order status from FF API
-      // 2. Update your local database with the latest status
+      // Try to get stored bridge transaction data
+      const storedDataStr = localStorage.getItem('bridge_transaction_data');
+      let bridgeData = null;
       
-      // For demo, simulate order details with realistic values from FF API response
-      const staticOrderData: OrderData = {
-        id: "PEFREY", // Changed to match the bridge create payload ID
-        ff_order_id: "PEFREY", // Changed to match the bridge create payload ID
-        ff_order_token: orderId, // The token from FF API is passed as orderId
-        from_currency: "USDT",
-        to_currency: "SOL",
-        amount: 50,
-        destination_address: "8VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY",
-        status: "NEW",
-        created_at: new Date().toISOString(),
-        deposit_address: "0x48f6bf4b24bc374943d7a45c0811908ccd1c2eea", // Updated deposit address from payload
-        initial_rate: 0.016718,
-        expiration_time: new Date(Date.now() + 1200000).toISOString(), // 20 minutes from now (1200000ms)
-        type: "float",
-        receive_amount: "0.39840800",
-        tag: null,
-        tagName: null,
-        addressAlt: null
-      };
-
-      // Calculate time remaining for order expiration
-      const expirationTime = new Date(staticOrderData.expiration_time);
-      const now = new Date();
-      const diffMs = expirationTime.getTime() - now.getTime();
+      if (storedDataStr) {
+        try {
+          bridgeData = JSON.parse(storedDataStr);
+          console.log("Found stored bridge data:", bridgeData);
+        } catch (e) {
+          console.error("Error parsing stored bridge data:", e);
+        }
+      }
       
-      let timeRemaining = null;
-      if (diffMs > 0) {
-        const diffMinutes = Math.floor(diffMs / 60000);
-        const diffSeconds = Math.floor((diffMs % 60000) / 1000);
-        timeRemaining = `${diffMinutes}:${diffSeconds.toString().padStart(2, '0')}`;
+      if (!bridgeData) {
+        console.log("No stored bridge data found, using static data");
+        // Use static data as fallback
+        bridgeData = {
+          id: orderId,
+          fromCurrency: "USDT",
+          toCurrency: "SOL",
+          amount: "50",
+          destinationAddress: "8VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY",
+          status: "NEW",
+          depositAddress: "0x48f6bf4b24bc374943d7a45c0811908ccd1c2eea",
+          type: "float",
+          receiveAmount: "0.39840800"
+        };
       }
 
       setOrderDetails({
-        depositAddress: staticOrderData.deposit_address,
-        depositAmount: staticOrderData.amount.toString(),
-        currentStatus: staticOrderData.status,
-        fromCurrency: staticOrderData.from_currency,
-        toCurrency: staticOrderData.to_currency,
-        orderId: staticOrderData.id,
-        ffOrderId: staticOrderData.ff_order_id,
-        ffOrderToken: staticOrderData.ff_order_token,
-        destinationAddress: staticOrderData.destination_address,
-        expiresAt: staticOrderData.expiration_time,
-        timeRemaining,
-        tag: staticOrderData.tag,
-        tagName: staticOrderData.tagName,
-        addressAlt: staticOrderData.addressAlt,
-        orderType: staticOrderData.type || "fixed",
-        receiveAmount: staticOrderData.receive_amount
+        depositAddress: bridgeData.depositAddress,
+        depositAmount: bridgeData.amount,
+        currentStatus: bridgeData.status,
+        fromCurrency: bridgeData.fromCurrency,
+        toCurrency: bridgeData.toCurrency,
+        orderId: bridgeData.id,
+        ffOrderId: bridgeData.id,
+        ffOrderToken: orderId,
+        destinationAddress: bridgeData.destinationAddress,
+        expiresAt: new Date(Date.now() + 20 * 60000).toISOString(),
+        timeRemaining: "20:00",
+        tag: bridgeData.tag || null,
+        tagName: bridgeData.tagName || null,
+        addressAlt: bridgeData.addressAlt || null,
+        orderType: bridgeData.type || "fixed",
+        receiveAmount: bridgeData.receiveAmount
       });
       
       setLoading(false);
@@ -146,7 +134,6 @@ export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = tr
     return undefined;
   }, [orderId, shouldFetch, fetchOrderDetails]);
 
-  // Add a timer to update the time remaining every second
   useEffect(() => {
     if (!orderDetails || !orderDetails.expiresAt) return;
 

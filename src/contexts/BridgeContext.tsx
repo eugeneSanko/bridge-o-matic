@@ -385,7 +385,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       validateBridgeTransaction();
 
       // Verify exchange rate is still valid
-      const now = new Date().getTime() / 1000; // Convert to seconds
+      const now = new Date().getTime() / 1000;
       if (!lastPriceData || lastPriceData.expiresAt < now) {
         await calculateReceiveAmount();
         throw new Error("Exchange rate has expired. Please try again.");
@@ -406,26 +406,45 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
         lastPriceData.data.rate || ''
       );
 
-      // If the result has an error code (not 0) and a message, pass it along
-      if (result && result.code !== undefined && result.code !== 0 && result.msg) {
-        console.error(`Order creation failed: ${result.msg} (code: ${result.code})`);
-        return result; // Return the error result so UI can handle it
-      }
+      // If successful, store the transaction data
+      if (result && result.code === 0 && result.data) {
+        // Store the transaction data for use in awaiting deposit page
+        const transactionData = {
+          id: result.data.id,
+          fromCurrency,
+          toCurrency,
+          amount,
+          destinationAddress,
+          status: result.data.status,
+          depositAddress: result.data.from?.address,
+          type: orderType,
+          receiveAmount: estimatedReceiveAmount,
+          tag: result.data.from?.tag || null,
+          tagName: result.data.from?.tagName || null,
+          addressAlt: result.data.from?.addressAlt || null
+        };
+        
+        localStorage.setItem('bridge_transaction_data', JSON.stringify(transactionData));
+        console.log("Stored bridge transaction data:", transactionData);
 
-      if (result && result.orderId && (!result.code || result.code === 0)) {
         // Start monitoring the order status
-        startStatusChecking(result.orderId);
+        startStatusChecking(result.data.id);
 
         toast({
           title: "Transaction Created",
           description: "Your bridge transaction has been initiated successfully!",
         });
 
-        // Return the result with order details
         return result;
       }
 
-      console.error("Order creation failed: No orderId returned");
+      // If the result has an error code and a message, pass it along
+      if (result && result.code !== undefined && result.code !== 0 && result.msg) {
+        console.error(`Order creation failed: ${result.msg} (code: ${result.code})`);
+        return result;
+      }
+
+      console.error("Order creation failed: No valid response");
       return {
         orderId: '',
         code: 500,
