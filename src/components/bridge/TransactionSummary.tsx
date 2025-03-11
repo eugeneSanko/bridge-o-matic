@@ -19,7 +19,7 @@ export const TransactionSummary = ({
   receiveAmount,
   orderType = "fixed"
 }: TransactionSummaryProps) => {
-  // Determine currency symbols for visual display
+  // Determine currency symbols for visual display (fallback)
   const getCurrencyIcon = (currency: string) => {
     const lowerCurrency = currency.toLowerCase();
     if (lowerCurrency === 'btc') return '₿';
@@ -28,10 +28,20 @@ export const TransactionSummary = ({
     return currency.toUpperCase().substring(0, 1);
   };
 
-  // Get currency image URLs
+  // Get currency image URLs using the correct FF.io asset path format
   const getCurrencyImageUrl = (currency: string) => {
     const lowerCurrency = currency.toLowerCase();
-    return `https://ff.io/static/currencies/${lowerCurrency}.svg`;
+    
+    // Special handling for common currencies using their official logo paths
+    if (lowerCurrency === 'btc') return 'https://ff.io/assets/images/coins/svg/btc.svg';
+    if (lowerCurrency === 'eth') return 'https://ff.io/assets/images/coins/svg/eth_dark.svg';
+    if (lowerCurrency === 'sol') return 'https://ff.io/assets/images/coins/svg/sol.svg';
+    if (lowerCurrency === 'usdt') return 'https://ff.io/assets/images/coins/svg/usdt.svg';
+    if (lowerCurrency === 'usdc') return 'https://ff.io/assets/images/coins/svg/usdceth.svg';
+    if (lowerCurrency === 'usdttrc') return 'https://ff.io/assets/images/coins/svg/usdttrc.svg';
+    
+    // For other currencies, use a generic path pattern
+    return `https://ff.io/assets/images/coins/svg/${lowerCurrency}.svg`;
   };
 
   // Determine background colors based on currency
@@ -42,6 +52,7 @@ export const TransactionSummary = ({
     if (lowerCurrency === 'sol') return 'bg-[#9945FF]';
     if (lowerCurrency === 'usdt') return 'bg-[#26A17B]';
     if (lowerCurrency === 'usdc') return 'bg-[#2775CA]';
+    if (lowerCurrency === 'usdttrc') return 'bg-[#53AE94]';
     return 'bg-[#0FA0CE]';
   };
 
@@ -62,7 +73,6 @@ export const TransactionSummary = ({
           <div className="text-sm text-gray-400 mb-3">YOU SEND</div>
           <div className="flex items-center gap-4">
             <div className={`w-12 h-12 rounded-full ${getCurrencyColor(fromCurrency)} flex items-center justify-center text-lg font-bold text-white overflow-hidden`}>
-              {/* Using FF.io currency SVG icons */}
               <img 
                 src={getCurrencyImageUrl(fromCurrency)}
                 alt={fromCurrency}
@@ -77,7 +87,7 @@ export const TransactionSummary = ({
             <div>
               <div className="text-2xl md:text-3xl font-bold mb-2">{amount} {fromCurrency?.toUpperCase()}</div>
               <div className="text-sm text-gray-400 font-mono">
-                Send to: {formatAddress("0xa489b15fa7cfcd230951ad2db01f6b58eaca9f70")}
+                Send to: {formatAddress(destinationAddress)}
               </div>
             </div>
           </div>
@@ -91,7 +101,6 @@ export const TransactionSummary = ({
           <div className="text-sm text-gray-400 mb-3">YOU RECEIVE</div>
           <div className="flex items-center gap-4">
             <div className={`w-12 h-12 rounded-full ${getCurrencyColor(toCurrency)} flex items-center justify-center text-lg font-bold text-white overflow-hidden`}>
-              {/* Using FF.io currency SVG icons */}
               <img 
                 src={getCurrencyImageUrl(toCurrency)}
                 alt={toCurrency}
@@ -109,7 +118,7 @@ export const TransactionSummary = ({
                 {receiveAmount || ""} {toCurrency?.toUpperCase()}
               </div>
               <div className="text-sm text-gray-400 font-mono">
-                Receive at: {formatAddress("8VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY")}
+                Receive at: {formatAddress(destinationAddress)}
               </div>
             </div>
           </div>

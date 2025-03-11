@@ -119,15 +119,6 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [deepLink, orderDetails?.currentStatus, orderDetails?.orderId, orderId, addLog, navigate, navigating]);
 
-  // Add toggle button to switch between static and dynamic data
-  const toggleDataSource = () => {
-    setIsUsingStatic(!isUsingStatic);
-    // Reset API attempted flag when toggling back to dynamic data
-    if (isUsingStatic) {
-      setApiAttempted(false);
-    }
-  };
-
   if (!isUsingStatic && loading) {
     return <LoadingState />;
   }
@@ -141,20 +132,10 @@ const BridgeAwaitingDeposit = () => {
   }
 
   return (
-    <>
-      <div className="fixed top-4 right-4 z-50">
-        <button 
-          onClick={toggleDataSource}
-          className="bg-[#0FA0CE] px-4 py-2 rounded-md text-white font-medium"
-        >
-          {isUsingStatic ? "Switch to Dynamic Data" : "Switch to Static Data"}
-        </button>
-      </div>
-      <BridgeTransaction 
-        orderDetails={isUsingStatic ? staticOrderDetails : orderDetails!} 
-        onCopyAddress={handleCopyAddress} 
-      />
-    </>
+    <BridgeTransaction 
+      orderDetails={isUsingStatic ? staticOrderDetails : orderDetails!} 
+      onCopyAddress={handleCopyAddress} 
+    />
   );
 };
 
