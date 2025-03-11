@@ -1,6 +1,8 @@
+
 import { useState, useEffect, useCallback } from "react";
-import { API_CONFIG, invokeFunctionWithRetry } from "@/config/api";
+import { API_CONFIG, invokeFunctionWithRetry, generateFixedFloatSignature } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface OrderData {
   id: string;
@@ -39,6 +41,7 @@ export interface OrderDetails {
   addressAlt?: string | null;
   orderType: "fixed" | "float";
   receiveAmount?: string;
+  rawApiResponse?: any; // Store raw API response for debugging
 }
 
 export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = true) {
@@ -54,7 +57,7 @@ export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = tr
     }
 
     try {
-      console.log("Fetching order details for", orderId, "- shouldFetch:", shouldFetch);
+      console.log("Fetching order details for", orderId);
       
       // Try to get stored bridge transaction data
       const storedDataStr = localStorage.getItem('bridge_transaction_data');
@@ -69,39 +72,141 @@ export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = tr
         }
       }
       
-      if (!bridgeData) {
-        console.log("No stored bridge data found, using static data");
-        // Use static data as fallback
-        bridgeData = {
-          id: orderId,
-          fromCurrency: "USDT",
-          toCurrency: "SOL",
-          amount: "50",
-          destinationAddress: "8VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY",
-          status: "NEW",
-          depositAddress: "0x48f6bf4b24bc374943d7a45c0811908ccd1c2eea",
-          type: "float",
-          receiveAmount: "0.39840800"
-        };
+      // If we have bridge data with a token, attempt to fetch the latest status from the API
+      if (bridgeData && bridgeData.orderToken) {
+        try {
+          console.log("Fetching real-time order status from API");
+          
+          // Prepare request body for the API call
+          const apiRequestBody = {
+            id: bridgeData.id,
+            token: bridgeData.orderToken
+          };
+          
+          // Make the API call via Supabase Edge Function
+          const { data: apiResponse, error: apiError } = await supabase.functions.invoke('bridge-status', {
+            body: apiRequestBody
+          });
+          
+          if (apiError) {
+            console.error("API error when fetching order status:", apiError);
+            throw new Error(`API error: ${apiError.message}`);
+          }
+          
+          if (apiResponse && apiResponse.code === 0 && apiResponse.data) {
+            console.log("API returned order status:", apiResponse);
+            
+            // Map API status to our app status format
+            const apiStatus = apiResponse.data.status;
+            const statusMap: Record<string, string> = {
+              'NEW': 'pending',
+              'PENDING': 'processing',
+              'EXCHANGE': 'exchanging',
+              'WITHDRAW': 'sending',
+              'DONE': 'completed',
+              'EXPIRED': 'expired',
+              'EMERGENCY': 'failed'
+            };
+            
+            // Update bridge data with the latest API information
+            bridgeData.status = statusMap[apiStatus] || apiStatus.toLowerCase();
+            
+            // If we have time information, update expiration
+            if (apiResponse.data.time && apiResponse.data.time.expiration) {
+              const expirationTimestamp = apiResponse.data.time.expiration * 1000; // Convert to milliseconds
+              bridgeData.expiresAt = new Date(expirationTimestamp).toISOString();
+            }
+            
+            // Store the updated bridge data back to localStorage
+            localStorage.setItem('bridge_transaction_data', JSON.stringify(bridgeData));
+            
+            setOrderDetails({
+              depositAddress: bridgeData.depositAddress || apiResponse.data.from.address,
+              depositAmount: bridgeData.amount || apiResponse.data.from.amount,
+              currentStatus: bridgeData.status,
+              fromCurrency: bridgeData.fromCurrency || apiResponse.data.from.code,
+              toCurrency: bridgeData.toCurrency || apiResponse.data.to.code,
+              orderId: bridgeData.id,
+              ffOrderId: bridgeData.id,
+              ffOrderToken: bridgeData.orderToken,
+              destinationAddress: bridgeData.destinationAddress || apiResponse.data.to.address,
+              expiresAt: bridgeData.expiresAt,
+              timeRemaining: calculateTimeRemaining(bridgeData.expiresAt),
+              tag: bridgeData.tag || apiResponse.data.from.tag || null,
+              tagName: bridgeData.tagName || apiResponse.data.from.tagName || null,
+              addressAlt: bridgeData.addressAlt || apiResponse.data.from.addressAlt || null,
+              orderType: bridgeData.type || apiResponse.data.type || "fixed",
+              receiveAmount: bridgeData.receiveAmount || apiResponse.data.to.amount,
+              rawApiResponse: apiResponse.data
+            });
+            
+            setLoading(false);
+            return;
+          }
+        } catch (apiError) {
+          console.error("Error when fetching from API:", apiError);
+          // Continue to fallback if API fails - don't set error yet
+        }
       }
+      
+      // If we don't have API data or the API call failed, use the stored data as fallback
+      if (bridgeData) {
+        setOrderDetails({
+          depositAddress: bridgeData.depositAddress,
+          depositAmount: bridgeData.amount,
+          currentStatus: bridgeData.status,
+          fromCurrency: bridgeData.fromCurrency,
+          toCurrency: bridgeData.toCurrency,
+          orderId: bridgeData.id,
+          ffOrderId: bridgeData.id,
+          ffOrderToken: bridgeData.orderToken || orderId,
+          destinationAddress: bridgeData.destinationAddress,
+          expiresAt: bridgeData.expiresAt,
+          timeRemaining: calculateTimeRemaining(bridgeData.expiresAt),
+          tag: bridgeData.tag || null,
+          tagName: bridgeData.tagName || null,
+          addressAlt: bridgeData.addressAlt || null,
+          orderType: bridgeData.type || "fixed",
+          receiveAmount: bridgeData.receiveAmount
+        });
+        
+        setLoading(false);
+        return;
+      }
+      
+      // If we still don't have data, use static fallback data
+      console.log("No stored bridge data found, using static data");
+      // Use static data as fallback
+      const fallbackData = {
+        id: orderId,
+        fromCurrency: "USDT",
+        toCurrency: "SOL",
+        amount: "50",
+        destinationAddress: "8VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY",
+        status: "NEW",
+        depositAddress: "0x48f6bf4b24bc374943d7a45c0811908ccd1c2eea",
+        type: "float",
+        receiveAmount: "0.39840800",
+        expiresAt: new Date(Date.now() + 20 * 60000).toISOString(),
+      };
 
       setOrderDetails({
-        depositAddress: bridgeData.depositAddress,
-        depositAmount: bridgeData.amount,
-        currentStatus: bridgeData.status,
-        fromCurrency: bridgeData.fromCurrency,
-        toCurrency: bridgeData.toCurrency,
-        orderId: bridgeData.id,
-        ffOrderId: bridgeData.id,
+        depositAddress: fallbackData.depositAddress,
+        depositAmount: fallbackData.amount,
+        currentStatus: fallbackData.status.toLowerCase(),
+        fromCurrency: fallbackData.fromCurrency,
+        toCurrency: fallbackData.toCurrency,
+        orderId: fallbackData.id,
+        ffOrderId: fallbackData.id,
         ffOrderToken: orderId,
-        destinationAddress: bridgeData.destinationAddress,
-        expiresAt: new Date(Date.now() + 20 * 60000).toISOString(),
-        timeRemaining: "20:00",
-        tag: bridgeData.tag || null,
-        tagName: bridgeData.tagName || null,
-        addressAlt: bridgeData.addressAlt || null,
-        orderType: bridgeData.type || "fixed",
-        receiveAmount: bridgeData.receiveAmount
+        destinationAddress: fallbackData.destinationAddress,
+        expiresAt: fallbackData.expiresAt,
+        timeRemaining: calculateTimeRemaining(fallbackData.expiresAt),
+        tag: null,
+        tagName: null,
+        addressAlt: null,
+        orderType: fallbackData.type || "fixed",
+        receiveAmount: fallbackData.receiveAmount
       });
       
       setLoading(false);
@@ -111,6 +216,23 @@ export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = tr
       setLoading(false);
     }
   }, [orderId, shouldFetch]);
+
+  // Helper function to calculate time remaining
+  const calculateTimeRemaining = (expiresAtStr: string | null): string | null => {
+    if (!expiresAtStr) return null;
+    
+    const expirationTime = new Date(expiresAtStr);
+    const now = new Date();
+    const diffMs = expirationTime.getTime() - now.getTime();
+    
+    if (diffMs <= 0) {
+      return "0:00";
+    }
+    
+    const diffMinutes = Math.floor(diffMs / 60000);
+    const diffSeconds = Math.floor((diffMs % 60000) / 1000);
+    return `${diffMinutes}:${diffSeconds.toString().padStart(2, '0')}`;
+  };
 
   useEffect(() => {
     if (shouldFetch) {

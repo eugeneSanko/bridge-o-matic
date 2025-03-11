@@ -1,3 +1,4 @@
+
 import { Loader2, Clock, ArrowRight, CheckCircle2 } from "lucide-react";
 
 interface ProgressStepsProps {
@@ -9,20 +10,45 @@ export const ProgressSteps = ({
 }: ProgressStepsProps) => {
   // Map status to step index
   const getActiveStepIndex = (status: string): number => {
+    // Lowercase the status for case-insensitive comparison
+    const lowerStatus = status?.toLowerCase() || "pending";
+    
     const statusMap: Record<string, number> = {
-      pending: 0,
-      processing: 1,
-      exchanging: 1,
-      sending: 2,
-      completed: 3,
-      expired: 0,
-      refunding: 1,
-      refunded: 3,
-      failed: 3,
-      unknown: 0,
+      // API statuses (uppercase)
+      "new": 0,
+      "pending": 1,
+      "exchange": 1,
+      "exchanging": 1,
+      "withdraw": 2,
+      "sending": 2,
+      "done": 3,
+      "completed": 3,
+      // App-specific statuses (lowercase)
+      "processing": 1,
+      "expired": 0,
+      "refunding": 1,
+      "refunded": 3,
+      "failed": 3,
+      "emergency": 3,
+      "unknown": 0,
     };
 
-    return statusMap[status] || 0;
+    return statusMap[lowerStatus] || 0;
+  };
+
+  // Returns appropriate visual status indicators
+  const getStatusType = (status: string): string => {
+    const lowerStatus = status?.toLowerCase() || "pending";
+    
+    if (["done", "completed"].includes(lowerStatus)) {
+      return "completed";
+    } else if (["failed", "emergency"].includes(lowerStatus)) {
+      return "failed";
+    } else if (["refunded", "expired"].includes(lowerStatus)) {
+      return "refunded";
+    }
+    
+    return "";
   };
 
   const activeStep = getActiveStepIndex(currentStatus);
@@ -51,14 +77,7 @@ export const ProgressSteps = ({
       icon: CheckCircle2,
       active: activeStep === 3,
       completed: false,
-      status:
-        currentStatus === "completed"
-          ? "completed"
-          : currentStatus === "failed"
-          ? "failed"
-          : currentStatus === "refunded"
-          ? "refunded"
-          : "",
+      status: getStatusType(currentStatus),
     },
   ];
 

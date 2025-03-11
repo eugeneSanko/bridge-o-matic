@@ -1,3 +1,4 @@
+
 import React from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
@@ -17,6 +18,13 @@ export const BridgeTransaction = ({
   orderDetails,
   onCopyAddress,
 }: BridgeTransactionProps) => {
+  // Log the raw API response for debugging if available
+  React.useEffect(() => {
+    if (orderDetails.rawApiResponse) {
+      console.log("Raw API response:", orderDetails.rawApiResponse);
+    }
+  }, [orderDetails.rawApiResponse]);
+
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
       <div className="max-w-6xl mx-auto">
@@ -27,7 +35,7 @@ export const BridgeTransaction = ({
           destinationAddress={orderDetails.destinationAddress}
           receiveAmount={orderDetails.receiveAmount}
           orderType={orderDetails.orderType}
-          depositAddress={orderDetails.depositAddress} // Pass deposit address
+          depositAddress={orderDetails.depositAddress}
         />
 
         <ProgressSteps currentStatus={orderDetails.currentStatus} />
