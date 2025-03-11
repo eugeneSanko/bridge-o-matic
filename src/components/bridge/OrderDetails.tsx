@@ -1,5 +1,6 @@
 
-import { Copy, Clock, Calendar, Tag } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Copy, Clock, Calendar, Tag, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface OrderDetailsProps {
@@ -9,11 +10,121 @@ interface OrderDetailsProps {
   onCopyClick: () => void;
   tag?: number | null;
   tagName?: string | null;
+  expiresAt?: string | null;
+  currentStatus?: string;
 }
 
-export const OrderDetails = ({ orderId, orderType, timeRemaining, onCopyClick, tag, tagName }: OrderDetailsProps) => {
+export const OrderDetails = ({ 
+  orderId, 
+  orderType, 
+  timeRemaining, 
+  onCopyClick, 
+  tag, 
+  tagName,
+  expiresAt,
+  currentStatus = "NEW"
+}: OrderDetailsProps) => {
+  const [localTimeRemaining, setLocalTimeRemaining] = useState(timeRemaining || "20:00");
+  const [timerColor, setTimerColor] = useState("#0FA0CE");
+  const [isExpired, setIsExpired] = useState(false);
+  
+  // Calculate and update countdown timer
+  useEffect(() => {
+    if (!expiresAt && !timeRemaining) {
+      // Start with 20 minutes if no expiration time provided
+      const endTime = new Date(Date.now() + 20 * 60000);
+      
+      const intervalId = setInterval(() => {
+        const now = new Date();
+        const diffMs = endTime.getTime() - now.getTime();
+        
+        if (diffMs <= 0) {
+          clearInterval(intervalId);
+          setLocalTimeRemaining("0:00");
+          setTimerColor("#ea384c");
+          setIsExpired(true);
+          return;
+        }
+        
+        const diffMinutes = Math.floor(diffMs / 60000);
+        const diffSeconds = Math.floor((diffMs % 60000) / 1000);
+        const newTimeRemaining = `${diffMinutes}:${diffSeconds.toString().padStart(2, '0')}`;
+        
+        // Change color based on remaining time
+        if (diffMinutes <= 5) {
+          setTimerColor("#ea384c"); // Red when less than 5 minutes
+        } else if (diffMinutes <= 10) {
+          setTimerColor("#F97316"); // Orange when less than 10 minutes
+        } else {
+          setTimerColor("#0FA0CE"); // Blue otherwise
+        }
+        
+        setLocalTimeRemaining(newTimeRemaining);
+      }, 1000);
+      
+      return () => clearInterval(intervalId);
+    } else if (expiresAt) {
+      // Use provided expiration time
+      const endTime = new Date(expiresAt);
+      
+      const intervalId = setInterval(() => {
+        const now = new Date();
+        const diffMs = endTime.getTime() - now.getTime();
+        
+        if (diffMs <= 0) {
+          clearInterval(intervalId);
+          setLocalTimeRemaining("0:00");
+          setTimerColor("#ea384c");
+          setIsExpired(true);
+          return;
+        }
+        
+        const diffMinutes = Math.floor(diffMs / 60000);
+        const diffSeconds = Math.floor((diffMs % 60000) / 1000);
+        const newTimeRemaining = `${diffMinutes}:${diffSeconds.toString().padStart(2, '0')}`;
+        
+        // Change color based on remaining time
+        if (diffMinutes <= 5) {
+          setTimerColor("#ea384c"); // Red when less than 5 minutes
+        } else if (diffMinutes <= 10) {
+          setTimerColor("#F97316"); // Orange when less than 10 minutes
+        } else {
+          setTimerColor("#0FA0CE"); // Blue otherwise
+        }
+        
+        setLocalTimeRemaining(newTimeRemaining);
+      }, 1000);
+      
+      return () => clearInterval(intervalId);
+    }
+  }, [expiresAt, timeRemaining]);
+
   const formatDate = (date: Date) => {
     return date.toISOString().replace('T', ' ').substring(0, 16) + ' UTC';
+  };
+
+  const renderStatusSection = () => {
+    const hasFailedOrExpired = isExpired || 
+      currentStatus === "FAILED" || 
+      currentStatus === "EXPIRED";
+    
+    if (hasFailedOrExpired) {
+      return (
+        <div className="mt-4 p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+          <div className="flex items-center gap-2 text-red-500">
+            <AlertCircle className="h-5 w-5" />
+            <span className="font-medium">
+              {isExpired ? "Deposit window expired" : "Awaiting deposit failed"}
+            </span>
+          </div>
+          <p className="text-sm text-gray-400 mt-1">
+            Please contact support with your order ID
+          </p>
+        </div>
+      );
+    }
+    
+    return null;
   };
 
   return (
@@ -41,9 +152,9 @@ export const OrderDetails = ({ orderId, orderType, timeRemaining, onCopyClick, t
         
         <div>
           <div className="text-sm text-gray-400 mb-2">Time Remaining</div>
-          <div className="flex items-center gap-2 text-[#0FA0CE]">
+          <div className="flex items-center gap-2" style={{ color: timerColor }}>
             <Clock className="h-5 w-5 animate-pulse" />
-            <span className="font-medium text-lg">{timeRemaining || "Waiting..."}</span>
+            <span className="font-medium text-lg transition-colors duration-300">{localTimeRemaining || "Waiting..."}</span>
           </div>
         </div>
         
@@ -61,6 +172,8 @@ export const OrderDetails = ({ orderId, orderType, timeRemaining, onCopyClick, t
             <span>{formatDate(new Date())}</span>
           </div>
         </div>
+        
+        {renderStatusSection()}
       </div>
     </div>
   );

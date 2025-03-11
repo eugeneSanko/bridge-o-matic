@@ -26,8 +26,8 @@ const BridgeAwaitingDeposit = () => {
     toCurrency: "SOL",
     orderId: "8ER2UF",
     destinationAddress: "8VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY",
-    expiresAt: new Date(Date.now() + 30 * 60000).toISOString(), // 30 minutes from now
-    timeRemaining: "29:59",
+    expiresAt: new Date(Date.now() + 20 * 60000).toISOString(), // 20 minutes from now
+    timeRemaining: "20:00",
     ffOrderId: "8ER2UF",
     ffOrderToken: token,
     tag: null,

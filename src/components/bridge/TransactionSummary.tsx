@@ -66,7 +66,7 @@ export const TransactionSummary = ({
   return (
     <div className="glass-card p-8 md:p-12 rounded-xl mb-8 relative overflow-hidden">
       <div className="absolute inset-0 opacity-20">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0FA0CE]/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0FA0CE]/30 via-[#7a64ff]/20 to-transparent backdrop-blur-sm animate-pulse-subtle" />
       </div>
       <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-12 relative">
         <div className="flex-1 w-full md:w-auto">
