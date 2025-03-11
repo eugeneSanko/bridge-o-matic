@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { API_CONFIG, invokeFunctionWithRetry, generateFixedFloatSignature } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -89,7 +88,6 @@ export function useBridgeOrder(
           
           console.log("API request parameters:", apiRequestBody);
           
-          // Make the API call via Supabase Edge Function
           const { data: apiResponse, error: apiError } = await supabase.functions.invoke('bridge-status', {
             body: apiRequestBody
           });
@@ -150,7 +148,7 @@ export function useBridgeOrder(
               tag: bridgeData?.tag || apiResponse.data.from.tag || null,
               tagName: bridgeData?.tagName || apiResponse.data.from.tagName || null,
               addressAlt: bridgeData?.addressAlt || apiResponse.data.from.addressAlt || null,
-              orderType: orderType,
+              orderType: bridgeData?.type === 'float' ? 'float' : 'fixed',
               receiveAmount: bridgeData?.receiveAmount || apiResponse.data.to.amount,
               rawApiResponse: apiResponse.data
             });
@@ -160,11 +158,9 @@ export function useBridgeOrder(
           }
         } catch (apiError) {
           console.error("Error when fetching from API:", apiError);
-          // Only set error if we don't have fallback data
           if (!bridgeData) {
             setError(apiError instanceof Error ? apiError.message : "An unknown error occurred");
           }
-          // Continue to fallback if API fails and we have stored data
         }
       }
       
@@ -239,7 +235,6 @@ export function useBridgeOrder(
     }
   }, [orderId, shouldFetch, forceApiCheck]);
 
-  // Function to update order status manually
   const updateOrderStatus = useCallback((newStatus: string) => {
     console.log(`Manually updating order status to: ${newStatus}`);
     
@@ -272,7 +267,6 @@ export function useBridgeOrder(
     });
   }, []);
 
-  // Helper function to calculate time remaining
   const calculateTimeRemaining = (expiresAtStr: string | null): string | null => {
     if (!expiresAtStr) return null;
     
@@ -296,7 +290,6 @@ export function useBridgeOrder(
       setLoading(false);
     }
     
-    // Only set up polling if we want to fetch and have an actual order ID
     if (shouldFetch && orderId) {
       const interval = window.setInterval(fetchOrderDetails, 15000);
       setPollingInterval(interval);
@@ -323,7 +316,6 @@ export function useBridgeOrder(
         clearInterval(timer);
         setOrderDetails(prev => prev ? { ...prev, timeRemaining: "0:00" } : null);
         
-        // Update the status to expired when the timer reaches zero
         updateOrderStatus("EXPIRED");
         
         return;
