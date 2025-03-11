@@ -10,14 +10,19 @@ const corsHeaders = {
 console.log("Bridge Order Status Function Loaded");
 
 const FF_API_URL = "https://ff.io/api/v2";
-const FF_API_KEY = Deno.env.get("FF_API_KEY") || "";
-const FF_API_SECRET = Deno.env.get("FF_API_SECRET") || "";
+const FF_API_KEY = Deno.env.get("FF_API_KEY") || "bzplvDU0N2Pa5crmQTbqteew6WJyuSGX9BEBPclU";
+const FF_API_SECRET = Deno.env.get("FF_API_SECRET") || "qIk7Vd6b5M3wqOmD3cnqRGQ6k3dGTDss47fvdng4";
 
-function generateSignature(body: any): string {
+async function generateSignature(body: any): Promise<string> {
   const encoder = new TextEncoder();
   const bodyStr = JSON.stringify(body);
   const key = encoder.encode(FF_API_SECRET);
   const message = encoder.encode(bodyStr);
+  
+  // Ensure FF_API_SECRET is not empty
+  if (FF_API_SECRET.length === 0) {
+    throw new Error("API Secret is empty or undefined");
+  }
   
   return crypto.subtle.importKey(
     "raw", key, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
@@ -40,7 +45,11 @@ serve(async (req) => {
   }
 
   try {
-    const { id, token } = await req.json();
+    console.log("Processing bridge status request");
+    const requestData = await req.json();
+    
+    // Extract id and token from the request
+    const { id, token } = requestData;
     
     if (!id || !token) {
       return new Response(
@@ -62,11 +71,39 @@ serve(async (req) => {
     
     // Prepare request body for FixedFloat API
     const requestBody = { id, token };
+    const requestBodyStr = JSON.stringify(requestBody);
+    
+    console.log("Request body:", requestBodyStr);
+    console.log("API Secret Length:", FF_API_SECRET.length);
     
     // Generate signature
     const signature = await generateSignature(requestBody);
     
     console.log(`Generated signature: ${signature}`);
+    
+    // Debugging information
+    const debugInfo = {
+      requestDetails: {
+        url: `${FF_API_URL}/order`,
+        method: "POST",
+        requestBody,
+        requestBodyString: requestBodyStr
+      },
+      signatureInfo: {
+        signature,
+        apiKey: FF_API_KEY,
+        secretLength: FF_API_SECRET.length
+      },
+      curlCommand: `curl -X POST \\
+  -H "Accept: application/json" \\
+  -H "X-API-KEY: ${FF_API_KEY}" \\
+  -H "X-API-SIGN: ${signature}" \\
+  -H "Content-Type: application/json; charset=UTF-8" \\
+  -d '${requestBodyStr}' \\
+  "${FF_API_URL}/order" -L`
+    };
+    
+    console.log("Debug Info:", JSON.stringify(debugInfo, null, 2));
     
     // Call the FixedFloat API
     const response = await fetch(`${FF_API_URL}/order`, {
@@ -76,18 +113,29 @@ serve(async (req) => {
         "X-API-KEY": FF_API_KEY,
         "X-API-SIGN": signature,
       },
-      body: JSON.stringify(requestBody),
+      body: requestBodyStr,
     });
     
+    // Get the response body as text
+    const responseText = await response.text();
+    
+    // Update debug info with response details
+    debugInfo.responseDetails = {
+      status: response.status.toString(),
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+      body: responseText
+    };
+    
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`API Error (${response.status}): ${errorText}`);
+      console.error(`API Error (${response.status}): ${responseText}`);
       
       return new Response(
         JSON.stringify({
           code: response.status,
           msg: `API Error: ${response.statusText}`,
-          details: errorText,
+          details: responseText,
+          debugInfo
         }),
         {
           status: response.status,
@@ -99,9 +147,33 @@ serve(async (req) => {
       );
     }
     
-    // Parse and return the API response
-    const apiResponse = await response.json();
+    // Try to parse the response as JSON
+    let apiResponse;
+    try {
+      apiResponse = JSON.parse(responseText);
+    } catch (e) {
+      console.error("Failed to parse API response as JSON:", e);
+      return new Response(
+        JSON.stringify({
+          code: 500,
+          msg: "Failed to parse API response",
+          details: e.message,
+          debugInfo
+        }),
+        {
+          status: 500,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+    
     console.log("API Response:", JSON.stringify(apiResponse));
+    
+    // Include debug info in the response
+    apiResponse.debugInfo = debugInfo;
     
     return new Response(
       JSON.stringify(apiResponse),
@@ -121,6 +193,7 @@ serve(async (req) => {
         code: 500,
         msg: "Internal server error",
         details: error.message,
+        stack: error.stack
       }),
       {
         status: 500,
