@@ -104,9 +104,13 @@ export const OrderDetails = ({
   };
 
   const renderStatusSection = () => {
+    // Check for failed or expired status in API format or app format
     const hasFailedOrExpired = isExpired || 
       currentStatus === "FAILED" || 
-      currentStatus === "EXPIRED";
+      currentStatus === "EXPIRED" ||
+      currentStatus === "failed" || 
+      currentStatus === "expired" ||
+      currentStatus === "EMERGENCY";
     
     if (hasFailedOrExpired) {
       return (
@@ -114,7 +118,9 @@ export const OrderDetails = ({
           <div className="flex items-center gap-2 text-red-500">
             <AlertCircle className="h-5 w-5" />
             <span className="font-medium">
-              {isExpired ? "Deposit window expired" : "Awaiting deposit failed"}
+              {isExpired || currentStatus === "EXPIRED" || currentStatus === "expired" 
+                ? "Deposit window expired" 
+                : "Awaiting deposit failed"}
             </span>
           </div>
           <p className="text-sm text-gray-400 mt-1">

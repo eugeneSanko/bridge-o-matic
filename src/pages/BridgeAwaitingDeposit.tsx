@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
@@ -14,14 +15,15 @@ const BridgeAwaitingDeposit = () => {
   const orderId = searchParams.get("orderId");
   const token = searchParams.get("token") || (orderId || "");
   
-  // Always use real data since we're now storing it
-  const [isUsingStatic, setIsUsingStatic] = useState(false);
+  // Always use real data and force API check
   const [apiAttempted, setApiAttempted] = useState(false);
   const [navigating, setNavigating] = useState(false);
   
+  // Set forceApiCheck to true to always attempt API call
   const { orderDetails, loading, error, handleCopyAddress } = useBridgeOrder(
     token, 
-    !apiAttempted
+    true, // Always try to fetch from API
+    true  // Force API check even if we have local data
   );
   
   const { deepLink, logs, addLog } = useDeepLink();
@@ -34,37 +36,26 @@ const BridgeAwaitingDeposit = () => {
         description: "No order information found",
         variant: "destructive"
       });
-    }
-  }, [token]);
-
-  useEffect(() => {
-    if (!token) {
-      toast({
-        title: "Missing Order Token",
-        description: "Using demo data instead of a real order",
-      });
-      setIsUsingStatic(true);
     } else {
       console.log(`Processing order token: ${token}`);
     }
   }, [token]);
 
   useEffect(() => {
-    if (!isUsingStatic && !apiAttempted && (loading || error || orderDetails)) {
+    if (!apiAttempted && (loading || error || orderDetails)) {
       setApiAttempted(true);
       
-      // If we get an error, switch to static data
+      // If we get an error, show a toast
       if (error) {
-        console.log("API error detected, switching to static data");
-        setIsUsingStatic(true);
+        console.error("API error detected:", error);
         toast({
           title: "Connection Error",
-          description: "Could not fetch order details. Using demo data instead.",
+          description: "Could not fetch order details from the exchange API.",
           variant: "destructive"
         });
       }
     }
-  }, [isUsingStatic, apiAttempted, loading, error, orderDetails]);
+  }, [apiAttempted, loading, error, orderDetails]);
 
   useEffect(() => {
     if (!deepLink) return;
@@ -79,7 +70,9 @@ const BridgeAwaitingDeposit = () => {
 
     // Only navigate to completion page if we have confirmation of completed status
     // and we're not already navigating
-    if (orderDetails?.currentStatus === 'completed' && !navigating) {
+    if ((orderDetails?.currentStatus === 'completed' || 
+         orderDetails?.rawApiResponse?.status === 'DONE') && 
+        !navigating) {
       console.log("Order is complete, navigating to completion page");
       setNavigating(true);
       navigate(`/bridge/order-complete?orderId=${orderDetails.orderId}`);
@@ -102,20 +95,24 @@ const BridgeAwaitingDeposit = () => {
       const txId = params.get("txId");
       addLog(`Transaction ID from deep link: ${txId}`);
     }
-  }, [deepLink, orderDetails?.currentStatus, orderDetails?.orderId, orderId, addLog, navigate, navigating]);
+  }, [deepLink, orderDetails?.currentStatus, orderDetails?.orderId, orderDetails?.rawApiResponse?.status, orderId, addLog, navigate, navigating]);
 
+  // Show loading state while fetching order details
   if (loading) {
     return <LoadingState />;
   }
 
+  // Show error state if there was an error
   if (error) {
     return <ErrorState error={error} />;
   }
 
+  // Show empty state if no order details were found
   if (!orderDetails) {
     return <EmptyState />;
   }
 
+  // Show the bridge transaction with the order details
   return (
     <BridgeTransaction 
       orderDetails={orderDetails} 

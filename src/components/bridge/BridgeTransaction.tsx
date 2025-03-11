@@ -49,7 +49,7 @@ export const BridgeTransaction = ({
             orderType={orderDetails.orderType}
             timeRemaining={orderDetails.timeRemaining}
             expiresAt={orderDetails.expiresAt}
-            currentStatus={orderDetails.currentStatus}
+            currentStatus={apiStatus} 
             onCopyClick={() => onCopyAddress(orderDetails.orderId)}
             tag={orderDetails.tag}
             tagName={orderDetails.tagName}
