@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { API_CONFIG, invokeFunctionWithRetry, generateFixedFloatSignature } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -108,7 +107,9 @@ export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = tr
               'EMERGENCY': 'failed'
             };
             
-            // Update bridge data with the latest API information
+            // Ensure orderType is correctly typed
+            const orderType = apiResponse.data.type?.toLowerCase() === 'float' ? 'float' : 'fixed';
+            
             bridgeData.status = statusMap[apiStatus] || apiStatus.toLowerCase();
             
             // If we have time information, update expiration
@@ -135,7 +136,7 @@ export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = tr
               tag: bridgeData.tag || apiResponse.data.from.tag || null,
               tagName: bridgeData.tagName || apiResponse.data.from.tagName || null,
               addressAlt: bridgeData.addressAlt || apiResponse.data.from.addressAlt || null,
-              orderType: bridgeData.type || apiResponse.data.type || "fixed",
+              orderType: orderType,
               receiveAmount: bridgeData.receiveAmount || apiResponse.data.to.amount,
               rawApiResponse: apiResponse.data
             });
@@ -205,7 +206,7 @@ export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = tr
         tag: null,
         tagName: null,
         addressAlt: null,
-        orderType: fallbackData.type || "fixed",
+        orderType: fallbackData.type === 'float' ? 'float' : 'fixed',
         receiveAmount: fallbackData.receiveAmount
       });
       
