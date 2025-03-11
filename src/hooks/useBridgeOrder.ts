@@ -65,7 +65,7 @@ export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = tr
       // 2. Update your local database with the latest status
       
       // For demo, simulate order details with realistic values from FF API response
-      const staticOrderData = {
+      const staticOrderData: OrderData = {
         id: "8ER2UF",
         ff_order_id: "8ER2UF",
         ff_order_token: orderId, // The token from FF API is passed as orderId
@@ -79,7 +79,10 @@ export function useBridgeOrder(orderId: string | null, shouldFetch: boolean = tr
         initial_rate: 0.016718,
         expiration_time: new Date(Date.now() + 600000).toISOString(), // 10 minutes from now
         type: "float",
-        receive_amount: "0.39840800"
+        receive_amount: "0.39840800",
+        tag: null,
+        tagName: null,
+        addressAlt: null
       };
 
       // Calculate time remaining for order expiration
