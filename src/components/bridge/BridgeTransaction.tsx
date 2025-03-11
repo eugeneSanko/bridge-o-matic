@@ -24,24 +24,33 @@ export const BridgeTransaction = ({
   // Extract the time left from the raw API response (in seconds)
   const timeLeft = orderDetails.rawApiResponse?.time?.left || null;
   
-  // Check if order is expired based on time left
+  // Check if order is expired based on various indicators
   const [isExpired, setIsExpired] = useState(false);
   
   // Check for expired status
   useEffect(() => {
-    // Check if the API status is already EXPIRED
-    if (apiStatus === "EXPIRED" || orderDetails.currentStatus === "expired") {
-      setIsExpired(true);
-      return;
-    }
+    // Check multiple conditions for expiration
+    const isApiExpired = apiStatus === "EXPIRED";
+    const isStatusExpired = orderDetails.currentStatus === "expired";
+    const isTimerExpired = timeLeft !== null && timeLeft <= 0;
     
-    // Check if the timer has run out (timeLeft is 0 or negative)
-    if (timeLeft !== null && timeLeft <= 0) {
-      setIsExpired(true);
-      return;
-    }
+    // Log expiration checks for debugging
+    console.log("Expiration checks:", {
+      apiStatus,
+      currentStatus: orderDetails.currentStatus,
+      timeLeft,
+      isApiExpired,
+      isStatusExpired,
+      isTimerExpired
+    });
     
-    setIsExpired(false);
+    // Set as expired if any condition is true
+    if (isApiExpired || isStatusExpired || isTimerExpired) {
+      console.log("Order is expired");
+      setIsExpired(true);
+    } else {
+      setIsExpired(false);
+    }
   }, [apiStatus, orderDetails.currentStatus, timeLeft]);
   
   // Log the raw API response for debugging if available

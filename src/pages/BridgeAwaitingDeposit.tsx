@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
 import { useDeepLink } from "@/hooks/useDeepLink";
@@ -10,6 +10,18 @@ import { BridgeTransaction } from "@/components/bridge/BridgeTransaction";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DebugPanel } from "@/components/bridge/DebugPanel";
+
+// Dynamic polling intervals (in milliseconds) based on status
+const POLLING_INTERVALS = {
+  DEFAULT: 15000,     // Default: 15 seconds
+  NEW: 10000,         // Awaiting deposit: 10 seconds  
+  PENDING: 10000,     // Received, waiting for confirmations: 10 seconds
+  EXCHANGE: 20000,    // Exchange in progress: 20 seconds
+  WITHDRAW: 20000,    // Sending funds: 20 seconds
+  DONE: null,         // Completed: no polling needed
+  EXPIRED: null,      // Expired: no polling needed
+  EMERGENCY: null     // Emergency: no polling needed
+};
 
 const BridgeAwaitingDeposit = () => {
   const navigate = useNavigate();
@@ -23,6 +35,8 @@ const BridgeAwaitingDeposit = () => {
   const [manualStatusCheckAttempted, setManualStatusCheckAttempted] = useState(false);
   const [statusCheckDebugInfo, setStatusCheckDebugInfo] = useState(null);
   const [statusCheckError, setStatusCheckError] = useState(null);
+  const [pollingInterval, setPollingInterval] = useState(POLLING_INTERVALS.DEFAULT);
+  const [lastPollTimestamp, setLastPollTimestamp] = useState(0);
   
   // Set forceApiCheck to true to always attempt API call
   const { orderDetails, loading, error, handleCopyAddress } = useBridgeOrder(
@@ -32,6 +46,17 @@ const BridgeAwaitingDeposit = () => {
   );
   
   const { deepLink, logs, addLog } = useDeepLink();
+
+  // Update polling interval based on current status
+  useEffect(() => {
+    if (!orderDetails || !orderDetails.rawApiResponse) return;
+    
+    const apiStatus = orderDetails.rawApiResponse.status;
+    const newInterval = POLLING_INTERVALS[apiStatus] ?? POLLING_INTERVALS.DEFAULT;
+    
+    console.log(`Setting polling interval to ${newInterval === null ? 'none' : `${newInterval}ms`} for status ${apiStatus}`);
+    setPollingInterval(newInterval);
+  }, [orderDetails?.rawApiResponse?.status]);
 
   // Show message if no order data is found
   useEffect(() => {
@@ -47,15 +72,31 @@ const BridgeAwaitingDeposit = () => {
   }, [orderId, token]);
 
   // Manual status check function that uses our bridge-status function
-  const checkOrderStatus = async () => {
+  const checkOrderStatus = useCallback(async (force = false) => {
     if (!orderId || !token) {
       console.error("Missing order ID or token for status check");
       setStatusCheckError("Missing order ID or token");
       return;
     }
+    
+    // Skip if polling is disabled (null interval) and not forced
+    if (pollingInterval === null && !force) {
+      console.log("Polling disabled for current status, skipping check");
+      return;
+    }
+    
+    // Skip if not enough time has passed since last poll
+    const now = Date.now();
+    if (!force && (now - lastPollTimestamp) < pollingInterval) {
+      console.log(`Not enough time elapsed since last poll (${(now - lastPollTimestamp)/1000}s), skipping`);
+      return;
+    }
+    
+    // Update last poll timestamp
+    setLastPollTimestamp(now);
 
     try {
-      console.log("Manually checking order status with bridge-status function");
+      console.log(`${force ? 'Forcing' : 'Scheduled'} order status check with bridge-status function`);
       setManualStatusCheckAttempted(true);
       
       const { data, error } = await supabase.functions.invoke('bridge-status', {
@@ -94,14 +135,14 @@ const BridgeAwaitingDeposit = () => {
       console.error("Error checking order status:", error);
       setStatusCheckError(`Error: ${error.message}`);
     }
-  };
+  }, [orderId, token, pollingInterval, lastPollTimestamp, navigating, navigate]);
 
   // Run a manual status check on component mount
   useEffect(() => {
     if (orderId && token && !manualStatusCheckAttempted) {
-      checkOrderStatus();
+      checkOrderStatus(true); // Force first check
     }
-  }, [orderId, token, manualStatusCheckAttempted]);
+  }, [orderId, token, manualStatusCheckAttempted, checkOrderStatus]);
 
   useEffect(() => {
     if (!apiAttempted && (loading || error || orderDetails)) {
@@ -159,16 +200,21 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [deepLink, orderDetails?.currentStatus, orderDetails?.orderId, orderDetails?.rawApiResponse?.status, orderId, addLog, navigate, navigating]);
 
-  // Periodically check status
+  // Periodically check status with dynamic interval
   useEffect(() => {
-    if (!orderId || !token) return;
+    if (!orderId || !token || pollingInterval === null) return;
+    
+    console.log(`Setting up polling with ${pollingInterval}ms interval`);
     
     const intervalId = setInterval(() => {
       checkOrderStatus();
-    }, 30000); // Check every 30 seconds
+    }, pollingInterval);
     
-    return () => clearInterval(intervalId);
-  }, [orderId, token]);
+    return () => {
+      console.log('Clearing polling interval');
+      clearInterval(intervalId);
+    };
+  }, [orderId, token, pollingInterval, checkOrderStatus]);
 
   // Show loading state while fetching order details
   if (loading) {
