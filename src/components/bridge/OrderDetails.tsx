@@ -29,120 +29,80 @@ export const OrderDetails = ({
   const [localTimeRemaining, setLocalTimeRemaining] = useState(timeRemaining || "20:00");
   const [timerColor, setTimerColor] = useState("#9b87f5"); // Start with purple
   const [isExpired, setIsExpired] = useState(false);
+  const [secondsRemaining, setSecondsRemaining] = useState<number | null>(null);
   
-  // Calculate and update countdown timer
+  // Initialize the timer based on timeLeft from API
   useEffect(() => {
-    // If we have a timeLeft value from the API, use it directly
     if (timeLeft !== undefined && timeLeft !== null) {
-      console.log(`Using API timeLeft value: ${timeLeft} seconds`);
-      
-      // Initialize with the current timeLeft value
-      let secondsRemaining = timeLeft;
-      
-      const updateTimer = () => {
-        const minutes = Math.floor(secondsRemaining / 60);
-        const seconds = secondsRemaining % 60;
-        const newTimeRemaining = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        
-        // Update the timer text
-        setLocalTimeRemaining(newTimeRemaining);
-        
-        // Update colors based on time remaining
-        if (minutes <= 5) {
-          setTimerColor("#ea384c"); // Red when less than 5 minutes
-        } else if (minutes <= 10) {
-          setTimerColor("#F97316"); // Orange when less than 10 minutes
-        } else {
-          setTimerColor("#9b87f5"); // Purple otherwise
-        }
-        
-        // Check if timer has expired
-        if (secondsRemaining <= 0) {
-          clearInterval(intervalId);
-          setIsExpired(true);
-          setTimerColor("#ea384c");
-          return;
-        }
-        
-        // Decrement the timer
-        secondsRemaining -= 1;
-      };
-      
-      // Initial update
-      updateTimer();
-      
-      // Set up interval to update every second
-      const intervalId = setInterval(updateTimer, 1000);
-      
-      return () => clearInterval(intervalId);
-    } else if (!expiresAt && !timeRemaining) {
-      // Start with 20 minutes if no expiration time provided
-      const endTime = new Date(Date.now() + 20 * 60000);
-      
-      const intervalId = setInterval(() => {
-        const now = new Date();
-        const diffMs = endTime.getTime() - now.getTime();
-        
-        if (diffMs <= 0) {
-          clearInterval(intervalId);
-          setLocalTimeRemaining("0:00");
-          setTimerColor("#ea384c");
-          setIsExpired(true);
-          return;
-        }
-        
-        const diffMinutes = Math.floor(diffMs / 60000);
-        const diffSeconds = Math.floor((diffMs % 60000) / 1000);
-        const newTimeRemaining = `${diffMinutes}:${diffSeconds.toString().padStart(2, '0')}`;
-        
-        // Change color based on remaining time
-        if (diffMinutes <= 5) {
-          setTimerColor("#ea384c"); // Red when less than 5 minutes
-        } else if (diffMinutes <= 10) {
-          setTimerColor("#F97316"); // Orange when less than 10 minutes
-        } else {
-          setTimerColor("#9b87f5"); // Purple otherwise
-        }
-        
-        setLocalTimeRemaining(newTimeRemaining);
-      }, 1000);
-      
-      return () => clearInterval(intervalId);
-    } else if (expiresAt) {
-      // Use provided expiration time
-      const endTime = new Date(expiresAt);
-      
-      const intervalId = setInterval(() => {
-        const now = new Date();
-        const diffMs = endTime.getTime() - now.getTime();
-        
-        if (diffMs <= 0) {
-          clearInterval(intervalId);
-          setLocalTimeRemaining("0:00");
-          setTimerColor("#ea384c");
-          setIsExpired(true);
-          return;
-        }
-        
-        const diffMinutes = Math.floor(diffMs / 60000);
-        const diffSeconds = Math.floor((diffMs % 60000) / 1000);
-        const newTimeRemaining = `${diffMinutes}:${diffSeconds.toString().padStart(2, '0')}`;
-        
-        // Change color based on remaining time
-        if (diffMinutes <= 5) {
-          setTimerColor("#ea384c"); // Red when less than 5 minutes
-        } else if (diffMinutes <= 10) {
-          setTimerColor("#F97316"); // Orange when less than 10 minutes
-        } else {
-          setTimerColor("#9b87f5"); // Purple otherwise (for 20-10 mins)
-        }
-        
-        setLocalTimeRemaining(newTimeRemaining);
-      }, 1000);
-      
-      return () => clearInterval(intervalId);
+      console.log(`Initializing timer with API timeLeft value: ${timeLeft} seconds`);
+      setSecondsRemaining(timeLeft);
     }
-  }, [expiresAt, timeRemaining, timeLeft]);
+  }, [timeLeft]);
+  
+  // Countdown effect
+  useEffect(() => {
+    // Only start countdown if we have secondsRemaining value
+    if (secondsRemaining === null) return;
+    
+    // Format and display the time
+    const updateTimerDisplay = () => {
+      const minutes = Math.floor(secondsRemaining / 60);
+      const seconds = Math.floor(secondsRemaining % 60);
+      const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      setLocalTimeRemaining(formattedTime);
+      
+      // Update colors based on time remaining
+      if (minutes <= 5) {
+        setTimerColor("#ea384c"); // Red when less than 5 minutes
+      } else if (minutes <= 10) {
+        setTimerColor("#F97316"); // Orange when less than 10 minutes
+      } else {
+        setTimerColor("#9b87f5"); // Purple otherwise
+      }
+      
+      // Check if timer has expired
+      if (secondsRemaining <= 0) {
+        clearInterval(intervalId);
+        setIsExpired(true);
+        setTimerColor("#ea384c");
+        return;
+      }
+    };
+    
+    // Initial update
+    updateTimerDisplay();
+    
+    // Set up interval to update every second
+    const intervalId = setInterval(() => {
+      setSecondsRemaining(prev => {
+        if (prev === null || prev <= 0) return 0;
+        return prev - 1;
+      });
+      updateTimerDisplay();
+    }, 1000);
+    
+    return () => clearInterval(intervalId);
+  }, [secondsRemaining]);
+
+  // Fallback to expiresAt if no timeLeft provided
+  useEffect(() => {
+    if (secondsRemaining !== null) return; // Skip if we already have seconds remaining
+    
+    if (expiresAt) {
+      // Calculate seconds remaining based on expiresAt
+      const endTime = new Date(expiresAt);
+      const now = new Date();
+      const diffSeconds = Math.max(0, Math.floor((endTime.getTime() - now.getTime()) / 1000));
+      setSecondsRemaining(diffSeconds);
+    } else if (timeRemaining) {
+      // Parse from timeRemaining (MM:SS format)
+      const [minutes, seconds] = timeRemaining.split(':').map(Number);
+      setSecondsRemaining((minutes * 60) + seconds);
+    } else {
+      // Default to 20 minutes if no time info provided
+      setSecondsRemaining(20 * 60);
+    }
+  }, [expiresAt, timeRemaining, secondsRemaining]);
 
   const formatDate = (date: Date) => {
     return date.toISOString().replace('T', ' ').substring(0, 16) + ' UTC';
