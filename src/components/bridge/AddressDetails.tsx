@@ -1,6 +1,7 @@
 import { Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddressPlaceholder } from "./AddressPlaceholder";
+import { toast } from "sonner";
 
 interface AddressDetailsProps {
   depositAddress: string;
@@ -34,7 +35,7 @@ export const AddressDetails = ({
         .writeText(destinationAddress)
         .then(() => {
           // Optionally, display a success message
-          console.log("Destination address copied!");
+          toast.success("Destination address copied!");
           // You can replace the console log with a toast notification if you use a library like react-toastify.
         })
         .catch((err) => {
@@ -77,7 +78,7 @@ export const AddressDetails = ({
           </div>
         )}
 
-        <div className="py-4 px-6 bg-secondary/20 rounded-lg text-sm text-gray-300">
+        <div className="py-4 px-6 bg-secondary/20 rounded-lg text-sm text-gray-300 glass-card">
           {orderType === "fixed" ? (
             <>
               <p>
