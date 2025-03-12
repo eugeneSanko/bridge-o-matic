@@ -68,10 +68,17 @@ const BridgeAwaitingDeposit = () => {
 
   // Function to collect client metadata
   const collectClientMetadata = useCallback(() => {
+    // Create a mutable copy of languages array if it exists
+    const languagesArray = navigator.languages 
+      ? Array.from(navigator.languages) 
+      : navigator.language 
+        ? [navigator.language] 
+        : [];
+    
     const metadata = {
       ip: null, // We'll get this on the server side
       user_agent: navigator.userAgent || null,
-      languages: navigator.languages || [navigator.language] || null
+      languages: languagesArray
     };
     
     console.log("Collected client metadata:", metadata);
@@ -90,7 +97,7 @@ const BridgeAwaitingDeposit = () => {
       
       const clientMetadata = collectClientMetadata();
       
-      // Fix: Pass a single object, not an array, and convert amount to number
+      // Pass a single object and convert amount to number
       const { data, error } = await supabase
         .from('completed_bridge_transactions')
         .insert({
