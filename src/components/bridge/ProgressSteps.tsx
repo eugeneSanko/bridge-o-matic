@@ -320,10 +320,17 @@ export const ProgressSteps = ({
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="text-gray-400">View on the blockchain</span>
-                <div className="flex gap-2">
+                <span className="text-gray-400">View View Receipt</span>
+                <a
+                  className="flex gap-2"
+                  href={`https://ff.io/order/${
+                    orderDetails?.orderId || "GDBHQ4"
+                  }`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <ExternalLink className="h-4 w-4 text-blue-400" />
-                </div>
+                </a>
               </div>
 
               <div className="flex justify-between items-center">
@@ -376,10 +383,17 @@ export const ProgressSteps = ({
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="text-gray-400">View on the blockchain</span>
-                <div className="flex gap-2">
+                <span className="text-gray-400">View Receipt</span>
+                <a
+                  className="flex gap-2"
+                  href={`https://ff.io/order/${
+                    orderDetails?.orderId || "GDBHQ4"
+                  }`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <ExternalLink className="h-4 w-4 text-blue-400" />
-                </div>
+                </a>
               </div>
 
               <div className="flex justify-between items-center">
