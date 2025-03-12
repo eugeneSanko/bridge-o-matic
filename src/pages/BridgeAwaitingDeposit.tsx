@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
@@ -15,8 +16,8 @@ import { CompletedTransaction } from "@/types/bridge";
 
 const POLLING_INTERVALS = {
   DEFAULT: 15000,     // Default: 15 seconds
-  NEW: 15000,         // Awaiting deposit: 15 seconds (was 10 seconds)
-  PENDING: 15000,     // Received, waiting for confirmations: 15 seconds (was 10 seconds)
+  NEW: 15000,         // Awaiting deposit: 15 seconds
+  PENDING: 15000,     // Received, waiting for confirmations: 15 seconds
   EXCHANGE: 20000,    // Exchange in progress: 20 seconds
   WITHDRAW: 20000,    // Sending funds: 20 seconds
   DONE: null,         // Completed: stop polling completely
@@ -36,9 +37,14 @@ const BridgeAwaitingDeposit = () => {
   const [statusCheckDebugInfo, setStatusCheckDebugInfo] = useState(null);
   const [statusCheckError, setStatusCheckError] = useState(null);
   const [pollingInterval, setPollingInterval] = useState(POLLING_INTERVALS.DEFAULT);
-  const [lastPollTimestamp, setLastPollTimestamp] = useState(0); // Start with 0 to force immediate check
+  const [lastPollTimestamp, setLastPollTimestamp] = useState(Date.now()); // Initialize with current time
   const [transactionSaved, setTransactionSaved] = useState(false);
-  const [pollingActive, setPollingActive] = useState(true); // IMPORTANT: Default to true
+  const [pollingActive, setPollingActive] = useState(true);
+  const [debugPollingInfo, setDebugPollingInfo] = useState({
+    lastPolled: 'Never',
+    nextPoll: 'Unknown',
+    interval: POLLING_INTERVALS.DEFAULT
+  });
   
   const { 
     orderDetails: originalOrderDetails, 
@@ -51,7 +57,7 @@ const BridgeAwaitingDeposit = () => {
   } = useBridgeOrder(
     orderId, 
     true, // Always try to fetch from API
-    true  // Force API check even if we have local data
+    false  // Don't force API check on initial load - we'll handle polling ourselves
   );
   
   const [orderDetails, setOrderDetails] = useState(originalOrderDetails);
@@ -180,9 +186,6 @@ const BridgeAwaitingDeposit = () => {
     } else {
       console.log(`Status ${apiStatus} requires polling, setting polling active`);
       setPollingActive(true);
-      
-      // Reset last poll timestamp to force immediate check on status change
-      setLastPollTimestamp(0);
     }
     
     if (apiStatus === "DONE" && !transactionSaved) {
@@ -209,10 +212,6 @@ const BridgeAwaitingDeposit = () => {
       return;
     }
     
-    // For NEW status or forced checks, always proceed regardless of polling interval
-    const currentStatus = orderDetails?.rawApiResponse?.status;
-    const isNewStatus = currentStatus === "NEW";
-    
     // Skip polling if we're not in active polling mode and not forcing
     if (!pollingActive && !force) {
       console.log("Polling is disabled for current status, skipping check");
@@ -220,15 +219,33 @@ const BridgeAwaitingDeposit = () => {
     }
     
     const now = Date.now();
-    // For NEW status, bypass the time check to poll more aggressively
-    if (!force && !isNewStatus && (now - lastPollTimestamp) < pollingInterval) {
-      console.log(`Not enough time elapsed since last poll (${(now - lastPollTimestamp)/1000}s), skipping`);
+    
+    // Important: Always respect the time interval between polls, regardless of status
+    if (!force && (now - lastPollTimestamp) < pollingInterval) {
+      const timeLeft = pollingInterval - (now - lastPollTimestamp);
+      console.log(`Not enough time elapsed since last poll (${(now - lastPollTimestamp)/1000}s), next poll in ${timeLeft/1000}s`);
+      
+      // Update debugging info
+      setDebugPollingInfo({
+        lastPolled: new Date(lastPollTimestamp).toLocaleTimeString(),
+        nextPoll: new Date(lastPollTimestamp + pollingInterval).toLocaleTimeString(),
+        interval: pollingInterval
+      });
+      
       return;
     }
     
-    console.log(`${force ? 'Forcing' : isNewStatus ? 'NEW status' : 'Scheduled'} order status check for ${orderId}`);
+    console.log(`${force ? 'Forcing' : 'Scheduled'} order status check for ${orderId}`);
     setLastPollTimestamp(now);
     setManualStatusCheckAttempted(true);
+    
+    // Update debug info
+    const nextPollTime = now + pollingInterval;
+    setDebugPollingInfo({
+      lastPolled: new Date(now).toLocaleTimeString(),
+      nextPoll: pollingInterval ? new Date(nextPollTime).toLocaleTimeString() : 'Never (polling stopped)',
+      interval: pollingInterval
+    });
 
     try {
       // First check if we have a completed transaction in the database
@@ -336,7 +353,7 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [orderId, token, pollingInterval, lastPollTimestamp, pollingActive, transactionSaved, saveCompletedTransaction, checkCompletedTransaction, orderDetails]);
 
-  // Initial status check
+  // Initial status check - only run once when the component mounts
   useEffect(() => {
     if (orderId && token && !manualStatusCheckAttempted) {
       console.log("Performing initial status check");
@@ -398,7 +415,6 @@ const BridgeAwaitingDeposit = () => {
 
   // Set up polling interval - REVISED LOGIC
   useEffect(() => {
-    // Clear existing interval first to prevent multiple intervals
     let intervalId: number | undefined;
     
     if (!orderId || !token) {
@@ -418,24 +434,21 @@ const BridgeAwaitingDeposit = () => {
     
     console.log(`Setting up polling with ${pollingInterval}ms interval, polling active: ${pollingActive}`);
     
-    // Force an immediate check first (especially important for NEW status)
-    const currentStatus = orderDetails?.rawApiResponse?.status;
-    if (currentStatus === "NEW" || currentStatus === "PENDING") {
-      console.log("Current status is NEW or PENDING, forcing immediate check");
-      checkOrderStatus(true);
-    }
+    // REMOVED: Don't force an immediate check - respect the intervals
     
-    // Then set up the recurring interval with the proper polling interval (15 seconds)
+    // Set up the recurring interval with the proper polling interval
     intervalId = window.setInterval(() => {
       console.log("Polling interval triggered, checking order status");
       checkOrderStatus();
     }, pollingInterval);
     
     return () => {
-      console.log('Clearing polling interval');
-      clearInterval(intervalId);
+      if (intervalId) {
+        console.log('Clearing polling interval');
+        clearInterval(intervalId);
+      }
     };
-  }, [orderId, token, pollingActive, pollingInterval, checkOrderStatus, orderDetails?.rawApiResponse?.status]);
+  }, [orderId, token, pollingActive, pollingInterval, checkOrderStatus]);
 
   // Debug button to force status check
   const handleForceStatusCheck = () => {
@@ -495,6 +508,9 @@ const BridgeAwaitingDeposit = () => {
         <div className="text-center text-sm text-gray-500">
           <p>Poll Status: {pollingActive ? 'Active' : 'Inactive'}</p>
           <p>Current Status: {orderDetails.rawApiResponse?.status || 'Unknown'}</p>
+          <p>Last Poll: {debugPollingInfo.lastPolled}</p>
+          <p>Next Poll: {debugPollingInfo.nextPoll}</p>
+          <p>Interval: {debugPollingInfo.interval ? `${debugPollingInfo.interval/1000}s` : 'Disabled'}</p>
           <button 
             onClick={handleForceStatusCheck}
             className="mt-2 px-3 py-1 bg-gray-200 rounded-md text-sm hover:bg-gray-300 transition-colors"

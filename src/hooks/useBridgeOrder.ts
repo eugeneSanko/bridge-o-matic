@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { invokeFunctionWithRetry } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -64,7 +63,6 @@ export function useBridgeOrder(
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(shouldFetch);
   const [error, setError] = useState<string | null>(null);
-  const [pollingInterval, setPollingInterval] = useState<number | null>(null);
 
   const fetchOrderDetails = useCallback(async () => {
     if (!orderId || !shouldFetch) {
