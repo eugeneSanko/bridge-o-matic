@@ -1,4 +1,3 @@
-
 import { Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddressPlaceholder } from "./AddressPlaceholder";
@@ -65,7 +64,7 @@ export const AddressDetails = ({
   };
 
   // Format the currency display to show both code and name if available
-  const currencyDisplay = fromCurrencyName 
+  const currencyDisplay = fromCurrencyName
     ? `${fromCurrency.toUpperCase()} - ${fromCurrencyName}`
     : fromCurrency.toUpperCase();
 
@@ -73,7 +72,12 @@ export const AddressDetails = ({
     <div className="col-span-5 glass-card p-6 rounded-xl">
       <div className="space-y-6">
         <div>
-          <div className="text-sm text-gray-400 mb-2">Send funds to</div>
+          <div className="text-sm text-gray-400 mb-2">
+            Send funds to{" "}
+            <span className="mb-2 text-[#9b87f5] font-semibold">
+              {currencyDisplay}
+            </span>
+          </div>
           <div className="relative">
             <div className="w-full h-12 px-4 bg-secondary/30 rounded-lg pr-24 font-mono text-sm flex items-center">
               {hasAddress ? (
@@ -104,9 +108,6 @@ export const AddressDetails = ({
         )}
 
         <div className="py-4 px-6 bg-secondary/20 rounded-lg text-sm text-gray-300 glass-card">
-          <p className="mb-2 text-[#9b87f5] font-semibold">
-            {currencyDisplay}
-          </p>
           {orderType === "fixed" ? (
             <>
               <p>
