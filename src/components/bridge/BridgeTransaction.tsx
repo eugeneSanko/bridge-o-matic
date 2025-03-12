@@ -48,17 +48,6 @@ export const BridgeTransaction = ({
     }
   }, [apiStatus, timeLeft]);
 
-  // Log the raw API response for debugging if available
-  React.useEffect(() => {
-    if (orderDetails.rawApiResponse) {
-      console.log("Raw API response:", orderDetails.rawApiResponse);
-      if (orderDetails.rawApiResponse.time) {
-        console.log("Time info:", orderDetails.rawApiResponse.time);
-        console.log("Time left:", orderDetails.rawApiResponse.time.left);
-      }
-    }
-  }, [orderDetails.rawApiResponse]);
-
   // Use the expired status to update the displayed status
   // Keep the original API status if it's not expired - this is important for DONE status
   const displayStatus = isExpired ? "EXPIRED" : apiStatus;
@@ -128,6 +117,16 @@ export const BridgeTransaction = ({
               <NotificationSection />
             </div>
           </>
+        )}
+
+        {/* Show success message if order is complete */}
+        {isOrderComplete && (
+          <div className="mt-8 p-6 bg-green-900/20 border border-green-500/30 rounded-lg text-center">
+            <h3 className="text-2xl font-bold text-green-400 mb-2">Transaction Complete!</h3>
+            <p className="text-green-200">
+              Your funds have been successfully transferred. They should appear in your destination wallet shortly.
+            </p>
+          </div>
         )}
       </div>
     </div>
