@@ -10,8 +10,6 @@ interface AddressDetailsProps {
   onCopyClick: () => void;
   addressAlt?: string | null;
   orderType: "fixed" | "float";
-  fromCurrency?: string;
-  fromCurrencyName?: string;
 }
 
 export const AddressDetails = ({
@@ -20,8 +18,6 @@ export const AddressDetails = ({
   onCopyClick,
   addressAlt,
   orderType,
-  fromCurrency,
-  fromCurrencyName,
 }: AddressDetailsProps) => {
   const hasAddress =
     depositAddress &&
@@ -32,18 +28,6 @@ export const AddressDetails = ({
     if (!address) return "";
     if (address.length <= 20) return address;
     return `${address.slice(0, 10)}...${address.slice(-10)}`;
-  };
-
-  // Format the currency display to show both code and name when available
-  const getCurrencyDisplay = () => {
-    if (fromCurrency && fromCurrencyName) {
-      return `(${fromCurrency} - ${fromCurrencyName})`;
-    } else if (fromCurrency) {
-      return `(${fromCurrency})`;
-    } else if (fromCurrencyName) {
-      return `(${fromCurrencyName})`;
-    }
-    return "";
   };
 
   const handleCopyDestination = () => {
@@ -80,9 +64,7 @@ export const AddressDetails = ({
     <div className="col-span-5 glass-card p-6 rounded-xl">
       <div className="space-y-6">
         <div>
-          <div className="text-sm text-gray-400 mb-2">
-            Send funds to {getCurrencyDisplay()}
-          </div>
+          <div className="text-sm text-gray-400 mb-2">Send funds to</div>
           <div className="relative">
             <div className="w-full h-12 px-4 bg-secondary/30 rounded-lg pr-24 font-mono text-sm flex items-center">
               {hasAddress ? (

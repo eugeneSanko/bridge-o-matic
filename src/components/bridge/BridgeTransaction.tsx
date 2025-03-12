@@ -67,18 +67,12 @@ export const BridgeTransaction = ({
   // Use the expired status to update the displayed status
   const displayStatus = isExpired ? "EXPIRED" : apiStatus;
 
-  // Extract full currency names from the API response if available
-  const fromCurrencyName = orderDetails.rawApiResponse?.from?.name || orderDetails.fromCurrencyName || orderDetails.fromCurrency;
-  const toCurrencyName = orderDetails.rawApiResponse?.to?.name || orderDetails.toCurrencyName || orderDetails.toCurrency;
-
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
       <div className="max-w-6xl mx-auto">
         <TransactionSummary
           fromCurrency={orderDetails.fromCurrency}
           toCurrency={orderDetails.toCurrency}
-          fromCurrencyName={fromCurrencyName}
-          toCurrencyName={toCurrencyName}
           amount={orderDetails.depositAmount}
           destinationAddress={orderDetails.destinationAddress}
           receiveAmount={orderDetails.receiveAmount}
@@ -111,8 +105,6 @@ export const BridgeTransaction = ({
                 onCopyClick={() => onCopyAddress(orderDetails.depositAddress)}
                 addressAlt={orderDetails.addressAlt}
                 orderType={orderDetails.orderType}
-                fromCurrency={orderDetails.fromCurrency}
-                fromCurrencyName={fromCurrencyName}
               />
               <QRCodeSection
                 depositAddress={orderDetails.depositAddress}

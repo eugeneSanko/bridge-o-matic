@@ -4,8 +4,6 @@ import { AddressPlaceholder } from "./AddressPlaceholder";
 interface TransactionSummaryProps {
   fromCurrency: string;
   toCurrency: string;
-  fromCurrencyName?: string;
-  toCurrencyName?: string;
   amount: string;
   destinationAddress: string;
   receiveAmount?: string;
@@ -16,8 +14,6 @@ interface TransactionSummaryProps {
 export const TransactionSummary = ({
   fromCurrency,
   toCurrency,
-  fromCurrencyName,
-  toCurrencyName,
   amount,
   destinationAddress,
   receiveAmount,
@@ -26,103 +22,46 @@ export const TransactionSummary = ({
 }: TransactionSummaryProps) => {
   const getCurrencyIcon = (currency: string) => {
     const lowerCurrency = currency.toLowerCase();
-    switch (lowerCurrency) {
-      case "btc":
-        return "₿";
-      case "eth":
-        return "Ξ";
-      case "sol":
-        return "◎";
-      case "usdt":
-      case "usdttrc":
-        return "₮";
-      case "usdc":
-        return "$";
-      case "bnb":
-        return "BNB";
-      case "dot":
-        return "DOT";
-      case "xrp":
-        return "XRP";
-      case "ada":
-        return "ADA";
-      case "matic":
-        return "MATIC";
-      default:
-        return currency.toUpperCase().substring(0, 1);
-    }
+    if (lowerCurrency === "btc") return "₿";
+    if (lowerCurrency === "eth") return "Ξ";
+    if (lowerCurrency === "sol") return "◎";
+    return currency.toUpperCase().substring(0, 1);
   };
 
   const getCurrencyImageUrl = (currency: string) => {
     const lowerCurrency = currency.toLowerCase();
-    switch (lowerCurrency) {
-      case "btc":
-        return "https://ff.io/assets/images/coins/svg/btc.svg";
-      case "eth":
-        return "https://ff.io/assets/images/coins/svg/eth_dark.svg";
-      case "sol":
-        return "https://ff.io/assets/images/coins/svg/sol.svg";
-      case "usdt":
-        return "https://ff.io/assets/images/coins/svg/usdt.svg";
-      case "usdc":
-        return "https://ff.io/assets/images/coins/svg/usdceth.svg";
-      case "usdttrc":
-        return "https://ff.io/assets/images/coins/svg/usdttrc.svg";
-      case "bnb":
-        return "https://ff.io/assets/images/coins/svg/bnb.svg";
-      case "dot":
-        return "https://ff.io/assets/images/coins/svg/dot.svg";
-      case "xrp":
-        return "https://ff.io/assets/images/coins/svg/xrp.svg";
-      case "ada":
-        return "https://ff.io/assets/images/coins/svg/ada.svg";
-      case "matic":
-        return "https://ff.io/assets/images/coins/svg/matic.svg";
-      default:
-        return `https://ff.io/assets/images/coins/svg/${lowerCurrency}.svg`;
-    }
+
+    if (lowerCurrency === "btc")
+      return "https://ff.io/assets/images/coins/svg/btc.svg";
+    if (lowerCurrency === "eth")
+      return "https://ff.io/assets/images/coins/svg/eth_dark.svg";
+    if (lowerCurrency === "sol")
+      return "https://ff.io/assets/images/coins/svg/sol.svg";
+    if (lowerCurrency === "usdt")
+      return "https://ff.io/assets/images/coins/svg/usdt.svg";
+    if (lowerCurrency === "usdc")
+      return "https://ff.io/assets/images/coins/svg/usdceth.svg";
+    if (lowerCurrency === "usdttrc")
+      return "https://ff.io/assets/images/coins/svg/usdttrc.svg";
+
+    return `https://ff.io/assets/images/coins/svg/${lowerCurrency}.svg`;
   };
 
   const getCurrencyColor = (currency: string) => {
     const lowerCurrency = currency.toLowerCase();
-    switch (lowerCurrency) {
-      case "btc":
-        return "bg-[#F7931A]";
-      case "eth":
-        return "bg-[#627EEA]";
-      case "sol":
-        return "bg-[#9945FF]";
-      case "usdt":
-      case "usdttrc":
-        return "bg-[#26A17B]";
-      case "usdc":
-        return "bg-[#2775CA]";
-      case "bnb":
-        return "bg-[#F3BA2F]";
-      case "dot":
-        return "bg-[#E6007A]";
-      case "xrp":
-        return "bg-[#23292F]";
-      case "ada":
-        return "bg-[#0033AD]";
-      case "matic":
-        return "bg-[#8247E5]";
-      default:
-        return "bg-[#0FA0CE]";
-    }
+    if (lowerCurrency === "btc") return "bg-[#F7931A]";
+    if (lowerCurrency === "eth") return "bg-[#627EEA]";
+    if (lowerCurrency === "sol") return "bg-[#9945FF]";
+    if (lowerCurrency === "usdt") return "bg-[#26A17B]";
+    if (lowerCurrency === "usdc") return "bg-[#2775CA]";
+    if (lowerCurrency === "usdttrc") return "bg-[#53AE94]";
+    return "bg-[#0FA0CE]";
   };
 
   const formatAddress = (address: string) => {
     if (!address) return "";
     if (address.length <= 16) return address;
     return `${address.slice(0, 8)}...${address.slice(-8)}`;
-  };
-
-  const getDisplayCurrencyName = (code: string, name?: string) => {
-    if (name && name !== code) {
-      return `${code.toUpperCase()} - ${name}`;
-    }
-    return code.toUpperCase();
   };
 
   return (
@@ -154,7 +93,7 @@ export const TransactionSummary = ({
             </div>
             <div>
               <div className="text-2xl md:text-3xl font-bold mb-2 md:text-right">
-                {amount} {getDisplayCurrencyName(fromCurrency, fromCurrencyName)}
+                {amount} {fromCurrency?.toUpperCase()}
               </div>
               <div className="text-sm text-gray-400 font-mono">
                 Send funds:{" "}
@@ -194,7 +133,7 @@ export const TransactionSummary = ({
                 {orderType === "float" && (
                   <span className="text-gray-400 mr-1">≈</span>
                 )}
-                {receiveAmount || ""} {getDisplayCurrencyName(toCurrency, toCurrencyName)}
+                {receiveAmount || ""} {toCurrency?.toUpperCase()}
               </div>
               <div className="text-sm text-gray-400 font-mono">
                 Receive at: {formatAddress(destinationAddress)}

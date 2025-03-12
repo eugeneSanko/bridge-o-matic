@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { API_CONFIG, invokeFunctionWithRetry, generateFixedFloatSignature } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -22,8 +21,6 @@ export interface OrderData {
   addressAlt?: string | null;
   type?: "fixed" | "float";
   receive_amount?: string;
-  from_currency_name?: string;
-  to_currency_name?: string;
 }
 
 export interface OrderDetails {
@@ -32,8 +29,6 @@ export interface OrderDetails {
   currentStatus: string;
   fromCurrency: string;
   toCurrency: string;
-  fromCurrencyName?: string;
-  toCurrencyName?: string;
   orderId: string;
   destinationAddress: string;
   expiresAt: string | null;
@@ -138,10 +133,6 @@ export function useBridgeOrder(
               localStorage.setItem('bridge_transaction_data', JSON.stringify(bridgeData));
             }
             
-            // Extract currency names from API response
-            const fromCurrencyName = apiResponse.data.from?.name || null;
-            const toCurrencyName = apiResponse.data.to?.name || null;
-            
             // Set order details from API data
             setOrderDetails({
               depositAddress: bridgeData?.depositAddress || apiResponse.data.from.address,
@@ -149,8 +140,6 @@ export function useBridgeOrder(
               currentStatus: currentStatus,
               fromCurrency: bridgeData?.fromCurrency || apiResponse.data.from.code,
               toCurrency: bridgeData?.toCurrency || apiResponse.data.to.code,
-              fromCurrencyName: fromCurrencyName,
-              toCurrencyName: toCurrencyName,
               orderId: apiResponse.data.id,
               ffOrderId: apiResponse.data.id,
               ffOrderToken: apiResponse.data.token || bridgeData?.orderToken || orderId,
@@ -194,8 +183,6 @@ export function useBridgeOrder(
           currentStatus: bridgeData.status,
           fromCurrency: bridgeData.fromCurrency,
           toCurrency: bridgeData.toCurrency,
-          fromCurrencyName: bridgeData.from_currency_name || null,
-          toCurrencyName: bridgeData.to_currency_name || null,
           orderId: bridgeData.id,
           ffOrderId: bridgeData.id,
           ffOrderToken: bridgeData.orderToken || orderId,
