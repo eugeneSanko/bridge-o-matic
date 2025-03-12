@@ -24,41 +24,29 @@ export const BridgeTransaction = ({
   // Extract the time left from the raw API response (in seconds)
   const timeLeft = orderDetails.rawApiResponse?.time?.left || null;
 
-  // Check if order is expired based on various indicators
+  // Check if order is expired based only on API status
   const [isExpired, setIsExpired] = useState(false);
 
-  // Check for expired status
+  // Check for expired status - simplified to only check API response
   useEffect(() => {
-    // Check multiple conditions for expiration
+    // Only mark as expired if the API explicitly says it's EXPIRED
     const isApiExpired = apiStatus === "EXPIRED";
-    const isStatusExpired = orderDetails.currentStatus === "expired";
-    const isTimerExpired = timeLeft !== null && timeLeft <= 0;
     
-    // Only set as expired if the status is NEW or EXPIRED and the timer has expired
-    // For other statuses like PENDING, EXCHANGE, etc., we want to continue showing progress
-    const shouldMarkAsExpired = (isApiExpired || isStatusExpired) && 
-      (apiStatus === "NEW" || apiStatus === "EXPIRED" || 
-       orderDetails.currentStatus === "new" || orderDetails.currentStatus === "expired");
-
-    // Log expiration checks for debugging
     console.log("Expiration checks:", {
       apiStatus,
       currentStatus: orderDetails.currentStatus,
       timeLeft,
-      isApiExpired,
-      isStatusExpired,
-      isTimerExpired,
-      shouldMarkAsExpired
+      isApiExpired
     });
 
-    // Only set as expired if conditions are met
-    if (shouldMarkAsExpired) {
+    // Only set as expired if the API status is EXPIRED
+    if (isApiExpired) {
       console.log("Order is expired");
       setIsExpired(true);
     } else {
       setIsExpired(false);
     }
-  }, [apiStatus, orderDetails.currentStatus, timeLeft]);
+  }, [apiStatus, timeLeft]);
 
   // Log the raw API response for debugging if available
   React.useEffect(() => {
@@ -77,7 +65,7 @@ export const BridgeTransaction = ({
 
   // Check if the order is complete - explicitly check for both DONE and completed
   const isOrderComplete =
-    displayStatus === "DONE" || displayStatus === "completed";
+    displayStatus === "DONE" || displayStatus?.toLowerCase() === "completed";
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Copy, Clock, Calendar, Tag, AlertCircle, TimerOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,8 +35,11 @@ export const OrderDetails = ({
     if (timeLeft !== undefined && timeLeft !== null) {
       console.log(`Initializing timer with API timeLeft value: ${timeLeft} seconds`);
       setSecondsRemaining(timeLeft);
+      
+      // Only set as expired if current status is explicitly "EXPIRED"
+      setIsExpired(currentStatus === "EXPIRED" || currentStatus === "expired");
     }
-  }, [timeLeft]);
+  }, [timeLeft, currentStatus]);
   
   // Countdown effect
   useEffect(() => {
@@ -46,19 +48,21 @@ export const OrderDetails = ({
     
     // Format and display the time
     const updateTimerDisplay = () => {
-      const minutes = Math.floor(secondsRemaining / 60);
-      const seconds = Math.floor(secondsRemaining % 60);
+      const minutes = Math.floor(Math.abs(secondsRemaining) / 60);
+      const seconds = Math.floor(Math.abs(secondsRemaining) % 60);
       const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
       setLocalTimeRemaining(formattedTime);
       
-      // Update colors based on time remaining
-      if (secondsRemaining <= 0) {
+      // Update colors based on time remaining and status
+      if (currentStatus === "EXPIRED" || currentStatus === "expired") {
         setTimerColor("#ea384c"); // Red when expired
         setIsExpired(true);
-        return;
-      } else if (minutes <= 5) {
+      } else if (secondsRemaining <= 0 && (currentStatus === "NEW" || currentStatus === "new")) {
+        // Only show red for NEW status when time is up
+        setTimerColor("#ea384c");
+      } else if (secondsRemaining > 0 && minutes <= 5) {
         setTimerColor("#ea384c"); // Red when less than 5 minutes
-      } else if (minutes <= 10) {
+      } else if (secondsRemaining > 0 && minutes <= 10) {
         setTimerColor("#F97316"); // Orange when less than 10 minutes
       } else {
         setTimerColor("#9b87f5"); // Purple otherwise
@@ -72,13 +76,16 @@ export const OrderDetails = ({
     const intervalId = setInterval(() => {
       setSecondsRemaining(prev => {
         const newValue = prev !== null ? prev - 1 : 0;
-        return Math.max(0, newValue); // Don't go below zero
+        // Don't go below zero only for NEW status
+        return (currentStatus === "NEW" || currentStatus === "new") 
+          ? Math.max(0, newValue) 
+          : newValue; // Allow negative for other statuses
       });
       updateTimerDisplay();
     }, 1000);
     
     return () => clearInterval(intervalId);
-  }, [secondsRemaining]);
+  }, [secondsRemaining, currentStatus]);
 
   // Fallback to expiresAt if no timeLeft provided
   useEffect(() => {
@@ -106,7 +113,7 @@ export const OrderDetails = ({
 
   const renderStatusSection = () => {
     // Check for failed or expired status in API format or app format
-    const hasFailedOrExpired = isExpired || 
+    const hasFailedOrExpired = 
       currentStatus === "FAILED" || 
       currentStatus === "EXPIRED" ||
       currentStatus === "failed" || 
@@ -119,7 +126,7 @@ export const OrderDetails = ({
           <div className="flex items-center gap-2 text-red-500">
             <AlertCircle className="h-5 w-5" />
             <span className="font-medium">
-              {isExpired || currentStatus === "EXPIRED" || currentStatus === "expired" 
+              {currentStatus === "EXPIRED" || currentStatus === "expired" 
                 ? "Deposit window expired" 
                 : "Awaiting deposit failed"}
             </span>
