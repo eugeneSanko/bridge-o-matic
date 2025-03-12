@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
@@ -73,7 +74,6 @@ serve(async (req) => {
     const requestBodyStr = JSON.stringify(requestBody);
     
     console.log("Request body:", requestBodyStr);
-    console.log("API Secret Length:", FF_API_SECRET.length);
     
     // Generate signature
     const signature = await generateSignature(requestBody);
@@ -129,21 +129,44 @@ serve(async (req) => {
     if (!response.ok) {
       console.error(`API Error (${response.status}): ${responseText}`);
       
-      return new Response(
-        JSON.stringify({
-          code: response.status,
-          msg: `API Error: ${response.statusText}`,
-          details: responseText,
-          debugInfo
-        }),
-        {
-          status: response.status,
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      // Try to parse error response as JSON if possible
+      try {
+        const errorJson = JSON.parse(responseText);
+        
+        // Return a more structured error with the parsed JSON
+        return new Response(
+          JSON.stringify({
+            code: response.status,
+            msg: `API Error: ${response.statusText}`,
+            details: errorJson,
+            debugInfo
+          }),
+          {
+            status: response.status,
+            headers: {
+              ...corsHeaders,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      } catch {
+        // If parsing fails, return the raw text
+        return new Response(
+          JSON.stringify({
+            code: response.status,
+            msg: `API Error: ${response.statusText}`,
+            details: responseText,
+            debugInfo
+          }),
+          {
+            status: response.status,
+            headers: {
+              ...corsHeaders,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
     }
     
     // Try to parse the response as JSON

@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
@@ -24,7 +25,11 @@ const POLLING_INTERVALS = {
   EMERGENCY: null     // Emergency: no polling needed
 };
 
+// Define active polling statuses explicitly
 const ACTIVE_POLLING_STATUSES = ['NEW', 'PENDING', 'EXCHANGE', 'WITHDRAW'];
+
+// Terminal statuses that should stop polling
+const TERMINAL_STATUSES = ['DONE', 'EXPIRED', 'EMERGENCY'];
 
 const BridgeAwaitingDeposit = () => {
   const navigate = useNavigate();
@@ -154,31 +159,43 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [orderDetails, transactionSaved, collectClientMetadata]);
 
+  // Effect to determine interval and polling status based on current API status
   useEffect(() => {
     if (!orderDetails || !orderDetails.rawApiResponse) return;
     
     const apiStatus = orderDetails.rawApiResponse.status;
     console.log(`Current API status: ${apiStatus}`);
     
+    // Reset lastPollTimestamp when status changes to ensure immediate polling
+    setLastPollTimestamp(0);
+    
+    // Set the polling interval based on the current status
     const newInterval = POLLING_INTERVALS[apiStatus] ?? POLLING_INTERVALS.DEFAULT;
     console.log(`Setting polling interval to ${newInterval === null ? 'none' : `${newInterval}ms`} for status ${apiStatus}`);
     setPollingInterval(newInterval);
     
+    // Determine if polling should be active based on status
     const shouldPollStatus = ACTIVE_POLLING_STATUSES.includes(apiStatus);
+    const isTerminalStatus = TERMINAL_STATUSES.includes(apiStatus);
     
     if (apiStatus === "DONE") {
       if (!transactionSaved) {
+        console.log("Status is DONE but transaction not saved, keeping polling active for transaction saving");
+        setPollingActive(true);
         saveCompletedTransaction();
       } else {
         console.log("Transaction is complete and saved, stopping polling");
         setPollingActive(false);
       }
-    } else if (apiStatus === "EXPIRED" || apiStatus === "EMERGENCY") {
-      console.log(`Status is ${apiStatus}, stopping polling`);
+    } else if (isTerminalStatus) {
+      console.log(`Status is ${apiStatus} (terminal), stopping polling`);
       setPollingActive(false);
     } else if (shouldPollStatus) {
-      console.log(`Status is ${apiStatus}, ensuring polling is active`);
+      console.log(`Status is ${apiStatus} (active polling status), ensuring polling is active`);
       setPollingActive(true);
+    } else {
+      console.log(`Status is ${apiStatus}, using default polling behavior`);
+      setPollingActive(true); // Default to active for any unknown status
     }
   }, [orderDetails?.rawApiResponse?.status, transactionSaved, saveCompletedTransaction]);
 
@@ -202,30 +219,39 @@ const BridgeAwaitingDeposit = () => {
     }
     
     const currentApiStatus = orderDetails?.rawApiResponse?.status;
+    console.log(`Status check requested - Current status: ${currentApiStatus}, Force: ${force}, Polling active: ${pollingActive}`);
     
-    if (!force && currentApiStatus === "DONE" && transactionSaved) {
-      console.log("Status is DONE and transaction is saved, skipping status check");
-      return;
+    // Skip check only if explicitly forced to stop (terminal status + saved) and not a forced check
+    if (!force) {
+      if (currentApiStatus === "DONE" && transactionSaved) {
+        console.log("Status is DONE and transaction is saved, skipping status check");
+        return;
+      }
+      
+      if (TERMINAL_STATUSES.includes(currentApiStatus) && currentApiStatus !== "DONE") {
+        console.log(`Status is terminal (${currentApiStatus}), skipping status check`);
+        return;
+      }
+      
+      if (!pollingActive) {
+        console.log("Polling is disabled, skipping status check");
+        return;
+      }
+      
+      if (pollingInterval === null) {
+        console.log("Polling interval is null for current status, skipping check");
+        return;
+      }
+      
+      const now = Date.now();
+      if ((now - lastPollTimestamp) < pollingInterval) {
+        console.log(`Not enough time elapsed since last poll (${(now - lastPollTimestamp)/1000}s < ${pollingInterval/1000}s), skipping`);
+        return;
+      }
     }
     
-    if (!pollingActive && !force) {
-      console.log("Polling is disabled, skipping status check");
-      return;
-    }
-    
-    if (pollingInterval === null && !force) {
-      console.log("Polling interval is null for current status, skipping check");
-      return;
-    }
-    
-    const now = Date.now();
-    if (!force && (now - lastPollTimestamp) < pollingInterval) {
-      console.log(`Not enough time elapsed since last poll (${(now - lastPollTimestamp)/1000}s < ${pollingInterval/1000}s), skipping`);
-      return;
-    }
-    
-    setLastPollTimestamp(now);
-    console.log(`${force ? 'Forcing' : 'Scheduled'} order status check at ${new Date().toISOString()}`);
+    console.log(`${force ? 'Forcing' : 'Executing'} order status check at ${new Date().toISOString()}`);
+    setLastPollTimestamp(Date.now());
 
     try {
       setManualStatusCheckAttempted(true);
@@ -248,6 +274,7 @@ const BridgeAwaitingDeposit = () => {
         return;
       }
 
+      console.log("Calling bridge-status endpoint for order update...");
       const { data, error } = await supabase.functions.invoke('bridge-status', {
         body: { id: orderId, token }
       });
@@ -314,6 +341,7 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [orderId, token, pollingInterval, lastPollTimestamp, transactionSaved, saveCompletedTransaction, checkCompletedTransaction, pollingActive, orderDetails]);
 
+  // Initial status check on component mount
   useEffect(() => {
     if (orderId && token && !manualStatusCheckAttempted) {
       console.log("Performing initial status check");
@@ -371,6 +399,7 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [deepLink, addLog, transactionSaved, saveCompletedTransaction]);
 
+  // Main polling effect
   useEffect(() => {
     let intervalId: number | null = null;
     
@@ -386,38 +415,33 @@ const BridgeAwaitingDeposit = () => {
     
     console.log(`Setting up polling with ${pollingInterval}ms interval, polling is ${pollingActive ? 'active' : 'inactive'}`);
     
+    // Clear any existing interval
+    if (intervalId !== null) {
+      window.clearInterval(intervalId);
+    }
+    
+    // Set up new interval with updated polling frequency
     intervalId = window.setInterval(() => {
       const currentStatus = orderDetails?.rawApiResponse?.status;
       
-      console.log(`Polling check - Status: ${currentStatus}, Active: ${pollingActive}, Saved: ${transactionSaved}`);
+      console.log(`Polling check - Status: ${currentStatus}, Active: ${pollingActive}`);
       
-      if (currentStatus === "DONE" && transactionSaved) {
-        console.log("Skipping status check - transaction is complete and saved");
-        if (intervalId !== null) {
-          console.log('Clearing polling interval - transaction complete');
-          clearInterval(intervalId);
-        }
-      } 
-      else if (currentStatus === "EXPIRED" || currentStatus === "EMERGENCY") {
-        console.log(`Skipping status check - transaction is in terminal state: ${currentStatus}`);
-        if (intervalId !== null) {
-          console.log(`Clearing polling interval - transaction in terminal state: ${currentStatus}`);
-          clearInterval(intervalId);
-        }
-      }
-      else {
+      // Always check status if polling is active
+      if (pollingActive) {
         console.log(`Executing scheduled status check for status: ${currentStatus}`);
         checkOrderStatus();
+      } else {
+        console.log(`Skipping status check - polling inactive for status: ${currentStatus}`);
       }
     }, pollingInterval);
     
     return () => {
       if (intervalId !== null) {
         console.log('Clearing polling interval - cleanup');
-        clearInterval(intervalId);
+        window.clearInterval(intervalId);
       }
     };
-  }, [orderId, token, pollingInterval, checkOrderStatus, orderDetails, transactionSaved, pollingActive]);
+  }, [orderId, token, pollingInterval, checkOrderStatus, pollingActive]);
 
   if (loading) {
     return <LoadingState />;
