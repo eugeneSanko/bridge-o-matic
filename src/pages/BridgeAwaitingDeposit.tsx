@@ -218,11 +218,10 @@ const BridgeAwaitingDeposit = () => {
           }
         }));
         
-        // Only redirect to success page if we have a valid order ID
-        if (!transactionSaved && completedTransaction.ff_order_id) {
+        // Only stop polling and redirect after confirming transaction is saved
+        setPollingInterval(null);
+        if (completedTransaction.ff_order_id) {
           navigate(`/bridge/order-complete?orderId=${completedTransaction.ff_order_id}`);
-        } else if (!completedTransaction.ff_order_id) {
-          console.error("Cannot navigate to order-complete: Missing order ID in completed transaction");
         }
         return;
       }
@@ -248,32 +247,9 @@ const BridgeAwaitingDeposit = () => {
         const status = data.data.status;
         console.log(`Order status from API: ${status}`);
         
-        if (status === 'EXPIRED') {
-          const completedTransaction = await checkCompletedTransaction(orderId);
-          if (completedTransaction) {
-            console.log("API reports EXPIRED but transaction is completed in database");
-            setOrderDetails(prevDetails => ({
-              ...prevDetails!,
-              currentStatus: "completed",
-              rawApiResponse: completedTransaction.raw_api_response || {
-                ...prevDetails?.rawApiResponse,
-                status: "DONE"
-              }
-            }));
-            
-            // Only navigate if we have a valid order ID
-            if (completedTransaction.ff_order_id) {
-              navigate(`/bridge/order-complete?orderId=${completedTransaction.ff_order_id}`);
-            } else {
-              console.error("Cannot navigate to order-complete: Missing order ID in completed transaction");
-            }
-            return;
-          }
-        }
-        
-        // If status is DONE, save to database and redirect
+        // Only stop polling when transaction is saved and status is DONE
         if (status === 'DONE') {
-          console.log("Order is complete, showing notification and saving data");
+          console.log("Order is complete, preparing to save data");
           toast({
             title: "Transaction Complete",
             description: `Your transaction has been completed successfully.`,
@@ -290,10 +266,7 @@ const BridgeAwaitingDeposit = () => {
             };
           });
           
-          // Stop further polling
-          setPollingInterval(null);
-          
-          // Set a flag to indicate we're saving
+          // Set a flag to indicate we're saving, but don't stop polling yet
           if (!transactionSaved && data.data.id) {
             // Wait for state to update before proceeding
             setTimeout(() => {
@@ -385,14 +358,18 @@ const BridgeAwaitingDeposit = () => {
     console.log(`Setting up polling with ${pollingInterval}ms interval`);
     
     const intervalId = setInterval(() => {
-      checkOrderStatus();
+      // Only check if not saved yet or if status isn't DONE
+      const currentStatus = orderDetails?.rawApiResponse?.status;
+      if (!transactionSaved || currentStatus !== 'DONE') {
+        checkOrderStatus();
+      }
     }, pollingInterval);
     
     return () => {
       console.log('Clearing polling interval');
       clearInterval(intervalId);
     };
-  }, [orderId, token, pollingInterval, checkOrderStatus]);
+  }, [orderId, token, pollingInterval, checkOrderStatus, orderDetails, transactionSaved]);
 
   if (loading) {
     return <LoadingState />;
