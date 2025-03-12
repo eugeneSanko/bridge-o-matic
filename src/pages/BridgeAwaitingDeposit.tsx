@@ -38,7 +38,8 @@ const BridgeAwaitingDeposit = () => {
   const [pollingInterval, setPollingInterval] = useState(POLLING_INTERVALS.DEFAULT);
   const [lastPollTimestamp, setLastPollTimestamp] = useState(0);
   const [transactionSaved, setTransactionSaved] = useState(false);
-  
+  const [pollingActive, setPollingActive] = useState(true);
+
   const { orderDetails: originalOrderDetails, loading, error, handleCopyAddress } = useBridgeOrder(
     orderId, 
     true, // Always try to fetch from API
@@ -79,7 +80,6 @@ const BridgeAwaitingDeposit = () => {
         return null;
       }
       
-      // Cast to our CompletedTransaction type
       return transaction as unknown as CompletedTransaction; 
     } catch (error) {
       console.error("Error in checkCompletedTransaction:", error);
@@ -115,7 +115,6 @@ const BridgeAwaitingDeposit = () => {
       
       const clientMetadata = collectClientMetadata();
       
-      // Store the full API response for later use
       const { data, error } = await supabase
         .from('completed_bridge_transactions')
         .insert({
@@ -139,12 +138,14 @@ const BridgeAwaitingDeposit = () => {
       console.log("Transaction saved successfully:", data);
       setTransactionSaved(true);
       
-      // Show a success toast instead of navigating
       toast({
         title: "Transaction Saved",
         description: "Your transaction has been successfully recorded in our system.",
         variant: "default"
       });
+      
+      setPollingActive(false);
+      setPollingInterval(null);
       
     } catch (error) {
       console.error("Error in saveCompletedTransaction:", error);
@@ -167,6 +168,7 @@ const BridgeAwaitingDeposit = () => {
     if (apiStatus === "DONE" && transactionSaved) {
       console.log("Transaction is complete and saved, stopping polling");
       setPollingInterval(null);
+      setPollingActive(false);
     }
   }, [orderDetails?.rawApiResponse?.status, transactionSaved, saveCompletedTransaction]);
 
@@ -183,6 +185,11 @@ const BridgeAwaitingDeposit = () => {
   }, [orderId, token]);
 
   const checkOrderStatus = useCallback(async (force = false) => {
+    if (!pollingActive && !force) {
+      console.log("Polling is disabled, skipping status check");
+      return;
+    }
+    
     if (!orderId || !token) {
       console.error("Missing order ID or token for status check");
       setStatusCheckError("Missing order ID or token");
@@ -218,10 +225,9 @@ const BridgeAwaitingDeposit = () => {
           }
         }));
         
-        // Only stop polling after confirming transaction is saved
-        if (transactionSaved) {
-          setPollingInterval(null);
-        }
+        setPollingActive(false);
+        setPollingInterval(null);
+        setTransactionSaved(true);
         return;
       }
 
@@ -246,7 +252,6 @@ const BridgeAwaitingDeposit = () => {
         const status = data.data.status;
         console.log(`Order status from API: ${status}`);
         
-        // Only stop polling when transaction is saved and status is DONE
         if (status === 'DONE') {
           console.log("Order is complete, preparing to save data");
           toast({
@@ -255,7 +260,6 @@ const BridgeAwaitingDeposit = () => {
             variant: "default"
           });
           
-          // Update order details with the API response
           setOrderDetails(prevDetails => {
             if (!prevDetails) return null;
             return {
@@ -265,17 +269,17 @@ const BridgeAwaitingDeposit = () => {
             };
           });
           
-          // Don't stop polling yet, wait until transaction is saved
           if (!transactionSaved && data.data.id) {
-            // Wait for state to update before proceeding
             setTimeout(() => {
               saveCompletedTransaction();
             }, 100);
+          } else if (transactionSaved) {
+            setPollingActive(false);
+            setPollingInterval(null);
           } else if (!data.data.id) {
             console.error("Cannot save transaction: Missing order ID in API response");
           }
         } else {
-          // For other statuses, just update the order details
           setOrderDetails(prevDetails => {
             if (!prevDetails) return null;
             return {
@@ -293,7 +297,7 @@ const BridgeAwaitingDeposit = () => {
       console.error("Error checking order status:", error);
       setStatusCheckError(`Error: ${error.message}`);
     }
-  }, [orderId, token, pollingInterval, lastPollTimestamp, transactionSaved, saveCompletedTransaction, checkCompletedTransaction]);
+  }, [orderId, token, pollingInterval, lastPollTimestamp, transactionSaved, saveCompletedTransaction, checkCompletedTransaction, pollingActive]);
 
   useEffect(() => {
     if (orderId && token && !manualStatusCheckAttempted) {
@@ -352,17 +356,22 @@ const BridgeAwaitingDeposit = () => {
   }, [deepLink, addLog, transactionSaved, saveCompletedTransaction]);
 
   useEffect(() => {
-    if (!orderId || !token || pollingInterval === null) return;
+    if (!orderId || !token || pollingInterval === null || !pollingActive) {
+      console.log("Not setting up polling - inactive or no orderId/token");
+      return;
+    }
     
     console.log(`Setting up polling with ${pollingInterval}ms interval`);
     
     const intervalId = setInterval(() => {
-      // Only check if we haven't reached DONE status or if transaction isn't saved yet
       const currentStatus = orderDetails?.rawApiResponse?.status;
-      if (currentStatus !== "DONE" || !transactionSaved) {
-        checkOrderStatus();
-      } else {
+      
+      if (currentStatus === "DONE" && transactionSaved) {
         console.log("Skipping status check - transaction is complete and saved");
+        clearInterval(intervalId);
+        setPollingActive(false);
+      } else {
+        checkOrderStatus();
       }
     }, pollingInterval);
     
@@ -370,7 +379,7 @@ const BridgeAwaitingDeposit = () => {
       console.log('Clearing polling interval');
       clearInterval(intervalId);
     };
-  }, [orderId, token, pollingInterval, checkOrderStatus, orderDetails, transactionSaved]);
+  }, [orderId, token, pollingInterval, checkOrderStatus, orderDetails, transactionSaved, pollingActive]);
 
   if (loading) {
     return <LoadingState />;
