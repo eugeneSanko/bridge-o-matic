@@ -1,4 +1,3 @@
-
 import { ArrowRight } from "lucide-react";
 import { AddressPlaceholder } from "./AddressPlaceholder";
 
@@ -72,14 +71,26 @@ export const TransactionSummary = ({
   // Format the display for from/to currencies to show both code and name
   const formatFromCurrencyDisplay = () => {
     if (fromCurrencyName) {
-      return `${fromCurrency.toUpperCase()} - ${fromCurrencyName}`;
+      return (
+        <>
+          {fromCurrency.toUpperCase()}
+          <sup className="text-sm text-muted-foreground ">
+            {fromCurrencyName}
+          </sup>
+        </>
+      );
     }
     return fromCurrency.toUpperCase();
   };
 
   const formatToCurrencyDisplay = () => {
     if (toCurrencyName) {
-      return `${toCurrency.toUpperCase()} - ${toCurrencyName}`;
+      return (
+        <>
+          {toCurrencyName.toUpperCase()}
+          <sup className="text-sm text-muted-foreground ">{toCurrencyName}</sup>
+        </>
+      );
     }
     return toCurrency.toUpperCase();
   };

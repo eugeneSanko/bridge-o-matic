@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
@@ -19,21 +18,22 @@ export const BridgeTransaction = ({
   onCopyAddress,
 }: BridgeTransactionProps) => {
   // Extract the original API status if available from the raw response
-  const apiStatus = orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
-  
+  const apiStatus =
+    orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
+
   // Extract the time left from the raw API response (in seconds)
   const timeLeft = orderDetails.rawApiResponse?.time?.left || null;
-  
+
   // Check if order is expired based on various indicators
   const [isExpired, setIsExpired] = useState(false);
-  
+
   // Check for expired status
   useEffect(() => {
     // Check multiple conditions for expiration
     const isApiExpired = apiStatus === "EXPIRED";
     const isStatusExpired = orderDetails.currentStatus === "expired";
     const isTimerExpired = timeLeft !== null && timeLeft <= 0;
-    
+
     // Log expiration checks for debugging
     console.log("Expiration checks:", {
       apiStatus,
@@ -41,9 +41,9 @@ export const BridgeTransaction = ({
       timeLeft,
       isApiExpired,
       isStatusExpired,
-      isTimerExpired
+      isTimerExpired,
     });
-    
+
     // Set as expired if any condition is true
     if (isApiExpired || isStatusExpired || isTimerExpired) {
       console.log("Order is expired");
@@ -52,7 +52,7 @@ export const BridgeTransaction = ({
       setIsExpired(false);
     }
   }, [apiStatus, orderDetails.currentStatus, timeLeft]);
-  
+
   // Log the raw API response for debugging if available
   React.useEffect(() => {
     if (orderDetails.rawApiResponse) {
@@ -68,7 +68,8 @@ export const BridgeTransaction = ({
   const displayStatus = isExpired ? "EXPIRED" : apiStatus;
 
   // Check if the order is complete
-  const isOrderComplete = displayStatus === "DONE" || displayStatus === "completed";
+  const isOrderComplete =
+    displayStatus === "DONE" || displayStatus === "completed";
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
@@ -86,9 +87,9 @@ export const BridgeTransaction = ({
         />
 
         {/* Always display ProgressSteps regardless of status */}
-        <ProgressSteps 
-          currentStatus={displayStatus} 
-          orderDetails={orderDetails} 
+        <ProgressSteps
+          currentStatus={displayStatus}
+          orderDetails={orderDetails}
         />
 
         {/* Only show these sections if order is not complete */}
@@ -100,7 +101,7 @@ export const BridgeTransaction = ({
                 orderType={orderDetails.orderType}
                 timeRemaining={orderDetails.timeRemaining}
                 expiresAt={orderDetails.expiresAt}
-                currentStatus={displayStatus} 
+                currentStatus={displayStatus}
                 onCopyClick={() => onCopyAddress(orderDetails.orderId)}
                 tag={orderDetails.tag}
                 tagName={orderDetails.tagName}
