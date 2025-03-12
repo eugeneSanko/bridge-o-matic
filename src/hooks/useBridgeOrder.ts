@@ -50,6 +50,12 @@ export interface OrderDetails {
   rawApiResponse?: any;
 }
 
+// Statuses that should continue polling
+const ACTIVE_POLLING_STATUSES = ['NEW', 'PENDING', 'EXCHANGE', 'WITHDRAW'];
+
+// Terminal statuses that should stop polling
+const TERMINAL_STATUSES = ['DONE', 'EXPIRED', 'EMERGENCY'];
+
 export function useBridgeOrder(
   orderId: string | null, 
   shouldFetch: boolean = true,
@@ -267,6 +273,9 @@ export function useBridgeOrder(
     orderDetails,
     loading,
     error,
-    handleCopyAddress
+    handleCopyAddress,
+    fetchOrderDetails,
+    ACTIVE_POLLING_STATUSES,
+    TERMINAL_STATUSES
   };
 }

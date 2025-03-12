@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
@@ -38,8 +39,17 @@ const BridgeAwaitingDeposit = () => {
   const [pollingInterval, setPollingInterval] = useState(POLLING_INTERVALS.DEFAULT);
   const [lastPollTimestamp, setLastPollTimestamp] = useState(0);
   const [transactionSaved, setTransactionSaved] = useState(false);
+  const [pollingActive, setPollingActive] = useState(true);
   
-  const { orderDetails: originalOrderDetails, loading, error, handleCopyAddress } = useBridgeOrder(
+  const { 
+    orderDetails: originalOrderDetails, 
+    loading, 
+    error, 
+    handleCopyAddress,
+    fetchOrderDetails,
+    ACTIVE_POLLING_STATUSES,
+    TERMINAL_STATUSES
+  } = useBridgeOrder(
     orderId, 
     true, // Always try to fetch from API
     true  // Force API check even if we have local data
@@ -147,19 +157,34 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [orderDetails, transactionSaved, collectClientMetadata, navigate]);
 
+  // Update polling status when order status changes
   useEffect(() => {
     if (!orderDetails || !orderDetails.rawApiResponse) return;
     
     const apiStatus = orderDetails.rawApiResponse.status;
-    const newInterval = POLLING_INTERVALS[apiStatus] ?? POLLING_INTERVALS.DEFAULT;
+    console.log(`Current API status: ${apiStatus}, determining polling behavior...`);
     
+    // Set polling interval based on status
+    const newInterval = POLLING_INTERVALS[apiStatus] ?? POLLING_INTERVALS.DEFAULT;
     console.log(`Setting polling interval to ${newInterval === null ? 'none' : `${newInterval}ms`} for status ${apiStatus}`);
     setPollingInterval(newInterval);
+    
+    // Update polling active state based on status
+    if (TERMINAL_STATUSES.includes(apiStatus)) {
+      console.log(`Status ${apiStatus} is terminal, stopping polling`);
+      setPollingActive(false);
+    } else if (ACTIVE_POLLING_STATUSES.includes(apiStatus)) {
+      console.log(`Status ${apiStatus} requires polling, setting polling active`);
+      setPollingActive(true);
+      
+      // Reset last poll timestamp to force immediate check on status change
+      setLastPollTimestamp(0);
+    }
     
     if (apiStatus === "DONE" && !transactionSaved) {
       saveCompletedTransaction();
     }
-  }, [orderDetails?.rawApiResponse?.status, transactionSaved, saveCompletedTransaction]);
+  }, [orderDetails?.rawApiResponse?.status, ACTIVE_POLLING_STATUSES, TERMINAL_STATUSES, transactionSaved, saveCompletedTransaction]);
 
   useEffect(() => {
     if (!orderId) {
@@ -180,23 +205,25 @@ const BridgeAwaitingDeposit = () => {
       return;
     }
     
-    if (pollingInterval === null && !force) {
-      console.log("Polling disabled for current status, skipping check");
+    // Skip polling if we're not in active polling mode and not forcing
+    if (!pollingActive && !force) {
+      console.log("Polling is disabled for current status, skipping check");
       return;
     }
     
     const now = Date.now();
+    // Check if enough time has passed since last poll
     if (!force && (now - lastPollTimestamp) < pollingInterval) {
       console.log(`Not enough time elapsed since last poll (${(now - lastPollTimestamp)/1000}s), skipping`);
       return;
     }
     
+    console.log(`${force ? 'Forcing' : 'Scheduled'} order status check for ${orderId}`);
     setLastPollTimestamp(now);
+    setManualStatusCheckAttempted(true);
 
     try {
-      console.log(`${force ? 'Forcing' : 'Scheduled'} order status check with bridge-status function`);
-      setManualStatusCheckAttempted(true);
-      
+      // First check if we have a completed transaction in the database
       const completedTransaction = await checkCompletedTransaction(orderId);
       if (completedTransaction) {
         console.log("Found completed transaction in database:", completedTransaction);
@@ -216,6 +243,7 @@ const BridgeAwaitingDeposit = () => {
         return;
       }
 
+      console.log(`Calling bridge-status function with id: ${orderId} and token: ${token}`);
       const { data, error } = await supabase.functions.invoke('bridge-status', {
         body: { id: orderId, token }
       });
@@ -275,7 +303,7 @@ const BridgeAwaitingDeposit = () => {
           });
           
           // Stop further polling
-          setPollingInterval(null);
+          setPollingActive(false);
           
           // Set a flag to indicate we're saving
           if (!transactionSaved) {
@@ -301,16 +329,19 @@ const BridgeAwaitingDeposit = () => {
       }
     } catch (error) {
       console.error("Error checking order status:", error);
-      setStatusCheckError(`Error: ${error.message}`);
+      setStatusCheckError(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
-  }, [orderId, token, pollingInterval, lastPollTimestamp, transactionSaved, saveCompletedTransaction, checkCompletedTransaction, navigate]);
+  }, [orderId, token, pollingInterval, lastPollTimestamp, pollingActive, transactionSaved, saveCompletedTransaction, checkCompletedTransaction, navigate]);
 
+  // Initial status check
   useEffect(() => {
     if (orderId && token && !manualStatusCheckAttempted) {
+      console.log("Performing initial status check");
       checkOrderStatus(true);
     }
   }, [orderId, token, manualStatusCheckAttempted, checkOrderStatus]);
 
+  // Set up API attempt tracking
   useEffect(() => {
     if (!apiAttempted && (loading || error || orderDetails)) {
       setApiAttempted(true);
@@ -326,6 +357,7 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [apiAttempted, loading, error, orderDetails]);
 
+  // Deep link handling
   useEffect(() => {
     if (!deepLink) return;
 
@@ -361,12 +393,17 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [deepLink, addLog, transactionSaved, saveCompletedTransaction]);
 
+  // Set up polling interval
   useEffect(() => {
-    if (!orderId || !token || pollingInterval === null) return;
+    if (!orderId || !token || !pollingActive || pollingInterval === null) {
+      console.log("Polling conditions not met, not setting up polling interval");
+      return;
+    }
     
-    console.log(`Setting up polling with ${pollingInterval}ms interval`);
+    console.log(`Setting up polling with ${pollingInterval}ms interval, polling active: ${pollingActive}`);
     
     const intervalId = setInterval(() => {
+      console.log("Polling interval triggered, checking order status");
       checkOrderStatus();
     }, pollingInterval);
     
@@ -374,7 +411,13 @@ const BridgeAwaitingDeposit = () => {
       console.log('Clearing polling interval');
       clearInterval(intervalId);
     };
-  }, [orderId, token, pollingInterval, checkOrderStatus]);
+  }, [orderId, token, pollingActive, pollingInterval, checkOrderStatus]);
+
+  // Debug button to force status check
+  const handleForceStatusCheck = () => {
+    console.log("Manually forcing status check");
+    checkOrderStatus(true);
+  };
 
   if (loading) {
     return <LoadingState />;
@@ -423,6 +466,20 @@ const BridgeAwaitingDeposit = () => {
         orderDetails={orderDetails} 
         onCopyAddress={handleCopyAddress} 
       />
+      
+      <div className="mt-4 flex justify-center">
+        <div className="text-center text-sm text-gray-500">
+          <p>Poll Status: {pollingActive ? 'Active' : 'Inactive'}</p>
+          <p>Current Status: {orderDetails.rawApiResponse?.status || 'Unknown'}</p>
+          <button 
+            onClick={handleForceStatusCheck}
+            className="mt-2 px-3 py-1 bg-gray-200 rounded-md text-sm hover:bg-gray-300 transition-colors"
+          >
+            Force Status Check
+          </button>
+        </div>
+      </div>
+      
       {statusCheckDebugInfo && (
         <div className="mt-8">
           <DebugPanel debugInfo={statusCheckDebugInfo} isLoading={false} />
