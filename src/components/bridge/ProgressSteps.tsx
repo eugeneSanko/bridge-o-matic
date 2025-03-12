@@ -258,7 +258,7 @@ export const ProgressSteps = ({
             {/* Robot image on the left */}
             <div className="hidden md:block absolute left-0 -bottom-14 opa-50">
               <img
-                src="/lovable-uploads/519fec7c-fbb9-4f3c-8535-970b9bbf7ae7.png"
+                src="/lovable-uploads/robo.png"
                 alt="Robot"
                 className="w-40 h-40 md:w-[15rem] md:h-[22rem] lg:w-[22rem] lg:h-[25rem] object-contain "
               />
