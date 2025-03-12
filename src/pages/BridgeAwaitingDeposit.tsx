@@ -139,22 +139,17 @@ const BridgeAwaitingDeposit = () => {
       console.log("Transaction saved successfully:", data);
       setTransactionSaved(true);
       
-      // Only navigate to the success page if we have a valid order ID
-      if (orderDetails.ffOrderId) {
-        navigate(`/bridge/order-complete?orderId=${orderDetails.ffOrderId}`);
-      } else {
-        console.error("Cannot navigate to order-complete page: Missing order ID");
-        toast({
-          title: "Error",
-          description: "Could not complete the transaction due to missing order information",
-          variant: "destructive"
-        });
-      }
+      // Show a success toast instead of navigating
+      toast({
+        title: "Transaction Saved",
+        description: "Your transaction has been successfully recorded in our system.",
+        variant: "default"
+      });
       
     } catch (error) {
       console.error("Error in saveCompletedTransaction:", error);
     }
-  }, [orderDetails, transactionSaved, collectClientMetadata, navigate]);
+  }, [orderDetails, transactionSaved, collectClientMetadata]);
 
   useEffect(() => {
     if (!orderDetails || !orderDetails.rawApiResponse) return;
@@ -218,10 +213,9 @@ const BridgeAwaitingDeposit = () => {
           }
         }));
         
-        // Only stop polling and redirect after confirming transaction is saved
-        setPollingInterval(null);
-        if (completedTransaction.ff_order_id) {
-          navigate(`/bridge/order-complete?orderId=${completedTransaction.ff_order_id}`);
+        // Only stop polling after confirming transaction is saved
+        if (transactionSaved) {
+          setPollingInterval(null);
         }
         return;
       }
@@ -266,7 +260,7 @@ const BridgeAwaitingDeposit = () => {
             };
           });
           
-          // Set a flag to indicate we're saving, but don't stop polling yet
+          // Don't stop polling yet, wait until transaction is saved
           if (!transactionSaved && data.data.id) {
             // Wait for state to update before proceeding
             setTimeout(() => {
@@ -294,7 +288,7 @@ const BridgeAwaitingDeposit = () => {
       console.error("Error checking order status:", error);
       setStatusCheckError(`Error: ${error.message}`);
     }
-  }, [orderId, token, pollingInterval, lastPollTimestamp, transactionSaved, saveCompletedTransaction, checkCompletedTransaction, navigate]);
+  }, [orderId, token, pollingInterval, lastPollTimestamp, transactionSaved, saveCompletedTransaction, checkCompletedTransaction]);
 
   useEffect(() => {
     if (orderId && token && !manualStatusCheckAttempted) {
@@ -358,18 +352,15 @@ const BridgeAwaitingDeposit = () => {
     console.log(`Setting up polling with ${pollingInterval}ms interval`);
     
     const intervalId = setInterval(() => {
-      // Only check if not saved yet or if status isn't DONE
-      const currentStatus = orderDetails?.rawApiResponse?.status;
-      if (!transactionSaved || currentStatus !== 'DONE') {
-        checkOrderStatus();
-      }
+      // Keep checking regardless of status to ensure UI updates
+      checkOrderStatus();
     }, pollingInterval);
     
     return () => {
       console.log('Clearing polling interval');
       clearInterval(intervalId);
     };
-  }, [orderId, token, pollingInterval, checkOrderStatus, orderDetails, transactionSaved]);
+  }, [orderId, token, pollingInterval, checkOrderStatus]);
 
   if (loading) {
     return <LoadingState />;
