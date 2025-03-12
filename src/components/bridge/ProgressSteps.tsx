@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Card } from "../ui/card";
+import { useEffect } from "react";
 
 interface ProgressStepsProps {
   currentStatus?: string;
@@ -22,6 +23,18 @@ export const ProgressSteps = ({
   currentStatus = "pending",
   orderDetails,
 }: ProgressStepsProps) => {
+  // Debug logging for status
+  useEffect(() => {
+    console.log("ProgressSteps received status:", { 
+      currentStatus, 
+      apiStatus: orderDetails?.rawApiResponse?.status,
+      orderDetails: orderDetails ? {
+        ffOrderId: orderDetails.ffOrderId,
+        currentStatus: orderDetails.currentStatus,
+      } : 'n/a'
+    });
+  }, [currentStatus, orderDetails]);
+
   // Map FF.io API status to step index
   const getActiveStepIndex = (status: string): number => {
     // Lowercase the status for case-insensitive comparison
@@ -66,6 +79,8 @@ export const ProgressSteps = ({
 
   // Returns appropriate visual status indicators
   const getStatusType = (status: string): string => {
+    console.log("Getting status type for:", status);
+    
     // First check uppercase FF.io API statuses
     if (status === "DONE") return "completed";
     if (status === "EMERGENCY") return "failed";
@@ -87,18 +102,28 @@ export const ProgressSteps = ({
     return "";
   };
 
-  const activeStep = getActiveStepIndex(currentStatus);
-  const statusType = getStatusType(currentStatus);
+  // Get the true API status if available, otherwise use currentStatus
+  const actualStatus = orderDetails?.rawApiResponse?.status || currentStatus;
+  
+  const activeStep = getActiveStepIndex(actualStatus);
+  const statusType = getStatusType(actualStatus);
+  
+  console.log("ProgressSteps computed values:", {
+    actualStatus,
+    activeStep,
+    statusType
+  });
+  
   const isCompleted =
     statusType === "completed" ||
-    currentStatus === "DONE" ||
-    currentStatus?.toLowerCase() === "completed";
+    actualStatus === "DONE" ||
+    actualStatus?.toLowerCase() === "completed";
 
   // For expired status, modify the first step icon and text
   const isExpired =
     statusType === "expired" ||
-    currentStatus === "EXPIRED" ||
-    currentStatus?.toLowerCase() === "expired";
+    actualStatus === "EXPIRED" ||
+    actualStatus?.toLowerCase() === "expired";
 
   // Format a Unix timestamp to human-readable date
   const formatTimestamp = (timestamp: number | undefined) => {

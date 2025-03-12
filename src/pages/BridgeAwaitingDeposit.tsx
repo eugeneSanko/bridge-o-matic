@@ -208,6 +208,7 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [orderId, token]);
 
+  // IMPROVED: Better status mapping and response handling
   const checkOrderStatus = useCallback(async (force = false) => {
     if (!orderId || !token) {
       console.error("Missing order ID or token for status check");
@@ -306,6 +307,19 @@ const BridgeAwaitingDeposit = () => {
           }
         }
         
+        // Map API status to our app status format
+        const statusMap: Record<string, string> = {
+          'NEW': 'pending',
+          'PENDING': 'processing',
+          'EXCHANGE': 'exchanging',
+          'WITHDRAW': 'sending',
+          'DONE': 'completed',
+          'EXPIRED': 'expired',
+          'EMERGENCY': 'failed'
+        };
+        
+        const currentStatus = statusMap[status] || status.toLowerCase();
+        
         // If status is DONE, save to database but don't redirect
         if (status === 'DONE') {
           console.log("Order is complete, showing notification and saving data");
@@ -336,12 +350,15 @@ const BridgeAwaitingDeposit = () => {
             }, 100);
           }
         } else {
-          // For other statuses, just update the order details
+          // For other statuses, just update the order details with BOTH currentStatus AND rawApiResponse
           setOrderDetails(prevDetails => {
             if (!prevDetails) return null;
+            
+            // Important: Update both the currentStatus AND the rawApiResponse to ensure ProgressSteps gets the correct status
+            console.log(`Updating order details with status ${status} (mapped to ${currentStatus})`);
             return {
               ...prevDetails,
-              currentStatus: status.toLowerCase(),
+              currentStatus: currentStatus,
               rawApiResponse: data.data
             };
           });
@@ -525,6 +542,7 @@ const BridgeAwaitingDeposit = () => {
         <div className="text-center text-sm text-gray-500">
           <p>Poll Status: {pollingActive ? 'Active' : 'Inactive'}</p>
           <p>Current Status: {orderDetails.rawApiResponse?.status || 'Unknown'}</p>
+          <p>Mapped Status: {orderDetails.currentStatus}</p>
           <p>Last Poll: {debugPollingInfo.lastPolled}</p>
           <p>Next Poll: {debugPollingInfo.nextPoll}</p>
           <p>Interval: {debugPollingInfo.interval ? `${debugPollingInfo.interval/1000}s` : 'Disabled'}</p>

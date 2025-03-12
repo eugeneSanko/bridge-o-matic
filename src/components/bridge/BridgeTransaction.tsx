@@ -28,6 +28,17 @@ export const BridgeTransaction = ({
   // Check if order is expired based only on API status
   const [isExpired, setIsExpired] = useState(false);
 
+  // Debug the status values for troubleshooting
+  useEffect(() => {
+    console.log("BridgeTransaction status values:", {
+      currentStatus: orderDetails.currentStatus,
+      apiStatus,
+      rawApiStatus: orderDetails.rawApiResponse?.status,
+      timeLeft,
+      displayStatus: isExpired ? "EXPIRED" : apiStatus
+    });
+  }, [orderDetails, apiStatus, timeLeft, isExpired]);
+
   // Check for expired status - simplified to only check API response
   useEffect(() => {
     // Only mark as expired if the API explicitly says it's EXPIRED
