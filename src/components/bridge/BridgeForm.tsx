@@ -271,8 +271,15 @@ export const BridgeForm = () => {
           description: "Your bridge transaction has been successfully created!",
         });
 
-        const redirectParam = result.orderToken || result.orderId;
-        navigate(`/bridge/awaiting-deposit?orderId=${redirectParam}`);
+        const orderId = result.data?.id || result.orderId;
+        const orderToken = result.data?.token || result.orderToken;
+        
+        let redirectUrl = `/bridge/awaiting-deposit?orderId=${orderId}`;
+        if (orderToken) {
+          redirectUrl += `&token=${orderToken}`;
+        }
+        
+        navigate(redirectUrl);
       } else {
         toast({
           title: "Transaction Failed",

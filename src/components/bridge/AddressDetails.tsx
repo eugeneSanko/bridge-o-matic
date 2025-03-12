@@ -1,3 +1,4 @@
+
 import { Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddressPlaceholder } from "./AddressPlaceholder";
@@ -34,12 +35,27 @@ export const AddressDetails = ({
       navigator.clipboard
         .writeText(destinationAddress)
         .then(() => {
-          // Optionally, display a success message
           toast.success("Destination address copied!");
-          // You can replace the console log with a toast notification if you use a library like react-toastify.
         })
         .catch((err) => {
           console.error("Failed to copy the address:", err);
+          toast.error("Failed to copy address");
+        });
+    }
+  };
+
+  const handleCopyDeposit = () => {
+    if (hasAddress) {
+      navigator.clipboard
+        .writeText(depositAddress)
+        .then(() => {
+          toast.success("Deposit address copied!");
+          // Call the provided onCopyClick callback
+          onCopyClick();
+        })
+        .catch((err) => {
+          console.error("Failed to copy the address:", err);
+          toast.error("Failed to copy address");
         });
     }
   };
@@ -61,7 +77,7 @@ export const AddressDetails = ({
               variant="ghost"
               size="icon"
               className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
-              onClick={onCopyClick}
+              onClick={handleCopyDeposit}
               disabled={!hasAddress}
             >
               <Copy className="h-4 w-4" />

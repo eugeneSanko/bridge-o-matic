@@ -408,9 +408,14 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
 
       // If successful, store the transaction data
       if (result && result.code === 0 && result.data) {
+        // Extract the order ID and token from the result
+        const orderId = result.data.id;
+        const orderToken = result.data.token;
+        
         // Store the transaction data for use in awaiting deposit page
         const transactionData = {
-          id: result.data.id,
+          id: orderId,
+          orderToken: orderToken, // Store the token separately
           fromCurrency,
           toCurrency,
           amount,
@@ -421,14 +426,16 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
           receiveAmount: estimatedReceiveAmount,
           tag: result.data.from?.tag || null,
           tagName: result.data.from?.tagName || null,
-          addressAlt: result.data.from?.addressAlt || null
+          addressAlt: result.data.from?.addressAlt || null,
+          expiresAt: result.data.time?.expiration ? 
+            new Date(result.data.time.expiration * 1000).toISOString() : null
         };
         
         localStorage.setItem('bridge_transaction_data', JSON.stringify(transactionData));
         console.log("Stored bridge transaction data:", transactionData);
 
         // Start monitoring the order status
-        startStatusChecking(result.data.id);
+        startStatusChecking(orderId);
 
         toast({
           title: "Transaction Created",

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Copy, Clock, Calendar, Tag, AlertCircle } from "lucide-react";
+import { Copy, Clock, Calendar, Tag, AlertCircle, TimerOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface OrderDetailsProps {
@@ -12,6 +12,7 @@ interface OrderDetailsProps {
   tagName?: string | null;
   expiresAt?: string | null;
   currentStatus?: string;
+  timeLeft?: number | null;
 }
 
 export const OrderDetails = ({ 
@@ -22,91 +23,95 @@ export const OrderDetails = ({
   tag, 
   tagName,
   expiresAt,
-  currentStatus = "NEW"
+  currentStatus = "NEW",
+  timeLeft
 }: OrderDetailsProps) => {
   const [localTimeRemaining, setLocalTimeRemaining] = useState(timeRemaining || "20:00");
   const [timerColor, setTimerColor] = useState("#9b87f5"); // Start with purple
   const [isExpired, setIsExpired] = useState(false);
+  const [secondsRemaining, setSecondsRemaining] = useState<number | null>(null);
   
-  // Calculate and update countdown timer
+  // Initialize the timer based on timeLeft from API
   useEffect(() => {
-    if (!expiresAt && !timeRemaining) {
-      // Start with 20 minutes if no expiration time provided
-      const endTime = new Date(Date.now() + 20 * 60000);
-      
-      const intervalId = setInterval(() => {
-        const now = new Date();
-        const diffMs = endTime.getTime() - now.getTime();
-        
-        if (diffMs <= 0) {
-          clearInterval(intervalId);
-          setLocalTimeRemaining("0:00");
-          setTimerColor("#ea384c");
-          setIsExpired(true);
-          return;
-        }
-        
-        const diffMinutes = Math.floor(diffMs / 60000);
-        const diffSeconds = Math.floor((diffMs % 60000) / 1000);
-        const newTimeRemaining = `${diffMinutes}:${diffSeconds.toString().padStart(2, '0')}`;
-        
-        // Change color based on remaining time
-        if (diffMinutes <= 5) {
-          setTimerColor("#ea384c"); // Red when less than 5 minutes
-        } else if (diffMinutes <= 10) {
-          setTimerColor("#F97316"); // Orange when less than 10 minutes
-        } else {
-          setTimerColor("#9b87f5"); // Purple otherwise
-        }
-        
-        setLocalTimeRemaining(newTimeRemaining);
-      }, 1000);
-      
-      return () => clearInterval(intervalId);
-    } else if (expiresAt) {
-      // Use provided expiration time
-      const endTime = new Date(expiresAt);
-      
-      const intervalId = setInterval(() => {
-        const now = new Date();
-        const diffMs = endTime.getTime() - now.getTime();
-        
-        if (diffMs <= 0) {
-          clearInterval(intervalId);
-          setLocalTimeRemaining("0:00");
-          setTimerColor("#ea384c");
-          setIsExpired(true);
-          return;
-        }
-        
-        const diffMinutes = Math.floor(diffMs / 60000);
-        const diffSeconds = Math.floor((diffMs % 60000) / 1000);
-        const newTimeRemaining = `${diffMinutes}:${diffSeconds.toString().padStart(2, '0')}`;
-        
-        // Change color based on remaining time
-        if (diffMinutes <= 5) {
-          setTimerColor("#ea384c"); // Red when less than 5 minutes
-        } else if (diffMinutes <= 10) {
-          setTimerColor("#F97316"); // Orange when less than 10 minutes
-        } else {
-          setTimerColor("#9b87f5"); // Purple otherwise (for 20-10 mins)
-        }
-        
-        setLocalTimeRemaining(newTimeRemaining);
-      }, 1000);
-      
-      return () => clearInterval(intervalId);
+    if (timeLeft !== undefined && timeLeft !== null) {
+      console.log(`Initializing timer with API timeLeft value: ${timeLeft} seconds`);
+      setSecondsRemaining(timeLeft);
     }
-  }, [expiresAt, timeRemaining]);
+  }, [timeLeft]);
+  
+  // Countdown effect
+  useEffect(() => {
+    // Only start countdown if we have secondsRemaining value
+    if (secondsRemaining === null) return;
+    
+    // Format and display the time
+    const updateTimerDisplay = () => {
+      const minutes = Math.floor(secondsRemaining / 60);
+      const seconds = Math.floor(secondsRemaining % 60);
+      const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      setLocalTimeRemaining(formattedTime);
+      
+      // Update colors based on time remaining
+      if (secondsRemaining <= 0) {
+        setTimerColor("#ea384c"); // Red when expired
+        setIsExpired(true);
+        return;
+      } else if (minutes <= 5) {
+        setTimerColor("#ea384c"); // Red when less than 5 minutes
+      } else if (minutes <= 10) {
+        setTimerColor("#F97316"); // Orange when less than 10 minutes
+      } else {
+        setTimerColor("#9b87f5"); // Purple otherwise
+      }
+    };
+    
+    // Initial update
+    updateTimerDisplay();
+    
+    // Set up interval to update every second
+    const intervalId = setInterval(() => {
+      setSecondsRemaining(prev => {
+        const newValue = prev !== null ? prev - 1 : 0;
+        return Math.max(0, newValue); // Don't go below zero
+      });
+      updateTimerDisplay();
+    }, 1000);
+    
+    return () => clearInterval(intervalId);
+  }, [secondsRemaining]);
+
+  // Fallback to expiresAt if no timeLeft provided
+  useEffect(() => {
+    if (secondsRemaining !== null) return; // Skip if we already have seconds remaining
+    
+    if (expiresAt) {
+      // Calculate seconds remaining based on expiresAt
+      const endTime = new Date(expiresAt);
+      const now = new Date();
+      const diffSeconds = Math.max(0, Math.floor((endTime.getTime() - now.getTime()) / 1000));
+      setSecondsRemaining(diffSeconds);
+    } else if (timeRemaining) {
+      // Parse from timeRemaining (MM:SS format)
+      const [minutes, seconds] = timeRemaining.split(':').map(Number);
+      setSecondsRemaining((minutes * 60) + seconds);
+    } else {
+      // Default to 20 minutes if no time info provided
+      setSecondsRemaining(20 * 60);
+    }
+  }, [expiresAt, timeRemaining, secondsRemaining]);
 
   const formatDate = (date: Date) => {
     return date.toISOString().replace('T', ' ').substring(0, 16) + ' UTC';
   };
 
   const renderStatusSection = () => {
+    // Check for failed or expired status in API format or app format
     const hasFailedOrExpired = isExpired || 
       currentStatus === "FAILED" || 
-      currentStatus === "EXPIRED";
+      currentStatus === "EXPIRED" ||
+      currentStatus === "failed" || 
+      currentStatus === "expired" ||
+      currentStatus === "EMERGENCY";
     
     if (hasFailedOrExpired) {
       return (
@@ -114,7 +119,9 @@ export const OrderDetails = ({
           <div className="flex items-center gap-2 text-red-500">
             <AlertCircle className="h-5 w-5" />
             <span className="font-medium">
-              {isExpired ? "Deposit window expired" : "Awaiting deposit failed"}
+              {isExpired || currentStatus === "EXPIRED" || currentStatus === "expired" 
+                ? "Deposit window expired" 
+                : "Awaiting deposit failed"}
             </span>
           </div>
           <p className="text-sm text-gray-400 mt-1">
@@ -153,8 +160,14 @@ export const OrderDetails = ({
         <div>
           <div className="text-sm text-gray-400 mb-2">Time Remaining</div>
           <div className="flex items-center gap-2" style={{ color: timerColor }}>
-            <Clock className="h-5 w-5 animate-pulse" />
-            <span className="font-medium text-lg transition-colors duration-300">{localTimeRemaining || "Waiting..."}</span>
+            {isExpired ? (
+              <TimerOff className="h-5 w-5" />
+            ) : (
+              <Clock className="h-5 w-5 animate-pulse" />
+            )}
+            <span className="font-medium text-lg transition-colors duration-300">
+              {isExpired ? "Expired" : localTimeRemaining || "Waiting..."}
+            </span>
           </div>
         </div>
         

@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useEffect, useState } from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
 import { AddressDetails } from "./AddressDetails";
@@ -17,6 +18,55 @@ export const BridgeTransaction = ({
   orderDetails,
   onCopyAddress,
 }: BridgeTransactionProps) => {
+  // Extract the original API status if available from the raw response
+  const apiStatus = orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
+  
+  // Extract the time left from the raw API response (in seconds)
+  const timeLeft = orderDetails.rawApiResponse?.time?.left || null;
+  
+  // Check if order is expired based on various indicators
+  const [isExpired, setIsExpired] = useState(false);
+  
+  // Check for expired status
+  useEffect(() => {
+    // Check multiple conditions for expiration
+    const isApiExpired = apiStatus === "EXPIRED";
+    const isStatusExpired = orderDetails.currentStatus === "expired";
+    const isTimerExpired = timeLeft !== null && timeLeft <= 0;
+    
+    // Log expiration checks for debugging
+    console.log("Expiration checks:", {
+      apiStatus,
+      currentStatus: orderDetails.currentStatus,
+      timeLeft,
+      isApiExpired,
+      isStatusExpired,
+      isTimerExpired
+    });
+    
+    // Set as expired if any condition is true
+    if (isApiExpired || isStatusExpired || isTimerExpired) {
+      console.log("Order is expired");
+      setIsExpired(true);
+    } else {
+      setIsExpired(false);
+    }
+  }, [apiStatus, orderDetails.currentStatus, timeLeft]);
+  
+  // Log the raw API response for debugging if available
+  React.useEffect(() => {
+    if (orderDetails.rawApiResponse) {
+      console.log("Raw API response:", orderDetails.rawApiResponse);
+      if (orderDetails.rawApiResponse.time) {
+        console.log("Time info:", orderDetails.rawApiResponse.time);
+        console.log("Time left:", orderDetails.rawApiResponse.time.left);
+      }
+    }
+  }, [orderDetails.rawApiResponse]);
+
+  // Use the expired status to update the displayed status
+  const displayStatus = isExpired ? "EXPIRED" : apiStatus;
+
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
       <div className="max-w-6xl mx-auto">
@@ -27,10 +77,10 @@ export const BridgeTransaction = ({
           destinationAddress={orderDetails.destinationAddress}
           receiveAmount={orderDetails.receiveAmount}
           orderType={orderDetails.orderType}
-          depositAddress={orderDetails.depositAddress} // Pass deposit address
+          depositAddress={orderDetails.depositAddress}
         />
 
-        <ProgressSteps currentStatus={orderDetails.currentStatus} />
+        <ProgressSteps currentStatus={displayStatus} />
 
         <div className="grid grid-cols-12 gap-6 mb-12">
           <OrderDetails
@@ -38,10 +88,11 @@ export const BridgeTransaction = ({
             orderType={orderDetails.orderType}
             timeRemaining={orderDetails.timeRemaining}
             expiresAt={orderDetails.expiresAt}
-            currentStatus={orderDetails.currentStatus}
+            currentStatus={displayStatus} 
             onCopyClick={() => onCopyAddress(orderDetails.orderId)}
             tag={orderDetails.tag}
             tagName={orderDetails.tagName}
+            timeLeft={timeLeft}
           />
           <AddressDetails
             depositAddress={orderDetails.depositAddress}
