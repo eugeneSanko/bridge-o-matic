@@ -1,17 +1,26 @@
+
 import {
   Loader,
   LoaderPinwheel,
   Clock,
   ArrowLeftRight,
   CircleCheckBig,
+  Copy,
+  ExternalLink,
+  Check,
+  Star,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface ProgressStepsProps {
   currentStatus?: string;
+  orderDetails?: any;
 }
 
 export const ProgressSteps = ({
   currentStatus = "pending",
+  orderDetails,
 }: ProgressStepsProps) => {
   // Map FF.io API status to step index
   const getActiveStepIndex = (status: string): number => {
@@ -80,12 +89,206 @@ export const ProgressSteps = ({
 
   const activeStep = getActiveStepIndex(currentStatus);
   const statusType = getStatusType(currentStatus);
+  const isCompleted = statusType === "completed" || currentStatus === "DONE" || currentStatus?.toLowerCase() === "completed";
 
   // For expired status, modify the first step icon and text
   const isExpired =
     statusType === "expired" ||
     currentStatus === "EXPIRED" ||
     currentStatus?.toLowerCase() === "expired";
+
+  // If completed, show the completed transaction view
+  if (isCompleted) {
+    return (
+      <div className="glass-card p-0 rounded-xl mb-9 overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Order Details Card (Left) */}
+          <div className="bg-[#1c2b52]/80 p-6 space-y-4">
+            <div className="border-b border-white/10 pb-3">
+              <div className="text-gray-400 text-sm">Order ID</div>
+              <div className="text-[#f0b90b] font-mono font-semibold text-xl flex items-center gap-2">
+                {orderDetails?.orderId || "GDBHQ4"} 
+                <Button variant="ghost" size="icon" className="h-6 w-6">
+                  <Copy className="h-4 w-4 text-gray-400" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="border-b border-white/10 pb-3">
+              <div className="text-gray-400 text-sm">Order status</div>
+              <div className="text-green-500 font-medium text-xl">Completed</div>
+            </div>
+            
+            <div className="border-b border-white/10 pb-3">
+              <div className="text-gray-400 text-sm">Order type</div>
+              <div className="text-white text-lg">
+                {orderDetails?.orderType === 'fixed' ? 'Fixed rate' : 'Float rate'}
+              </div>
+            </div>
+            
+            <div className="border-b border-white/10 pb-3">
+              <div className="text-gray-400 text-sm">Creation Time</div>
+              <div className="text-white text-lg">
+                {new Date().toLocaleString()}
+              </div>
+            </div>
+            
+            <div className="border-b border-white/10 pb-3">
+              <div className="text-gray-400 text-sm">Received Time</div>
+              <div className="text-white text-lg">
+                {new Date(Date.now() - 5*60000).toLocaleString()}
+              </div>
+            </div>
+            
+            <div>
+              <div className="text-gray-400 text-sm">Completed Time</div>
+              <div className="text-white text-lg">
+                {new Date().toLocaleString()}
+              </div>
+            </div>
+          </div>
+          
+          {/* Confirmation Card (Right) */}
+          <div className="bg-[#1c2b52]/80 p-6 flex flex-col items-center justify-center relative overflow-hidden">
+            <div className="relative z-10 text-center space-y-8">
+              <h2 className="text-3xl font-bold text-white flex items-center justify-center gap-2">
+                Your {orderDetails?.toCurrency || "Ethereum"} was sent 
+                <Check className="h-6 w-6 text-green-500" />
+              </h2>
+              
+              <p className="text-gray-300 max-w-md mx-auto">
+                If you enjoy your experience on FixedFloat, please leave a review at services below. 
+                We appreciate your support!
+              </p>
+              
+              <div className="flex gap-6 justify-center mt-4">
+                <a href="https://www.bestchange.com" target="_blank" rel="noopener noreferrer" 
+                   className="flex items-center gap-2 text-white/80 hover:text-white transition-colors">
+                  <div className="bg-[#9EA13F]/20 p-2 rounded">BC</div>
+                  <span>Bestchange</span>
+                </a>
+                <a href="https://www.trustpilot.com" target="_blank" rel="noopener noreferrer" 
+                   className="flex items-center gap-2 text-white/80 hover:text-white transition-colors">
+                  <Star className="h-5 w-5 text-green-500" />
+                  <span>Trustpilot</span>
+                </a>
+              </div>
+            </div>
+            
+            {/* Robot image as background element */}
+            <div className="absolute bottom-0 right-0 opacity-50">
+              <img 
+                src="/lovable-uploads/519fec7c-fbb9-4f3c-8535-970b9bbf7ae7.png"
+                alt="Robot"
+                className="w-40 h-40 object-contain"
+              />
+            </div>
+          </div>
+        </div>
+        
+        {/* Transaction Details (Bottom) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          {/* Accepted Transaction (Left) */}
+          <div className="bg-[#1c2b52]/80 p-6">
+            <h3 className="text-xl font-semibold text-white mb-4">Accepted transaction info</h3>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">TxID</span>
+                <div className="font-mono text-sm text-white flex items-center gap-2">
+                  9b942cf8b8e3aa944be74lc462c0c243c7a...
+                  <Button variant="ghost" size="icon" className="h-6 w-6">
+                    <Copy className="h-4 w-4 text-gray-400" />
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">View on the blockchain</span>
+                <div className="flex gap-2">
+                  <ExternalLink className="h-4 w-4 text-blue-400" />
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Received Time</span>
+                <span className="text-white">19 hours ago</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Block Time</span>
+                <span className="text-white">19 hours ago</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Confirmations</span>
+                <span className="text-white">40</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Amount</span>
+                <span className="text-white">{orderDetails?.depositAmount || "200"} {orderDetails?.fromCurrency || "ADA"}</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Fee</span>
+                <span className="text-white">0.168845 {orderDetails?.fromCurrency || "ADA"}</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Sent Transaction (Right) */}
+          <div className="bg-[#1c2b52]/80 p-6">
+            <h3 className="text-xl font-semibold text-white mb-4">Sent transaction info</h3>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">TxID</span>
+                <div className="font-mono text-sm text-white flex items-center gap-2">
+                  0x7ba710acc700ca056cfabb22e8dda54fa...
+                  <Button variant="ghost" size="icon" className="h-6 w-6">
+                    <Copy className="h-4 w-4 text-gray-400" />
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">View on the blockchain</span>
+                <div className="flex gap-2">
+                  <ExternalLink className="h-4 w-4 text-blue-400" />
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Sending time</span>
+                <span className="text-white">19 hours ago</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Block Time</span>
+                <span className="text-white">19 hours ago</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Confirmations</span>
+                <span className="text-white">30</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Amount</span>
+                <span className="text-white">{orderDetails?.receiveAmount || "0.0541047"} {orderDetails?.toCurrency || "ETH"}</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Fee</span>
+                <span className="text-white">0 {orderDetails?.toCurrency || "ETH"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const steps = [
     {

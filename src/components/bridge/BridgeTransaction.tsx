@@ -80,39 +80,46 @@ export const BridgeTransaction = ({
           depositAddress={orderDetails.depositAddress}
         />
 
-        <ProgressSteps currentStatus={displayStatus} />
+        <ProgressSteps 
+          currentStatus={displayStatus} 
+          orderDetails={orderDetails} 
+        />
 
-        <div className="grid grid-cols-12 gap-6 mb-12">
-          <OrderDetails
-            orderId={orderDetails.orderId}
-            orderType={orderDetails.orderType}
-            timeRemaining={orderDetails.timeRemaining}
-            expiresAt={orderDetails.expiresAt}
-            currentStatus={displayStatus} 
-            onCopyClick={() => onCopyAddress(orderDetails.orderId)}
-            tag={orderDetails.tag}
-            tagName={orderDetails.tagName}
-            timeLeft={timeLeft}
-          />
-          <AddressDetails
-            depositAddress={orderDetails.depositAddress}
-            destinationAddress={orderDetails.destinationAddress}
-            onCopyClick={() => onCopyAddress(orderDetails.depositAddress)}
-            addressAlt={orderDetails.addressAlt}
-            orderType={orderDetails.orderType}
-          />
-          <QRCodeSection
-            depositAddress={orderDetails.depositAddress}
-            depositAmount={orderDetails.depositAmount}
-            fromCurrency={orderDetails.fromCurrency}
-            tag={orderDetails.tag}
-          />
-        </div>
+        {displayStatus !== "DONE" && displayStatus !== "completed" && (
+          <>
+            <div className="grid grid-cols-12 gap-6 mb-12">
+              <OrderDetails
+                orderId={orderDetails.orderId}
+                orderType={orderDetails.orderType}
+                timeRemaining={orderDetails.timeRemaining}
+                expiresAt={orderDetails.expiresAt}
+                currentStatus={displayStatus} 
+                onCopyClick={() => onCopyAddress(orderDetails.orderId)}
+                tag={orderDetails.tag}
+                tagName={orderDetails.tagName}
+                timeLeft={timeLeft}
+              />
+              <AddressDetails
+                depositAddress={orderDetails.depositAddress}
+                destinationAddress={orderDetails.destinationAddress}
+                onCopyClick={() => onCopyAddress(orderDetails.depositAddress)}
+                addressAlt={orderDetails.addressAlt}
+                orderType={orderDetails.orderType}
+              />
+              <QRCodeSection
+                depositAddress={orderDetails.depositAddress}
+                depositAmount={orderDetails.depositAmount}
+                fromCurrency={orderDetails.fromCurrency}
+                tag={orderDetails.tag}
+              />
+            </div>
 
-        <div className="grid grid-cols-12 gap-6">
-          <InformationSection />
-          <NotificationSection />
-        </div>
+            <div className="grid grid-cols-12 gap-6">
+              <InformationSection />
+              <NotificationSection />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
