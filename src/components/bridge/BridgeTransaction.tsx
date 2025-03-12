@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
@@ -28,12 +27,13 @@ export const BridgeTransaction = ({
   // Check if order is expired based only on API status
   const [isExpired, setIsExpired] = useState(false);
 
-  // Debug the status values for troubleshooting
+  // Enhanced logging for debugging status issues
   useEffect(() => {
     console.log("BridgeTransaction status values:", {
       currentStatus: orderDetails.currentStatus,
       apiStatus,
       rawApiStatus: orderDetails.rawApiResponse?.status,
+      rawApiResponse: JSON.stringify(orderDetails.rawApiResponse || {}, null, 2),
       timeLeft,
       displayStatus: isExpired ? "EXPIRED" : apiStatus
     });
