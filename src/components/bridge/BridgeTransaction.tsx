@@ -67,6 +67,9 @@ export const BridgeTransaction = ({
   // Use the expired status to update the displayed status
   const displayStatus = isExpired ? "EXPIRED" : apiStatus;
 
+  // Check if the order is complete
+  const isOrderComplete = displayStatus === "DONE" || displayStatus === "completed";
+
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
       <div className="max-w-6xl mx-auto">
@@ -82,12 +85,14 @@ export const BridgeTransaction = ({
           toCurrencyName={orderDetails.toCurrencyName}
         />
 
+        {/* Always display ProgressSteps regardless of status */}
         <ProgressSteps 
           currentStatus={displayStatus} 
           orderDetails={orderDetails} 
         />
 
-        {displayStatus !== "DONE" && displayStatus !== "completed" && (
+        {/* Only show these sections if order is not complete */}
+        {!isOrderComplete && (
           <>
             <div className="grid grid-cols-12 gap-6 mb-12">
               <OrderDetails
