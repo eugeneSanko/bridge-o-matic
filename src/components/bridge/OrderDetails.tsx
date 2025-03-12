@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Copy, Clock, Calendar, Tag, AlertCircle, TimerOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,8 +30,6 @@ export const OrderDetails = ({
   const [isExpired, setIsExpired] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState<number | null>(null);
   
-  console.log(`OrderDetails rendered - Status: ${currentStatus}, timeLeft: ${timeLeft}, expiresAt: ${expiresAt}`);
-  
   // Initialize the timer based on timeLeft from API
   useEffect(() => {
     if (timeLeft !== undefined && timeLeft !== null) {
@@ -63,7 +60,6 @@ export const OrderDetails = ({
       } else if (secondsRemaining <= 0 && (currentStatus === "NEW" || currentStatus === "new")) {
         // Only show red for NEW status when time is up
         setTimerColor("#ea384c");
-        // Do not set isExpired here - only the API determines if it's truly expired
       } else if (secondsRemaining > 0 && minutes <= 5) {
         setTimerColor("#ea384c"); // Red when less than 5 minutes
       } else if (secondsRemaining > 0 && minutes <= 10) {
@@ -79,9 +75,7 @@ export const OrderDetails = ({
     // Set up interval to update every second
     const intervalId = setInterval(() => {
       setSecondsRemaining(prev => {
-        if (prev === null) return 0;
-        
-        const newValue = prev - 1;
+        const newValue = prev !== null ? prev - 1 : 0;
         // Don't go below zero only for NEW status
         return (currentStatus === "NEW" || currentStatus === "new") 
           ? Math.max(0, newValue) 
@@ -101,18 +95,14 @@ export const OrderDetails = ({
       // Calculate seconds remaining based on expiresAt
       const endTime = new Date(expiresAt);
       const now = new Date();
-      const diffSeconds = Math.floor((endTime.getTime() - now.getTime()) / 1000);
-      console.log(`Setting timer from expiresAt (${expiresAt}): ${diffSeconds} seconds remaining`);
+      const diffSeconds = Math.max(0, Math.floor((endTime.getTime() - now.getTime()) / 1000));
       setSecondsRemaining(diffSeconds);
     } else if (timeRemaining) {
       // Parse from timeRemaining (MM:SS format)
       const [minutes, seconds] = timeRemaining.split(':').map(Number);
-      const totalSeconds = (minutes * 60) + seconds;
-      console.log(`Setting timer from timeRemaining (${timeRemaining}): ${totalSeconds} seconds`);
-      setSecondsRemaining(totalSeconds);
+      setSecondsRemaining((minutes * 60) + seconds);
     } else {
       // Default to 20 minutes if no time info provided
-      console.log(`No time info provided, defaulting to 20 minutes (1200 seconds)`);
       setSecondsRemaining(20 * 60);
     }
   }, [expiresAt, timeRemaining, secondsRemaining]);
@@ -186,11 +176,6 @@ export const OrderDetails = ({
               {isExpired ? "Expired" : localTimeRemaining || "Waiting..."}
             </span>
           </div>
-          {currentStatus && (
-            <div className="text-xs text-gray-400 mt-1">
-              Status: {currentStatus.toUpperCase()}
-            </div>
-          )}
         </div>
         
         <div>
