@@ -240,24 +240,6 @@ const BridgeAwaitingDeposit = () => {
     });
 
     try {
-      const completedTransaction = await checkCompletedTransaction(orderId);
-      if (completedTransaction) {
-        console.log("Found completed transaction in database:", completedTransaction);
-        setOrderDetails(prevDetails => {
-          if (!prevDetails) return null;
-          return {
-            ...prevDetails,
-            currentStatus: "completed",
-            rawApiResponse: completedTransaction.raw_api_response || {
-              ...prevDetails?.rawApiResponse,
-              status: "DONE"
-            }
-          };
-        });
-        
-        return;
-      }
-
       console.log(`Calling bridge-status function with id: ${orderId} and token: ${token}`);
       const { data, error } = await supabase.functions.invoke('bridge-status', {
         body: { id: orderId, token }
@@ -282,83 +264,46 @@ const BridgeAwaitingDeposit = () => {
         const apiStatus = data.data.status;
         console.log(`Order status from API: ${apiStatus}`);
         
-        if (apiStatus === 'EXPIRED') {
-          const completedTransaction = await checkCompletedTransaction(orderId);
-          if (completedTransaction) {
-            console.log("API reports EXPIRED but transaction is completed in database");
-            setOrderDetails(prevDetails => {
-              if (!prevDetails) return null;
-              return {
-                ...prevDetails,
-                currentStatus: "completed",
-                rawApiResponse: completedTransaction.raw_api_response || {
-                  ...prevDetails?.rawApiResponse,
-                  status: "DONE"
-                }
-              };
-            });
-            
-            return;
-          }
-        }
-        
-        const statusMap: Record<string, string> = {
-          'NEW': 'pending',
-          'PENDING': 'processing',
-          'EXCHANGE': 'exchanging',
-          'WITHDRAW': 'sending',
-          'DONE': 'completed',
-          'EXPIRED': 'expired',
-          'EMERGENCY': 'failed'
-        };
-        
-        const currentStatus = statusMap[apiStatus] || apiStatus.toLowerCase();
-        
-        if (apiStatus === 'DONE') {
-          console.log("Order is complete, showing notification and saving data");
-          toast({
-            title: "Transaction Complete",
-            description: `Your transaction has been completed successfully.`,
-            variant: "default"
-          });
+        // Update orderDetails with the new API response
+        setOrderDetails(prevDetails => {
+          if (!prevDetails) return null;
           
-          setOrderDetails(prevDetails => {
-            if (!prevDetails) return null;
-            return {
-              ...prevDetails,
-              currentStatus: "completed",
-              rawApiResponse: data.data
-            };
-          });
+          // Ensure we're updating with the complete API response
+          const updatedDetails = {
+            ...prevDetails,
+            currentStatus: apiStatus.toLowerCase(),
+            rawApiResponse: data.data  // Store the complete API response
+          };
           
+          console.log("Updated order details:", updatedDetails);
+          return updatedDetails;
+        });
+
+        // Update polling interval based on status
+        if (apiStatus === 'DONE' || apiStatus === 'EXPIRED' || apiStatus === 'EMERGENCY') {
+          console.log(`Status ${apiStatus} is terminal, stopping polling`);
           setPollingActive(false);
+          setPollingInterval(null);
           
-          if (!transactionSaved) {
-            setTimeout(() => {
-              saveCompletedTransaction();
-            }, 100);
+          if (apiStatus === 'DONE') {
+            toast({
+              title: "Transaction Complete",
+              description: "Your transaction has been completed successfully."
+            });
           }
         } else {
-          setOrderDetails(prevDetails => {
-            if (!prevDetails) return null;
-            
-            console.log(`Updating order details with status ${apiStatus} (mapped to ${currentStatus})`);
-            return {
-              ...prevDetails,
-              currentStatus: currentStatus,
-              rawApiResponse: data.data
-            };
-          });
+          // Adjust polling intervals based on status
+          const newInterval = POLLING_INTERVALS[apiStatus] || POLLING_INTERVALS.DEFAULT;
+          console.log(`Setting new polling interval for status ${apiStatus}: ${newInterval}ms`);
+          setPollingInterval(newInterval);
+          setPollingActive(true);
         }
-      } else {
-        console.error("API returned an error:", data);
-        setStatusCheckError(`API Error: ${data.msg || "Unknown error"}`);
       }
     } catch (error) {
       console.error("Error checking order status:", error);
       setStatusCheckError(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
-  }, [orderId, token, pollingInterval, lastPollTimestamp, pollingActive, transactionSaved, saveCompletedTransaction, checkCompletedTransaction]);
+  }, [orderId, token, pollingInterval, lastPollTimestamp, pollingActive]);
 
   useEffect(() => {
     if (orderId && token && !manualStatusCheckAttempted) {
@@ -449,7 +394,8 @@ const BridgeAwaitingDeposit = () => {
     intervalIdRef.current = id;
     console.log("Created new interval with ID:", id);
     
-    checkOrderStatus(false);
+    // Perform initial check
+    checkOrderStatus(true);
     
     return () => {
       if (intervalIdRef.current !== null) {
