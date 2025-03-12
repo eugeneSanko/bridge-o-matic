@@ -60,59 +60,60 @@ export const TransactionSummary = ({
   };
 
   return (
-    <div className="bg-[#1A1F3C] p-8 rounded-xl mb-8">
-      <div className="flex flex-col items-center justify-between gap-8 relative">
-        <div className="grid grid-cols-1 md:grid-cols-11 w-full items-center text-center">
-          {/* YOU SEND section */}
-          <div className="col-span-5 flex flex-col items-center">
-            <div className="text-sm text-gray-400 uppercase mb-2">YOU SEND</div>
-            <div className="text-4xl font-bold text-white mb-2">{amount} {fromCurrency?.toUpperCase()}</div>
-            <div className="text-xs text-gray-400 font-mono truncate max-w-full">
-              {depositAddress ? formatAddress(depositAddress) : 'Generating address...'}
-            </div>
-          </div>
-          
-          {/* Center logo with arrow */}
-          <div className="col-span-1 flex justify-center items-center my-6 md:my-0">
-            <div className="relative">
+    <div className="glass-card p-8 md:p-12 rounded-xl mb-8 relative overflow-hidden">
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#9b87f5]/30 via-[#7a64ff]/20 to-transparent backdrop-blur-sm animate-pulse-subtle" />
+      </div>
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-12 relative">
+        <div className="flex-1 w-full md:w-auto">
+          <div className="text-sm text-gray-400 mb-3">YOU SEND</div>
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-full ${getCurrencyColor(fromCurrency)} flex items-center justify-center text-lg font-bold text-white overflow-hidden`}>
               <img 
                 src={getCurrencyImageUrl(fromCurrency)}
                 alt={fromCurrency}
-                className="w-10 h-10 absolute opacity-25 blur-sm"
-                style={{ left: '-30px', zIndex: 0 }}
+                className="w-full h-full object-contain p-2"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  (e.target as HTMLImageElement).parentElement!.innerText = getCurrencyIcon(fromCurrency);
+                }}
               />
-              <ArrowRight className="w-8 h-8 text-white relative z-10" />
+            </div>
+            <div>
+              <div className="text-2xl md:text-3xl font-bold mb-2">{amount} {fromCurrency?.toUpperCase()}</div>
+              <div className="text-sm text-gray-400 font-mono">
+                Send funds to: {depositAddress ? formatAddress(depositAddress) : 'Generating address...'}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-secondary/20 flex items-center justify-center">
+          <ArrowRight className="w-8 h-8 md:w-10 md:h-10 text-[#9b87f5]" />
+        </div>
+        
+        <div className="flex-1 w-full md:w-auto">
+          <div className="text-sm text-gray-400 mb-3">YOU RECEIVE</div>
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-full ${getCurrencyColor(toCurrency)} flex items-center justify-center text-lg font-bold text-white overflow-hidden`}>
               <img 
                 src={getCurrencyImageUrl(toCurrency)}
                 alt={toCurrency}
-                className="w-10 h-10 absolute opacity-25 blur-sm"
-                style={{ right: '-30px', zIndex: 0 }}
+                className="w-full h-full object-contain p-2"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  (e.target as HTMLImageElement).parentElement!.innerText = getCurrencyIcon(toCurrency);
+                }}
               />
             </div>
-          </div>
-          
-          {/* YOU RECEIVE section */}
-          <div className="col-span-5 flex flex-col items-center">
-            <div className="text-sm text-gray-400 uppercase mb-2">YOU RECEIVE</div>
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <div className={`w-12 h-12 rounded-full ${getCurrencyColor(toCurrency)} flex items-center justify-center overflow-hidden`}>
-                <img 
-                  src={getCurrencyImageUrl(toCurrency)}
-                  alt={toCurrency}
-                  className="w-full h-full object-contain p-2"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                    (e.target as HTMLImageElement).parentElement!.innerText = getCurrencyIcon(toCurrency);
-                  }}
-                />
-              </div>
-              <div className="text-4xl font-bold text-[#F7931A]">
+            <div>
+              <div className="text-2xl md:text-3xl font-bold mb-2">
                 {orderType === "float" && <span className="text-gray-400 mr-1">≈</span>}
                 {receiveAmount || ""} {toCurrency?.toUpperCase()}
               </div>
-            </div>
-            <div className="text-xs text-gray-400 font-mono truncate max-w-full">
-              {formatAddress(destinationAddress)}
+              <div className="text-sm text-gray-400 font-mono">
+                Receive at: {formatAddress(destinationAddress)}
+              </div>
             </div>
           </div>
         </div>
