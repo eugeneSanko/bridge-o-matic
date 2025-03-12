@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { invokeFunctionWithRetry } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -84,6 +83,12 @@ export function useBridgeOrder(
         // Cast the completedTransaction to our CompletedTransaction type 
         const typedTransaction = completedTransaction as unknown as CompletedTransaction;
         
+        // Verify the order ID exists before using it
+        if (!typedTransaction.ff_order_id) {
+          console.error("Retrieved transaction has no order ID:", typedTransaction);
+          throw new Error("Retrieved transaction has invalid order ID");
+        }
+        
         setOrderDetails({
           depositAddress: typedTransaction.deposit_address,
           depositAmount: typedTransaction.amount.toString(),
@@ -128,6 +133,12 @@ export function useBridgeOrder(
       
       if (apiResponse && apiResponse.code === 0 && apiResponse.data) {
         console.log("API returned order status:", apiResponse);
+        
+        // Verify the order ID exists before proceeding
+        if (!apiResponse.data.id) {
+          console.error("API response has no order ID:", apiResponse);
+          throw new Error("API response has invalid order ID");
+        }
         
         // Map API status to our app status format
         const apiStatus = apiResponse.data.status;

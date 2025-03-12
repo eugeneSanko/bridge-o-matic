@@ -139,8 +139,17 @@ const BridgeAwaitingDeposit = () => {
       console.log("Transaction saved successfully:", data);
       setTransactionSaved(true);
       
-      // Navigate to success page
-      navigate(`/bridge/order-complete?orderId=${orderDetails.ffOrderId}`);
+      // Only navigate to the success page if we have a valid order ID
+      if (orderDetails.ffOrderId) {
+        navigate(`/bridge/order-complete?orderId=${orderDetails.ffOrderId}`);
+      } else {
+        console.error("Cannot navigate to order-complete page: Missing order ID");
+        toast({
+          title: "Error",
+          description: "Could not complete the transaction due to missing order information",
+          variant: "destructive"
+        });
+      }
       
     } catch (error) {
       console.error("Error in saveCompletedTransaction:", error);
@@ -209,9 +218,11 @@ const BridgeAwaitingDeposit = () => {
           }
         }));
         
-        // Redirect to success page if we found a completed transaction
-        if (!transactionSaved) {
-          navigate(`/bridge/order-complete?orderId=${orderId}`);
+        // Only redirect to success page if we have a valid order ID
+        if (!transactionSaved && completedTransaction.ff_order_id) {
+          navigate(`/bridge/order-complete?orderId=${completedTransaction.ff_order_id}`);
+        } else if (!completedTransaction.ff_order_id) {
+          console.error("Cannot navigate to order-complete: Missing order ID in completed transaction");
         }
         return;
       }
@@ -250,7 +261,12 @@ const BridgeAwaitingDeposit = () => {
               }
             }));
             
-            navigate(`/bridge/order-complete?orderId=${orderId}`);
+            // Only navigate if we have a valid order ID
+            if (completedTransaction.ff_order_id) {
+              navigate(`/bridge/order-complete?orderId=${completedTransaction.ff_order_id}`);
+            } else {
+              console.error("Cannot navigate to order-complete: Missing order ID in completed transaction");
+            }
             return;
           }
         }
@@ -278,11 +294,13 @@ const BridgeAwaitingDeposit = () => {
           setPollingInterval(null);
           
           // Set a flag to indicate we're saving
-          if (!transactionSaved) {
+          if (!transactionSaved && data.data.id) {
             // Wait for state to update before proceeding
             setTimeout(() => {
               saveCompletedTransaction();
             }, 100);
+          } else if (!data.data.id) {
+            console.error("Cannot save transaction: Missing order ID in API response");
           }
         } else {
           // For other statuses, just update the order details
