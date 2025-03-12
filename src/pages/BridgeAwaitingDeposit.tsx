@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DebugPanel } from "@/components/bridge/DebugPanel";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { CompletedTransaction } from "@/types/bridge";
 
 const POLLING_INTERVALS = {
   DEFAULT: 15000,     // Default: 15 seconds
@@ -79,7 +80,8 @@ const BridgeAwaitingDeposit = () => {
         return null;
       }
       
-      return transaction;
+      // Cast to our CompletedTransaction type
+      return transaction as unknown as CompletedTransaction; 
     } catch (error) {
       console.error("Error in checkCompletedTransaction:", error);
       return null;
@@ -126,7 +128,8 @@ const BridgeAwaitingDeposit = () => {
           destination_address: orderDetails.destinationAddress,
           deposit_address: orderDetails.depositAddress,
           client_metadata: clientMetadata,
-          raw_api_response: orderDetails.rawApiResponse
+          raw_api_response: orderDetails.rawApiResponse,
+          status: "completed"
         });
       
       if (error) {
