@@ -19,6 +19,8 @@ interface OrderData {
   initial_rate: number;
   created_at: string;
   expiration_time: string;
+  from_currency_name?: string;
+  to_currency_name?: string;
 }
 
 const BridgeOrderComplete = () => {
@@ -117,6 +119,9 @@ const BridgeOrderComplete = () => {
           toCurrency={orderDetails.to_currency}
           amount={orderDetails.amount.toString()}
           destinationAddress={orderDetails.destination_address}
+          fromCurrencyName={orderDetails.from_currency_name}
+          toCurrencyName={orderDetails.to_currency_name}
+          depositAddress={orderDetails.deposit_address}
         />
 
         <div className="glass-card p-8 rounded-xl mb-8">

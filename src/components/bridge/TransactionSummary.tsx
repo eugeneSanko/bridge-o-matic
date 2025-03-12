@@ -1,3 +1,4 @@
+
 import { ArrowRight } from "lucide-react";
 import { AddressPlaceholder } from "./AddressPlaceholder";
 
@@ -74,7 +75,7 @@ export const TransactionSummary = ({
       return (
         <>
           {fromCurrency.toUpperCase()}
-          <sup className="text-sm text-muted-foreground ">
+          <sup className="text-sm text-muted-foreground ml-1">
             {fromCurrencyName}
           </sup>
         </>
@@ -87,8 +88,10 @@ export const TransactionSummary = ({
     if (toCurrencyName) {
       return (
         <>
-          {toCurrencyName.toUpperCase()}
-          <sup className="text-sm text-muted-foreground ">{toCurrencyName}</sup>
+          {toCurrency.toUpperCase()}
+          <sup className="text-sm text-muted-foreground ml-1">
+            {toCurrencyName}
+          </sup>
         </>
       );
     }
