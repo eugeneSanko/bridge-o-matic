@@ -1,9 +1,12 @@
+
 import { ArrowRight } from "lucide-react";
 import { AddressPlaceholder } from "./AddressPlaceholder";
 
 interface TransactionSummaryProps {
   fromCurrency: string;
   toCurrency: string;
+  fromCurrencyName?: string;
+  toCurrencyName?: string;
   amount: string;
   destinationAddress: string;
   receiveAmount?: string;
@@ -14,6 +17,8 @@ interface TransactionSummaryProps {
 export const TransactionSummary = ({
   fromCurrency,
   toCurrency,
+  fromCurrencyName,
+  toCurrencyName,
   amount,
   destinationAddress,
   receiveAmount,
@@ -64,6 +69,11 @@ export const TransactionSummary = ({
     return `${address.slice(0, 8)}...${address.slice(-8)}`;
   };
 
+  // Display currency name or code
+  const getDisplayCurrencyName = (code: string, name?: string) => {
+    return name || code.toUpperCase();
+  };
+
   return (
     <div className="glass-card p-8 md:p-12 rounded-xl mb-8 relative overflow-hidden">
       <div className="absolute inset-0 opacity-20">
@@ -93,7 +103,7 @@ export const TransactionSummary = ({
             </div>
             <div>
               <div className="text-2xl md:text-3xl font-bold mb-2 md:text-right">
-                {amount} {fromCurrency?.toUpperCase()}
+                {amount} {getDisplayCurrencyName(fromCurrency, fromCurrencyName)}
               </div>
               <div className="text-sm text-gray-400 font-mono">
                 Send funds:{" "}
@@ -133,7 +143,7 @@ export const TransactionSummary = ({
                 {orderType === "float" && (
                   <span className="text-gray-400 mr-1">≈</span>
                 )}
-                {receiveAmount || ""} {toCurrency?.toUpperCase()}
+                {receiveAmount || ""} {getDisplayCurrencyName(toCurrency, toCurrencyName)}
               </div>
               <div className="text-sm text-gray-400 font-mono">
                 Receive at: {formatAddress(destinationAddress)}
