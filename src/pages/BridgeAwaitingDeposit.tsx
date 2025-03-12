@@ -163,6 +163,11 @@ const BridgeAwaitingDeposit = () => {
     if (apiStatus === "DONE" && !transactionSaved) {
       saveCompletedTransaction();
     }
+
+    if (apiStatus === "DONE" && transactionSaved) {
+      console.log("Transaction is complete and saved, stopping polling");
+      setPollingInterval(null);
+    }
   }, [orderDetails?.rawApiResponse?.status, transactionSaved, saveCompletedTransaction]);
 
   useEffect(() => {
@@ -352,15 +357,20 @@ const BridgeAwaitingDeposit = () => {
     console.log(`Setting up polling with ${pollingInterval}ms interval`);
     
     const intervalId = setInterval(() => {
-      // Keep checking regardless of status to ensure UI updates
-      checkOrderStatus();
+      // Only check if we haven't reached DONE status or if transaction isn't saved yet
+      const currentStatus = orderDetails?.rawApiResponse?.status;
+      if (currentStatus !== "DONE" || !transactionSaved) {
+        checkOrderStatus();
+      } else {
+        console.log("Skipping status check - transaction is complete and saved");
+      }
     }, pollingInterval);
     
     return () => {
       console.log('Clearing polling interval');
       clearInterval(intervalId);
     };
-  }, [orderId, token, pollingInterval, checkOrderStatus]);
+  }, [orderId, token, pollingInterval, checkOrderStatus, orderDetails, transactionSaved]);
 
   if (loading) {
     return <LoadingState />;
