@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
@@ -46,7 +47,7 @@ export const BridgeTransaction = ({
     } else {
       setIsExpired(false);
     }
-  }, [apiStatus, timeLeft]);
+  }, [apiStatus, timeLeft, orderDetails.currentStatus]);
 
   // Use the expired status to update the displayed status
   // Keep the original API status if it's not expired - this is important for DONE status

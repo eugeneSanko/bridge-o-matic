@@ -98,13 +98,16 @@ export const OrderDetails = ({
       const endTime = new Date(expiresAt);
       const now = new Date();
       const diffSeconds = Math.floor((endTime.getTime() - now.getTime()) / 1000);
+      console.log(`Calculated ${diffSeconds} seconds remaining from expiresAt: ${expiresAt}`);
       setSecondsRemaining(diffSeconds);
     } else if (timeRemaining) {
       // Parse from timeRemaining (MM:SS format)
       const [minutes, seconds] = timeRemaining.split(':').map(Number);
+      console.log(`Parsed ${minutes} minutes and ${seconds} seconds from timeRemaining: ${timeRemaining}`);
       setSecondsRemaining((minutes * 60) + seconds);
     } else {
       // Default to 20 minutes if no time info provided
+      console.log(`No time information provided, defaulting to 20 minutes`);
       setSecondsRemaining(20 * 60);
     }
   }, [expiresAt, timeRemaining, secondsRemaining]);
