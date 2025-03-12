@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Copy, Clock, Calendar, Tag, AlertCircle, TimerOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,51 +30,17 @@ export const OrderDetails = ({
   const [timerColor, setTimerColor] = useState("#9b87f5"); // Start with purple
   const [isExpired, setIsExpired] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState<number | null>(null);
-  const [countingUp, setCountingUp] = useState(false);
-  const [secondsElapsed, setSecondsElapsed] = useState(0);
   
   // Initialize the timer based on timeLeft from API
   useEffect(() => {
     if (timeLeft !== undefined && timeLeft !== null) {
       console.log(`Initializing timer with API timeLeft value: ${timeLeft} seconds`);
-      
-      if (timeLeft < 0 && (currentStatus === "PENDING" || currentStatus === "pending")) {
-        // If timeLeft is negative and status is PENDING, start counting up
-        console.log("Starting count-up timer for PENDING status with expired time");
-        setCountingUp(true);
-        setSecondsElapsed(Math.abs(timeLeft));
-      } else {
-        // Otherwise count down normally
-        setCountingUp(false);
-        setSecondsRemaining(timeLeft);
-      }
+      setSecondsRemaining(timeLeft);
     }
-  }, [timeLeft, currentStatus]);
+  }, [timeLeft]);
   
   // Countdown effect
   useEffect(() => {
-    // If we're counting up instead of down (for PENDING status)
-    if (countingUp) {
-      const updateCountUpDisplay = () => {
-        const minutes = Math.floor(secondsElapsed / 60);
-        const seconds = Math.floor(secondsElapsed % 60);
-        const formattedTime = `+${minutes}:${seconds.toString().padStart(2, '0')}`;
-        setLocalTimeRemaining(formattedTime);
-        setTimerColor("#F97316"); // Orange for counting up
-      };
-      
-      // Initial update
-      updateCountUpDisplay();
-      
-      // Set up interval to update every second
-      const intervalId = setInterval(() => {
-        setSecondsElapsed(prev => prev + 1);
-        updateCountUpDisplay();
-      }, 1000);
-      
-      return () => clearInterval(intervalId);
-    }
-    
     // Only start countdown if we have secondsRemaining value
     if (secondsRemaining === null) return;
     
@@ -87,13 +54,7 @@ export const OrderDetails = ({
       // Update colors based on time remaining
       if (secondsRemaining <= 0) {
         setTimerColor("#ea384c"); // Red when expired
-        
-        // Only set as expired if status is NEW or EXPIRED
-        // For PENDING and other statuses, don't mark as expired
-        if (currentStatus === "NEW" || currentStatus === "new" || 
-            currentStatus === "EXPIRED" || currentStatus === "expired") {
-          setIsExpired(true);
-        }
+        setIsExpired(true);
         return;
       } else if (minutes <= 5) {
         setTimerColor("#ea384c"); // Red when less than 5 minutes
@@ -117,26 +78,18 @@ export const OrderDetails = ({
     }, 1000);
     
     return () => clearInterval(intervalId);
-  }, [secondsRemaining, countingUp, secondsElapsed, currentStatus]);
+  }, [secondsRemaining]);
 
   // Fallback to expiresAt if no timeLeft provided
   useEffect(() => {
-    if (secondsRemaining !== null || countingUp) return; // Skip if we already have seconds remaining or counting up
+    if (secondsRemaining !== null) return; // Skip if we already have seconds remaining
     
     if (expiresAt) {
       // Calculate seconds remaining based on expiresAt
       const endTime = new Date(expiresAt);
       const now = new Date();
-      const diffSeconds = Math.floor((endTime.getTime() - now.getTime()) / 1000);
-      
-      if (diffSeconds < 0 && (currentStatus === "PENDING" || currentStatus === "pending")) {
-        // If expired and PENDING, count up
-        setCountingUp(true);
-        setSecondsElapsed(Math.abs(diffSeconds));
-      } else {
-        // Otherwise count down
-        setSecondsRemaining(Math.max(0, diffSeconds));
-      }
+      const diffSeconds = Math.max(0, Math.floor((endTime.getTime() - now.getTime()) / 1000));
+      setSecondsRemaining(diffSeconds);
     } else if (timeRemaining) {
       // Parse from timeRemaining (MM:SS format)
       const [minutes, seconds] = timeRemaining.split(':').map(Number);
@@ -145,24 +98,19 @@ export const OrderDetails = ({
       // Default to 20 minutes if no time info provided
       setSecondsRemaining(20 * 60);
     }
-  }, [expiresAt, timeRemaining, secondsRemaining, countingUp, currentStatus]);
+  }, [expiresAt, timeRemaining, secondsRemaining]);
 
   const formatDate = (date: Date) => {
     return date.toISOString().replace('T', ' ').substring(0, 16) + ' UTC';
   };
 
   const renderStatusSection = () => {
-    // Only show failed/expired status message for NEW or EXPIRED status
-    const isNewOrExpired = 
-      currentStatus === "NEW" || 
-      currentStatus === "new" || 
-      currentStatus === "EXPIRED" || 
-      currentStatus === "expired";
-    
-    // Check for failed or expired status while respecting the current status
-    const hasFailedOrExpired = (isExpired && isNewOrExpired) || 
+    // Check for failed or expired status in API format or app format
+    const hasFailedOrExpired = isExpired || 
       currentStatus === "FAILED" || 
+      currentStatus === "EXPIRED" ||
       currentStatus === "failed" || 
+      currentStatus === "expired" ||
       currentStatus === "EMERGENCY";
     
     if (hasFailedOrExpired) {
@@ -171,8 +119,7 @@ export const OrderDetails = ({
           <div className="flex items-center gap-2 text-red-500">
             <AlertCircle className="h-5 w-5" />
             <span className="font-medium">
-              {(isExpired && (currentStatus === "NEW" || currentStatus === "new")) || 
-               currentStatus === "EXPIRED" || currentStatus === "expired" 
+              {isExpired || currentStatus === "EXPIRED" || currentStatus === "expired" 
                 ? "Deposit window expired" 
                 : "Awaiting deposit failed"}
             </span>
@@ -213,15 +160,13 @@ export const OrderDetails = ({
         <div>
           <div className="text-sm text-gray-400 mb-2">Time Remaining</div>
           <div className="flex items-center gap-2" style={{ color: timerColor }}>
-            {isExpired && currentStatus !== "PENDING" && currentStatus !== "pending" ? (
+            {isExpired ? (
               <TimerOff className="h-5 w-5" />
             ) : (
               <Clock className="h-5 w-5 animate-pulse" />
             )}
             <span className="font-medium text-lg transition-colors duration-300">
-              {isExpired && currentStatus !== "PENDING" && currentStatus !== "pending" 
-                ? "Expired" 
-                : localTimeRemaining || "Waiting..."}
+              {isExpired ? "Expired" : localTimeRemaining || "Waiting..."}
             </span>
           </div>
         </div>

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
@@ -68,11 +67,9 @@ export const BridgeTransaction = ({
   // Use the expired status to update the displayed status
   const displayStatus = isExpired ? "EXPIRED" : apiStatus;
 
-  // Check if the order is complete - now also checks for "DONE" status from API
+  // Check if the order is complete
   const isOrderComplete =
-    displayStatus === "DONE" || 
-    displayStatus === "completed" || 
-    orderDetails.currentStatus === "completed";
+    displayStatus === "DONE" || displayStatus === "completed";
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
