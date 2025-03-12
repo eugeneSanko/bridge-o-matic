@@ -90,20 +90,19 @@ const BridgeAwaitingDeposit = () => {
       
       const clientMetadata = collectClientMetadata();
       
+      // Fix: Pass a single object, not an array, and convert amount to number
       const { data, error } = await supabase
         .from('completed_bridge_transactions')
-        .insert([
-          {
-            ff_order_id: orderDetails.ffOrderId,
-            ff_order_token: orderDetails.ffOrderToken,
-            from_currency: orderDetails.fromCurrency,
-            to_currency: orderDetails.toCurrency,
-            amount: orderDetails.depositAmount,
-            destination_address: orderDetails.destinationAddress,
-            deposit_address: orderDetails.depositAddress,
-            client_metadata: clientMetadata
-          }
-        ]);
+        .insert({
+          ff_order_id: orderDetails.ffOrderId,
+          ff_order_token: orderDetails.ffOrderToken,
+          from_currency: orderDetails.fromCurrency,
+          to_currency: orderDetails.toCurrency,
+          amount: parseFloat(orderDetails.depositAmount), // Convert to number
+          destination_address: orderDetails.destinationAddress,
+          deposit_address: orderDetails.depositAddress,
+          client_metadata: clientMetadata
+        });
       
       if (error) {
         console.error("Error saving transaction to Supabase:", error);
