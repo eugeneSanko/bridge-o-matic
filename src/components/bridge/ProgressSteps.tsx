@@ -1,3 +1,4 @@
+
 import {
   Loader,
   LoaderPinwheel,
@@ -34,7 +35,7 @@ export const ProgressSteps = ({
       PENDING: 1, // Transaction received, pending confirmation
       EXCHANGE: 1, // Transaction confirmed, exchange in progress
       WITHDRAW: 2, // Sending funds
-      DONE: 3, // Order completed
+      DONE: 3, // Order completed - This ensures DONE maps to completed status
       EXPIRED: 0, // Order expired
       EMERGENCY: 3, // Emergency, customer choice required
     };

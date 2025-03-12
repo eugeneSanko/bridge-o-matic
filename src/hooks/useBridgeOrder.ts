@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { API_CONFIG, invokeFunctionWithRetry, generateFixedFloatSignature } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -105,14 +106,14 @@ export function useBridgeOrder(
           if (apiResponse && apiResponse.code === 0 && apiResponse.data) {
             console.log("API returned order status:", apiResponse);
             
-            // Map API status to our app status format
+            // Map API status to our app status format - ensure DONE is correctly mapped to completed
             const apiStatus = apiResponse.data.status;
             const statusMap: Record<string, string> = {
               'NEW': 'pending',
               'PENDING': 'processing',
               'EXCHANGE': 'exchanging',
               'WITHDRAW': 'sending',
-              'DONE': 'completed',
+              'DONE': 'completed',     // Explicitly map DONE to completed
               'EXPIRED': 'expired',
               'EMERGENCY': 'failed'
             };
