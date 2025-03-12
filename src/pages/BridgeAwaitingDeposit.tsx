@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
@@ -148,13 +149,18 @@ const BridgeAwaitingDeposit = () => {
       console.log("Transaction saved successfully:", data);
       setTransactionSaved(true);
       
-      // Navigate to success page
-      navigate(`/bridge/order-complete?orderId=${orderDetails.ffOrderId}`);
+      // Removed navigation to success page
+      // Stay on current page when transaction is completed
+      toast({
+        title: "Transaction Complete",
+        description: "Your transaction has been completed successfully.",
+        variant: "default"
+      });
       
     } catch (error) {
       console.error("Error in saveCompletedTransaction:", error);
     }
-  }, [orderDetails, transactionSaved, collectClientMetadata, navigate]);
+  }, [orderDetails, transactionSaved, collectClientMetadata]);
 
   // Update polling status when order status changes
   useEffect(() => {
@@ -235,10 +241,7 @@ const BridgeAwaitingDeposit = () => {
           }
         }));
         
-        // Redirect to success page if we found a completed transaction
-        if (!transactionSaved) {
-          navigate(`/bridge/order-complete?orderId=${orderId}`);
-        }
+        // Don't redirect to success page when finding a completed transaction
         return;
       }
 
@@ -277,12 +280,12 @@ const BridgeAwaitingDeposit = () => {
               }
             }));
             
-            navigate(`/bridge/order-complete?orderId=${orderId}`);
+            // Don't redirect to success page in this case either
             return;
           }
         }
         
-        // If status is DONE, save to database and redirect
+        // If status is DONE, save to database but don't redirect
         if (status === 'DONE') {
           console.log("Order is complete, showing notification and saving data");
           toast({
@@ -330,7 +333,7 @@ const BridgeAwaitingDeposit = () => {
       console.error("Error checking order status:", error);
       setStatusCheckError(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
-  }, [orderId, token, pollingInterval, lastPollTimestamp, pollingActive, transactionSaved, saveCompletedTransaction, checkCompletedTransaction, navigate]);
+  }, [orderId, token, pollingInterval, lastPollTimestamp, pollingActive, transactionSaved, saveCompletedTransaction, checkCompletedTransaction]);
 
   // Initial status check
   useEffect(() => {

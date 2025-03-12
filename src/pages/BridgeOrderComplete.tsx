@@ -62,11 +62,11 @@ const BridgeOrderComplete = () => {
         console.log("Order details fetched successfully:", result.data);
         setOrderDetails(result.data);
         
-        // Verify order is actually completed
+        // Verify order is completed but don't redirect if not
+        // Just show the error on this page instead
         if (result.data.status !== "completed") {
-          console.log(`Order status is ${result.data.status}, not completed. Redirecting to order page.`);
-          navigate(`/bridge/awaiting-deposit?orderId=${orderId}`);
-          return;
+          console.log(`Order status is ${result.data.status}, not completed`);
+          setError(`This order is not completed yet. Current status: ${result.data.status}`);
         }
       } catch (error) {
         console.error("Error fetching order details:", error);
