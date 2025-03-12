@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Copy, Clock, Calendar, Tag, AlertCircle, TimerOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -61,7 +60,6 @@ export const OrderDetails = ({
       } else if (secondsRemaining <= 0 && (currentStatus === "NEW" || currentStatus === "new")) {
         // Only show red for NEW status when time is up
         setTimerColor("#ea384c");
-        // Don't set expired flag for non-expired statuses
       } else if (secondsRemaining > 0 && minutes <= 5) {
         setTimerColor("#ea384c"); // Red when less than 5 minutes
       } else if (secondsRemaining > 0 && minutes <= 10) {
@@ -78,10 +76,10 @@ export const OrderDetails = ({
     const intervalId = setInterval(() => {
       setSecondsRemaining(prev => {
         const newValue = prev !== null ? prev - 1 : 0;
-        // Allow countdown to go negative when we're still in NEW status
-        // but timer is finished - we continue showing "expired" behavior while
-        // waiting for status to change
-        return newValue;
+        // Don't go below zero only for NEW status
+        return (currentStatus === "NEW" || currentStatus === "new") 
+          ? Math.max(0, newValue) 
+          : newValue; // Allow negative for other statuses
       });
       updateTimerDisplay();
     }, 1000);
@@ -97,7 +95,7 @@ export const OrderDetails = ({
       // Calculate seconds remaining based on expiresAt
       const endTime = new Date(expiresAt);
       const now = new Date();
-      const diffSeconds = Math.floor((endTime.getTime() - now.getTime()) / 1000);
+      const diffSeconds = Math.max(0, Math.floor((endTime.getTime() - now.getTime()) / 1000));
       setSecondsRemaining(diffSeconds);
     } else if (timeRemaining) {
       // Parse from timeRemaining (MM:SS format)
