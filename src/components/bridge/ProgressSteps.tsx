@@ -1,3 +1,4 @@
+
 import {
   Loader,
   LoaderPinwheel,
@@ -199,7 +200,10 @@ export const ProgressSteps = ({
   if (isCompleted) {
     return (
       <div className=" p-0 rounded-xl mb-9 overflow-hidden">
-        <ProgressSteps></ProgressSteps>
+        {/* Render stepper at the top for completed state too - but don't call ProgressSteps recursively */}
+        <div className="glass-card p-6 md:p-8 rounded-xl mb-9">
+          {renderStepper()}
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 boarder-0">
           {/* Order Details Card (Left) */}
@@ -253,7 +257,6 @@ export const ProgressSteps = ({
           </Card>
 
           {/* Confirmation Card (Right) */}
-
           <Card className="glass-card p-6 flex flex-col items-center justify-center relative overflow-hidden md:col-span-2">
             {/* Robot image on the left */}
             <div className="hidden md:block absolute left-0 -bottom-14 opa-50">

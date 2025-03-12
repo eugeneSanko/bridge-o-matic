@@ -12,6 +12,9 @@ interface TransactionSummaryProps {
   depositAddress?: string;
   fromCurrencyName?: string;
   toCurrencyName?: string;
+  // Add new props for coin
+  fromCurrencyCoin?: string;
+  toCurrencyCoin?: string;
 }
 
 export const TransactionSummary = ({
@@ -24,7 +27,13 @@ export const TransactionSummary = ({
   depositAddress = "",
   fromCurrencyName,
   toCurrencyName,
+  fromCurrencyCoin,
+  toCurrencyCoin,
 }: TransactionSummaryProps) => {
+  // Prioritize using the coin over code for display
+  const displayFromCurrency = fromCurrencyCoin || fromCurrency;
+  const displayToCurrency = toCurrencyCoin || toCurrency;
+
   const getCurrencyIcon = (currency: string) => {
     const lowerCurrency = currency.toLowerCase();
     if (lowerCurrency === "btc") return "₿";
@@ -69,33 +78,33 @@ export const TransactionSummary = ({
     return `${address.slice(0, 8)}...${address.slice(-8)}`;
   };
 
-  // Format the display for from/to currencies to show both code and name
+  // Format the display for from/to currencies to show both coin/code and name
   const formatFromCurrencyDisplay = () => {
     if (fromCurrencyName) {
       return (
         <>
-          {fromCurrency.toUpperCase()}
+          {displayFromCurrency.toUpperCase()}
           <sup className="text-sm text-muted-foreground ml-1">
             {fromCurrencyName}
           </sup>
         </>
       );
     }
-    return fromCurrency.toUpperCase();
+    return displayFromCurrency.toUpperCase();
   };
 
   const formatToCurrencyDisplay = () => {
     if (toCurrencyName) {
       return (
         <>
-          {toCurrency.toUpperCase()}
+          {displayToCurrency.toUpperCase()}
           <sup className="text-sm text-muted-foreground ml-1">
             {toCurrencyName}
           </sup>
         </>
       );
     }
-    return toCurrency.toUpperCase();
+    return displayToCurrency.toUpperCase();
   };
 
   return (
@@ -111,17 +120,17 @@ export const TransactionSummary = ({
           <div className="flex items-center gap-4 md:flex-row-reverse">
             <div
               className={`w-12 h-12 rounded-full ${getCurrencyColor(
-                fromCurrency
+                displayFromCurrency
               )} flex items-center justify-center text-lg font-bold text-white overflow-hidden`}
             >
               <img
-                src={getCurrencyImageUrl(fromCurrency)}
-                alt={fromCurrency}
+                src={getCurrencyImageUrl(displayFromCurrency)}
+                alt={displayFromCurrency}
                 className="w-full h-full object-contain p-2"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = "none";
                   (e.target as HTMLImageElement).parentElement!.innerText =
-                    getCurrencyIcon(fromCurrency);
+                    getCurrencyIcon(displayFromCurrency);
                 }}
               />
             </div>
@@ -148,17 +157,17 @@ export const TransactionSummary = ({
           <div className="flex items-center gap-4">
             <div
               className={`w-12 h-12 rounded-full ${getCurrencyColor(
-                toCurrency
+                displayToCurrency
               )} flex items-center justify-center text-lg font-bold text-white overflow-hidden`}
             >
               <img
-                src={getCurrencyImageUrl(toCurrency)}
-                alt={toCurrency}
+                src={getCurrencyImageUrl(displayToCurrency)}
+                alt={displayToCurrency}
                 className="w-full h-full object-contain p-2"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = "none";
                   (e.target as HTMLImageElement).parentElement!.innerText =
-                    getCurrencyIcon(toCurrency);
+                    getCurrencyIcon(displayToCurrency);
                 }}
               />
             </div>

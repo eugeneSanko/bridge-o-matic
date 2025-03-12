@@ -33,6 +33,12 @@ export const BridgeTransaction = ({
     const isApiExpired = apiStatus === "EXPIRED";
     const isStatusExpired = orderDetails.currentStatus === "expired";
     const isTimerExpired = timeLeft !== null && timeLeft <= 0;
+    
+    // Only set as expired if the status is NEW or EXPIRED and the timer has expired
+    // For other statuses like PENDING, EXCHANGE, etc., we want to continue showing progress
+    const shouldMarkAsExpired = (isApiExpired || isStatusExpired) && 
+      (apiStatus === "NEW" || apiStatus === "EXPIRED" || 
+       orderDetails.currentStatus === "new" || orderDetails.currentStatus === "expired");
 
     // Log expiration checks for debugging
     console.log("Expiration checks:", {
@@ -42,10 +48,11 @@ export const BridgeTransaction = ({
       isApiExpired,
       isStatusExpired,
       isTimerExpired,
+      shouldMarkAsExpired
     });
 
-    // Set as expired if any condition is true
-    if (isApiExpired || isStatusExpired || isTimerExpired) {
+    // Only set as expired if conditions are met
+    if (shouldMarkAsExpired) {
       console.log("Order is expired");
       setIsExpired(true);
     } else {
@@ -65,9 +72,10 @@ export const BridgeTransaction = ({
   }, [orderDetails.rawApiResponse]);
 
   // Use the expired status to update the displayed status
+  // Keep the original API status if it's not expired - this is important for DONE status
   const displayStatus = isExpired ? "EXPIRED" : apiStatus;
 
-  // Check if the order is complete
+  // Check if the order is complete - explicitly check for both DONE and completed
   const isOrderComplete =
     displayStatus === "DONE" || displayStatus === "completed";
 
@@ -84,6 +92,9 @@ export const BridgeTransaction = ({
           depositAddress={orderDetails.depositAddress}
           fromCurrencyName={orderDetails.fromCurrencyName}
           toCurrencyName={orderDetails.toCurrencyName}
+          // Use the coin property if available in rawApiResponse
+          fromCurrencyCoin={orderDetails.rawApiResponse?.from?.coin || orderDetails.fromCurrency}
+          toCurrencyCoin={orderDetails.rawApiResponse?.to?.coin || orderDetails.toCurrency}
         />
 
         {/* Always display ProgressSteps regardless of status */}
