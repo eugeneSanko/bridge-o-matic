@@ -73,7 +73,9 @@ export const AddressDetails = ({
     <div className="col-span-5 glass-card p-6 rounded-xl">
       <div className="space-y-6">
         <div>
-          <div className="text-sm text-gray-400 mb-2">Send funds to</div>
+          <div className="text-sm text-gray-400 mb-2">
+            Send {currencyDisplay} to
+          </div>
           <div className="relative">
             <div className="w-full h-12 px-4 bg-secondary/30 rounded-lg pr-24 font-mono text-sm flex items-center">
               {hasAddress ? (
