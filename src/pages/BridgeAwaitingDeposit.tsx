@@ -1,5 +1,5 @@
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
 import { useDeepLink } from "@/hooks/useDeepLink";
@@ -45,6 +45,9 @@ const BridgeAwaitingDeposit = () => {
     nextPoll: 'Unknown',
     interval: POLLING_INTERVALS.DEFAULT
   });
+  
+  // Use a ref to track the interval ID
+  const intervalIdRef = useRef<number | null>(null);
   
   const { 
     orderDetails: originalOrderDetails, 
@@ -413,45 +416,53 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [deepLink, addLog, transactionSaved, saveCompletedTransaction]);
 
-  // Set up polling interval - REVISED LOGIC
+  // COMPLETELY REWRITTEN: Set up polling interval with stronger logic and cleanup
   useEffect(() => {
-    console.log("Setting up polling effect with interval:", pollingInterval);
-    let intervalId: number | undefined;
+    // Clear any existing interval to avoid multiple intervals
+    if (intervalIdRef.current !== null) {
+      console.log("Clearing existing interval:", intervalIdRef.current);
+      window.clearInterval(intervalIdRef.current);
+      intervalIdRef.current = null;
+    }
     
+    // Don't set up polling if required data is missing or polling is inactive
     if (!orderId || !token) {
-      console.log("Missing orderId or token, not setting up polling");
+      console.log("Not setting up polling - missing orderId or token");
       return;
     }
     
     if (!pollingActive) {
-      console.log("Polling is disabled, not setting up interval");
+      console.log("Not setting up polling - polling is disabled");
       return;
     }
     
     if (pollingInterval === null) {
-      console.log("Polling interval is null (terminal status), not setting up interval");
+      console.log("Not setting up polling - polling interval is null (terminal status)");
       return;
     }
     
-    // Clear any existing interval before setting a new one
-    if (intervalId) {
-      console.log("Clearing existing interval before setting new one");
-      clearInterval(intervalId);
-    }
+    console.log(`Setting up NEW polling interval: ${pollingInterval}ms for order ${orderId}`);
     
-    console.log(`Setting up polling with ${pollingInterval}ms interval, polling active: ${pollingActive}`);
-    
-    // Set up the recurring interval with the proper polling interval
-    intervalId = window.setInterval(() => {
-      console.log("Polling interval triggered, checking order status");
+    // Create new interval for polling
+    const id = window.setInterval(() => {
+      console.log(`Polling interval triggered at ${new Date().toLocaleTimeString()}, checking order status`);
       checkOrderStatus(false); // Regular polling is not forced
     }, pollingInterval);
     
-    // This cleanup function will run when the component unmounts or when dependencies change
+    // Store the interval ID in the ref
+    intervalIdRef.current = id;
+    console.log("Created new interval with ID:", id);
+    
+    // Make an immediate call on setup
+    console.log("Making immediate status check on setup");
+    checkOrderStatus(false);
+    
+    // Cleanup function to clear interval when component unmounts or dependencies change
     return () => {
-      if (intervalId) {
-        console.log('Cleaning up polling interval', intervalId);
-        clearInterval(intervalId);
+      if (intervalIdRef.current !== null) {
+        console.log("Cleaning up interval:", intervalIdRef.current);
+        window.clearInterval(intervalIdRef.current);
+        intervalIdRef.current = null;
       }
     };
   }, [orderId, token, pollingActive, pollingInterval, checkOrderStatus]);
@@ -517,6 +528,7 @@ const BridgeAwaitingDeposit = () => {
           <p>Last Poll: {debugPollingInfo.lastPolled}</p>
           <p>Next Poll: {debugPollingInfo.nextPoll}</p>
           <p>Interval: {debugPollingInfo.interval ? `${debugPollingInfo.interval/1000}s` : 'Disabled'}</p>
+          <p>Interval ID: {intervalIdRef.current || 'None'}</p>
           <button 
             onClick={handleForceStatusCheck}
             className="mt-2 px-3 py-1 bg-gray-200 rounded-md text-sm hover:bg-gray-300 transition-colors"
