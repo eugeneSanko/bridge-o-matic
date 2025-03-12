@@ -1,4 +1,10 @@
-import { Loader2, Clock, ArrowRight, CheckCircle2 } from "lucide-react";
+import {
+  Loader,
+  LoaderPinwheel,
+  Clock,
+  ArrowLeftRight,
+  CircleCheckBig,
+} from "lucide-react";
 
 interface ProgressStepsProps {
   currentStatus?: string;
@@ -30,7 +36,7 @@ export const ProgressSteps = ({
   const steps = [
     {
       label: "Awaiting deposit",
-      icon: Loader2,
+      icon: Loader,
       active: activeStep === 0,
       completed: activeStep > 0,
     },
@@ -42,13 +48,13 @@ export const ProgressSteps = ({
     },
     {
       label: "Perform exchange",
-      icon: ArrowRight,
+      icon: ArrowLeftRight,
       active: activeStep === 2,
       completed: activeStep > 2,
     },
     {
       label: "Done",
-      icon: CheckCircle2,
+      icon: CircleCheckBig,
       active: activeStep === 3,
       completed: false,
       status:
@@ -87,11 +93,15 @@ export const ProgressSteps = ({
               <div className="flex justify-center mb-3 -ml-10">
                 <Icon
                   className={`h-6 w-6 md:h-8 md:w-8 ${
-                    step.active && step.icon === Loader2 ? "animate-spin" : ""
+                    step.active && step.icon === Loader
+                      ? "animate-spin [animation-duration:3s]"
+                      : ""
                   }`}
                 />
               </div>
-              <div className="text-xs md:text-sm font-medium">{step.label}</div>
+              <div className="text-xs md:text-sm font-medium -ml-10">
+                {step.label}
+              </div>
               {step.status === "failed" && (
                 <div className="text-xs text-red-500 mt-1">
                   Transaction failed
