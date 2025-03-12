@@ -18,7 +18,7 @@ const POLLING_INTERVALS = {
   PENDING: 10000,     // Received, waiting for confirmations: 10 seconds
   EXCHANGE: 20000,    // Exchange in progress: 20 seconds
   WITHDRAW: 20000,    // Sending funds: 20 seconds
-  DONE: null,         // Completed: no polling needed
+  DONE: 30000,        // Completed: continue polling but less frequently
   EXPIRED: null,      // Expired: no polling needed
   EMERGENCY: null     // Emergency: no polling needed
 };
@@ -31,7 +31,6 @@ const BridgeAwaitingDeposit = () => {
   
   // Always use real data and force API check
   const [apiAttempted, setApiAttempted] = useState(false);
-  const [navigating, setNavigating] = useState(false);
   const [manualStatusCheckAttempted, setManualStatusCheckAttempted] = useState(false);
   const [statusCheckDebugInfo, setStatusCheckDebugInfo] = useState(null);
   const [statusCheckError, setStatusCheckError] = useState(null);
@@ -121,11 +120,14 @@ const BridgeAwaitingDeposit = () => {
         const status = data.data.status;
         console.log(`Order status from API: ${status}`);
         
-        // If the order is complete, navigate to the completion page
-        if (status === 'DONE' && !navigating) {
-          console.log("Order is complete, navigating to completion page");
-          setNavigating(true);
-          navigate(`/bridge/order-complete?orderId=${orderId}`);
+        // If order completed, show a notification but stay on this page
+        if (status === 'DONE') {
+          console.log("Order is complete, showing notification");
+          toast({
+            title: "Transaction Complete",
+            description: `Your transaction has been completed successfully.`,
+            variant: "default"
+          });
         }
       } else {
         console.error("API returned an error:", data);
@@ -135,7 +137,7 @@ const BridgeAwaitingDeposit = () => {
       console.error("Error checking order status:", error);
       setStatusCheckError(`Error: ${error.message}`);
     }
-  }, [orderId, token, pollingInterval, lastPollTimestamp, navigating, navigate]);
+  }, [orderId, token, pollingInterval, lastPollTimestamp]);
 
   // Run a manual status check on component mount
   useEffect(() => {
@@ -171,26 +173,18 @@ const BridgeAwaitingDeposit = () => {
       return;
     }
 
-    // Only navigate to completion page if we have confirmation of completed status
-    // and we're not already navigating
-    if ((orderDetails?.currentStatus === 'completed' || 
-         orderDetails?.rawApiResponse?.status === 'DONE') && 
-        !navigating) {
-      console.log("Order is complete, navigating to completion page");
-      setNavigating(true);
-      navigate(`/bridge/order-complete?orderId=${orderDetails.orderId}`);
-      return;
-    }
-
     if (params.has("status")) {
       const status = params.get("status");
       addLog(`Status from deep link: ${status}`);
       
-      // If we get a completed status from the deep link, navigate to completion
-      if (status === 'completed' && !navigating) {
+      // If we get a completed status from the deep link, show a toast
+      if (status === 'completed') {
         console.log("Got completed status from deep link");
-        setNavigating(true);
-        navigate(`/bridge/order-complete?orderId=${orderId}`);
+        toast({
+          title: "Transaction Complete",
+          description: `Your transaction has been completed successfully.`,
+          variant: "default"
+        });
       }
     }
 
@@ -198,7 +192,7 @@ const BridgeAwaitingDeposit = () => {
       const txId = params.get("txId");
       addLog(`Transaction ID from deep link: ${txId}`);
     }
-  }, [deepLink, orderDetails?.currentStatus, orderDetails?.orderId, orderDetails?.rawApiResponse?.status, orderId, addLog, navigate, navigating]);
+  }, [deepLink, addLog]);
 
   // Periodically check status with dynamic interval
   useEffect(() => {
