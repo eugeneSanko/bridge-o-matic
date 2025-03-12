@@ -69,9 +69,12 @@ export const TransactionSummary = ({
     return `${address.slice(0, 8)}...${address.slice(-8)}`;
   };
 
-  // Display currency name or code
+  // Display both currency code and name when available
   const getDisplayCurrencyName = (code: string, name?: string) => {
-    return name || code.toUpperCase();
+    if (name && name !== code) {
+      return `${code.toUpperCase()} - ${name}`;
+    }
+    return code.toUpperCase();
   };
 
   return (

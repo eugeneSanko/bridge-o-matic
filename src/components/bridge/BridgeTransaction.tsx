@@ -111,6 +111,7 @@ export const BridgeTransaction = ({
                 onCopyClick={() => onCopyAddress(orderDetails.depositAddress)}
                 addressAlt={orderDetails.addressAlt}
                 orderType={orderDetails.orderType}
+                fromCurrency={orderDetails.fromCurrency}
                 fromCurrencyName={fromCurrencyName}
               />
               <QRCodeSection
