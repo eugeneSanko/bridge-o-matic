@@ -98,9 +98,20 @@ export function useBridgeOrder(
         return;
       }
       
-      // If not found in completed transactions, fetch from API
+      // Get token from URL if not passed directly
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      
+      if (!token) {
+        throw new Error("Missing order token");
+      }
+      
+      // Pass both id and token to bridge-status function
       const { data: apiResponse, error: apiError } = await supabase.functions.invoke('bridge-status', {
-        body: { id: orderId }
+        body: { 
+          id: orderId,
+          token: token 
+        }
       });
       
       if (apiError) {
