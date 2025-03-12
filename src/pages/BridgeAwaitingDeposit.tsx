@@ -10,6 +10,8 @@ import { BridgeTransaction } from "@/components/bridge/BridgeTransaction";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DebugPanel } from "@/components/bridge/DebugPanel";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 // Dynamic polling intervals (in milliseconds) based on status
 const POLLING_INTERVALS = {
@@ -29,6 +31,9 @@ const BridgeAwaitingDeposit = () => {
   const orderId = searchParams.get("orderId");
   const token = searchParams.get("token") || "";
   
+  // Testing controls - simulate completed state
+  const [simulateSuccess, setSimulateSuccess] = useState(false);
+  
   // Always use real data and force API check
   const [apiAttempted, setApiAttempted] = useState(false);
   const [manualStatusCheckAttempted, setManualStatusCheckAttempted] = useState(false);
@@ -38,11 +43,34 @@ const BridgeAwaitingDeposit = () => {
   const [lastPollTimestamp, setLastPollTimestamp] = useState(0);
   
   // Set forceApiCheck to true to always attempt API call
-  const { orderDetails, loading, error, handleCopyAddress } = useBridgeOrder(
+  const { orderDetails: originalOrderDetails, loading, error, handleCopyAddress } = useBridgeOrder(
     orderId, 
     true, // Always try to fetch from API
     true  // Force API check even if we have local data
   );
+  
+  // Create a modified version of orderDetails that can be overridden by the success toggle
+  const [orderDetails, setOrderDetails] = useState(originalOrderDetails);
+  
+  // Update orderDetails when the original changes or when simulateSuccess changes
+  useEffect(() => {
+    if (!originalOrderDetails) return;
+    
+    if (simulateSuccess) {
+      // Clone the original and override the status
+      setOrderDetails({
+        ...originalOrderDetails,
+        currentStatus: "completed",
+        rawApiResponse: {
+          ...originalOrderDetails.rawApiResponse,
+          status: "DONE"
+        }
+      });
+    } else {
+      // Use the original orderDetails
+      setOrderDetails(originalOrderDetails);
+    }
+  }, [originalOrderDetails, simulateSuccess]);
   
   const { deepLink, logs, addLog } = useDeepLink();
 
@@ -246,6 +274,18 @@ const BridgeAwaitingDeposit = () => {
   // Show the bridge transaction with the order details
   return (
     <>
+      {/* Test controls */}
+      <div className="fixed top-4 right-4 z-50 bg-black/80 p-3 rounded-lg flex items-center gap-3">
+        <Switch 
+          id="simulate-success"
+          checked={simulateSuccess}
+          onCheckedChange={setSimulateSuccess}
+        />
+        <Label htmlFor="simulate-success" className="text-sm text-white">
+          Simulate Completed
+        </Label>
+      </div>
+      
       <BridgeTransaction 
         orderDetails={orderDetails} 
         onCopyAddress={handleCopyAddress} 
