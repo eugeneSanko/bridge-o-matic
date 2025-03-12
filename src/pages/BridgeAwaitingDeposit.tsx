@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
@@ -66,9 +65,27 @@ const BridgeAwaitingDeposit = () => {
   
   const { deepLink, logs, addLog } = useDeepLink();
 
-  // Function to collect client metadata
+  const checkCompletedTransaction = useCallback(async (orderId: string) => {
+    try {
+      const { data: transaction, error } = await supabase
+        .from('completed_bridge_transactions')
+        .select('*')
+        .eq('ff_order_id', orderId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error("Error checking completed transaction:", error);
+        return null;
+      }
+      
+      return transaction;
+    } catch (error) {
+      console.error("Error in checkCompletedTransaction:", error);
+      return null;
+    }
+  }, []);
+
   const collectClientMetadata = useCallback(() => {
-    // Create a mutable copy of languages array if it exists
     const languagesArray = navigator.languages 
       ? Array.from(navigator.languages) 
       : navigator.language 
@@ -85,7 +102,6 @@ const BridgeAwaitingDeposit = () => {
     return metadata;
   }, []);
 
-  // Function to save completed transaction to Supabase
   const saveCompletedTransaction = useCallback(async () => {
     if (!orderDetails || !orderDetails.rawApiResponse || transactionSaved) return;
     
@@ -97,7 +113,6 @@ const BridgeAwaitingDeposit = () => {
       
       const clientMetadata = collectClientMetadata();
       
-      // Pass a single object and convert amount to number
       const { data, error } = await supabase
         .from('completed_bridge_transactions')
         .insert({
@@ -105,7 +120,7 @@ const BridgeAwaitingDeposit = () => {
           ff_order_token: orderDetails.ffOrderToken,
           from_currency: orderDetails.fromCurrency,
           to_currency: orderDetails.toCurrency,
-          amount: parseFloat(orderDetails.depositAmount), // Convert to number
+          amount: parseFloat(orderDetails.depositAmount),
           destination_address: orderDetails.destinationAddress,
           deposit_address: orderDetails.depositAddress,
           client_metadata: clientMetadata
@@ -133,7 +148,6 @@ const BridgeAwaitingDeposit = () => {
     console.log(`Setting polling interval to ${newInterval === null ? 'none' : `${newInterval}ms`} for status ${apiStatus}`);
     setPollingInterval(newInterval);
     
-    // Save completed transaction when status is DONE
     if (apiStatus === "DONE" && !transactionSaved) {
       saveCompletedTransaction();
     }
@@ -175,6 +189,20 @@ const BridgeAwaitingDeposit = () => {
       console.log(`${force ? 'Forcing' : 'Scheduled'} order status check with bridge-status function`);
       setManualStatusCheckAttempted(true);
       
+      const completedTransaction = await checkCompletedTransaction(orderId);
+      if (completedTransaction) {
+        console.log("Found completed transaction in database:", completedTransaction);
+        setOrderDetails(prevDetails => ({
+          ...prevDetails!,
+          currentStatus: "completed",
+          rawApiResponse: {
+            ...prevDetails?.rawApiResponse,
+            status: "DONE"
+          }
+        }));
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('bridge-status', {
         body: { id: orderId, token }
       });
@@ -196,6 +224,22 @@ const BridgeAwaitingDeposit = () => {
         const status = data.data.status;
         console.log(`Order status from API: ${status}`);
         
+        if (status === 'EXPIRED') {
+          const completedTransaction = await checkCompletedTransaction(orderId);
+          if (completedTransaction) {
+            console.log("API reports EXPIRED but transaction is completed in database");
+            setOrderDetails(prevDetails => ({
+              ...prevDetails!,
+              currentStatus: "completed",
+              rawApiResponse: {
+                ...prevDetails?.rawApiResponse,
+                status: "DONE"
+              }
+            }));
+            return;
+          }
+        }
+        
         if (status === 'DONE' && !transactionSaved) {
           console.log("Order is complete, showing notification and saving data");
           toast({
@@ -214,7 +258,7 @@ const BridgeAwaitingDeposit = () => {
       console.error("Error checking order status:", error);
       setStatusCheckError(`Error: ${error.message}`);
     }
-  }, [orderId, token, pollingInterval, lastPollTimestamp, transactionSaved, saveCompletedTransaction]);
+  }, [orderId, token, pollingInterval, lastPollTimestamp, transactionSaved, saveCompletedTransaction, checkCompletedTransaction]);
 
   useEffect(() => {
     if (orderId && token && !manualStatusCheckAttempted) {
