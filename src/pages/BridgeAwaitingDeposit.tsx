@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
@@ -169,11 +168,11 @@ const BridgeAwaitingDeposit = () => {
     console.log(`Setting polling interval to ${newInterval === null ? 'none' : `${newInterval}ms`} for status ${apiStatus}`);
     setPollingInterval(newInterval);
     
-    // Update polling active state based on status
-    if (TERMINAL_STATUSES.includes(apiStatus)) {
+    // Only disable polling for terminal statuses
+    if (apiStatus === "DONE" || apiStatus === "EXPIRED") {
       console.log(`Status ${apiStatus} is terminal, stopping polling`);
       setPollingActive(false);
-    } else if (ACTIVE_POLLING_STATUSES.includes(apiStatus)) {
+    } else {
       console.log(`Status ${apiStatus} requires polling, setting polling active`);
       setPollingActive(true);
       
@@ -184,7 +183,7 @@ const BridgeAwaitingDeposit = () => {
     if (apiStatus === "DONE" && !transactionSaved) {
       saveCompletedTransaction();
     }
-  }, [orderDetails?.rawApiResponse?.status, ACTIVE_POLLING_STATUSES, TERMINAL_STATUSES, transactionSaved, saveCompletedTransaction]);
+  }, [orderDetails?.rawApiResponse?.status, transactionSaved, saveCompletedTransaction]);
 
   useEffect(() => {
     if (!orderId) {
