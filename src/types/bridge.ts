@@ -198,7 +198,7 @@ export interface AuthTestResult {
   error?: string;
 }
 
-// Add a new type for CompletedTransaction that includes raw_api_response
+// Updated CompletedTransaction interface to include raw_api_response
 export interface CompletedTransaction {
   amount: number;
   client_metadata: any;
