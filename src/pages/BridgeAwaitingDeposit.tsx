@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
@@ -16,8 +15,8 @@ import { CompletedTransaction } from "@/types/bridge";
 
 const POLLING_INTERVALS = {
   DEFAULT: 15000,     // Default: 15 seconds
-  NEW: 10000,         // Awaiting deposit: 10 seconds  
-  PENDING: 10000,     // Received, waiting for confirmations: 10 seconds
+  NEW: 15000,         // Awaiting deposit: 15 seconds (was 10 seconds)
+  PENDING: 15000,     // Received, waiting for confirmations: 15 seconds (was 10 seconds)
   EXCHANGE: 20000,    // Exchange in progress: 20 seconds
   WITHDRAW: 20000,    // Sending funds: 20 seconds
   DONE: null,         // Completed: stop polling completely
@@ -426,7 +425,7 @@ const BridgeAwaitingDeposit = () => {
       checkOrderStatus(true);
     }
     
-    // Then set up the recurring interval
+    // Then set up the recurring interval with the proper polling interval (15 seconds)
     intervalId = window.setInterval(() => {
       console.log("Polling interval triggered, checking order status");
       checkOrderStatus();
