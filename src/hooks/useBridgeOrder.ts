@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { invokeFunctionWithRetry } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -117,6 +118,8 @@ export function useBridgeOrder(
         throw new Error("Missing order token");
       }
       
+      console.log(`Making bridge-status API call for order ${orderId} with token ${token}`);
+      
       // Pass both id and token to bridge-status function
       const { data: apiResponse, error: apiError } = await supabase.functions.invoke('bridge-status', {
         body: { 
@@ -124,6 +127,8 @@ export function useBridgeOrder(
           token: token 
         }
       });
+      
+      console.log("API response received:", apiResponse);
       
       if (apiError) {
         console.error("API error when fetching order status:", apiError);

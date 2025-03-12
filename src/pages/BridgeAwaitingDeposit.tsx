@@ -415,6 +415,7 @@ const BridgeAwaitingDeposit = () => {
 
   // Set up polling interval - REVISED LOGIC
   useEffect(() => {
+    console.log("Setting up polling effect with interval:", pollingInterval);
     let intervalId: number | undefined;
     
     if (!orderId || !token) {
@@ -432,19 +433,24 @@ const BridgeAwaitingDeposit = () => {
       return;
     }
     
-    console.log(`Setting up polling with ${pollingInterval}ms interval, polling active: ${pollingActive}`);
+    // Clear any existing interval before setting a new one
+    if (intervalId) {
+      console.log("Clearing existing interval before setting new one");
+      clearInterval(intervalId);
+    }
     
-    // REMOVED: Don't force an immediate check - respect the intervals
+    console.log(`Setting up polling with ${pollingInterval}ms interval, polling active: ${pollingActive}`);
     
     // Set up the recurring interval with the proper polling interval
     intervalId = window.setInterval(() => {
       console.log("Polling interval triggered, checking order status");
-      checkOrderStatus();
+      checkOrderStatus(false); // Regular polling is not forced
     }, pollingInterval);
     
+    // This cleanup function will run when the component unmounts or when dependencies change
     return () => {
       if (intervalId) {
-        console.log('Clearing polling interval');
+        console.log('Cleaning up polling interval', intervalId);
         clearInterval(intervalId);
       }
     };
