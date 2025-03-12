@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { invokeFunctionWithRetry } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
@@ -23,6 +24,7 @@ export interface OrderData {
   receive_amount?: string;
   fromCurrencyName?: string;
   toCurrencyName?: string;
+  raw_api_response?: any;
 }
 
 export interface OrderDetails {
@@ -90,7 +92,7 @@ export function useBridgeOrder(
           expiresAt: null,
           timeRemaining: null,
           orderType: 'fixed',
-          rawApiResponse: {
+          rawApiResponse: completedTransaction.raw_api_response || {
             status: "DONE"
           }
         });

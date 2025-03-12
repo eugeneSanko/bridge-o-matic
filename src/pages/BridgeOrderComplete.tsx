@@ -21,6 +21,7 @@ interface OrderData {
   expiration_time: string;
   from_currency_name?: string;
   to_currency_name?: string;
+  raw_api_response?: any;  // Store the full API response
 }
 
 const BridgeOrderComplete = () => {
@@ -83,6 +84,84 @@ const BridgeOrderComplete = () => {
     fetchOrderDetails();
   }, [orderId, apiAttempted, navigate]);
 
+  // Helper function to format Unix timestamps
+  const formatTimestamp = (timestamp: number | undefined) => {
+    if (!timestamp) return "N/A";
+    return new Date(timestamp * 1000).toLocaleString();
+  };
+  
+  // Extract transaction times from API response
+  const getTransactionTimes = () => {
+    const apiResponse = orderDetails?.raw_api_response?.data;
+    if (!apiResponse || !apiResponse.time) {
+      return {
+        creationTime: formatTimestamp(undefined),
+        receivedTime: formatTimestamp(undefined),
+        completedTime: formatTimestamp(undefined)
+      };
+    }
+    
+    return {
+      creationTime: formatTimestamp(apiResponse.time.reg),
+      receivedTime: formatTimestamp(apiResponse.time.start),
+      completedTime: formatTimestamp(apiResponse.time.finish)
+    };
+  };
+  
+  // Get transaction details for "from" currency
+  const getFromTransactionDetails = () => {
+    const apiResponse = orderDetails?.raw_api_response?.data;
+    if (!apiResponse || !apiResponse.from || !apiResponse.from.tx) {
+      return {
+        txId: "",
+        receivedTime: "N/A",
+        blockTime: "N/A",
+        confirmations: "0",
+        amount: "0",
+        fee: "0",
+        feeCurrency: ""
+      };
+    }
+    
+    const tx = apiResponse.from.tx;
+    return {
+      txId: tx.id || "",
+      receivedTime: formatTimestamp(tx.timeReg),
+      blockTime: formatTimestamp(tx.timeBlock),
+      confirmations: tx.confirmations || "0",
+      amount: tx.amount || "0",
+      fee: tx.fee || "0",
+      feeCurrency: tx.ccyfee || ""
+    };
+  };
+  
+  // Get transaction details for "to" currency
+  const getToTransactionDetails = () => {
+    const apiResponse = orderDetails?.raw_api_response?.data;
+    if (!apiResponse || !apiResponse.to || !apiResponse.to.tx) {
+      return {
+        txId: "",
+        sentTime: "N/A",
+        blockTime: "N/A",
+        confirmations: "0",
+        amount: "0",
+        fee: "0",
+        feeCurrency: ""
+      };
+    }
+    
+    const tx = apiResponse.to.tx;
+    return {
+      txId: tx.id || "",
+      sentTime: formatTimestamp(tx.timeReg),
+      blockTime: formatTimestamp(tx.timeBlock),
+      confirmations: tx.confirmations || "0",
+      amount: tx.amount || "0",
+      fee: tx.fee || "0",
+      feeCurrency: tx.ccyfee || ""
+    };
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24 flex items-center justify-center">
@@ -110,6 +189,11 @@ const BridgeOrderComplete = () => {
       </div>
     );
   }
+  
+  // Get timestamp data from API response
+  const { creationTime, receivedTime, completedTime } = getTransactionTimes();
+  const fromTx = getFromTransactionDetails();
+  const toTx = getToTransactionDetails();
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
@@ -122,6 +206,10 @@ const BridgeOrderComplete = () => {
           fromCurrencyName={orderDetails.from_currency_name}
           toCurrencyName={orderDetails.to_currency_name}
           depositAddress={orderDetails.deposit_address}
+          receiveAmount={toTx.amount}
+          // Use coin data from API response if available
+          fromCurrencyCoin={orderDetails.raw_api_response?.data?.from?.coin}
+          toCurrencyCoin={orderDetails.raw_api_response?.data?.to?.coin}
         />
 
         <div className="glass-card p-8 rounded-xl mb-8">
@@ -145,8 +233,139 @@ const BridgeOrderComplete = () => {
             <div className="glass-card bg-secondary/20 p-6 rounded-lg">
               <h3 className="text-sm font-medium text-gray-400 mb-2">Created At</h3>
               <p className="font-mono text-sm">
-                {new Date(orderDetails.created_at).toLocaleString()}
+                {creationTime}
               </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Transaction Details */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-8">
+          {/* Accepted Transaction (Left) */}
+          <div className="glass-card p-6 border-0">
+            <h3 className="text-xl font-semibold text-white mb-4">
+              Accepted transaction info
+            </h3>
+
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">TxID</span>
+                <div className="font-mono text-sm text-white flex items-center gap-2 overflow-hidden text-ellipsis">
+                  {fromTx.txId.substring(0, 20)}...
+                  <button 
+                    className="text-blue-400 hover:text-blue-300"
+                    onClick={() => navigator.clipboard.writeText(fromTx.txId)}
+                  >
+                    <span className="sr-only">Copy</span>
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">View Receipt</span>
+                <a
+                  className="flex gap-2 text-blue-400 hover:text-blue-300"
+                  href={`https://ff.io/order/${orderDetails.ff_order_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View
+                </a>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Received Time</span>
+                <span className="text-white">{fromTx.receivedTime}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Block Time</span>
+                <span className="text-white">{fromTx.blockTime}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Confirmations</span>
+                <span className="text-white">{fromTx.confirmations}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Amount</span>
+                <span className="text-white">
+                  {fromTx.amount} {orderDetails.from_currency}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Fee</span>
+                <span className="text-white">
+                  {fromTx.fee} {fromTx.feeCurrency}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Sent Transaction (Right) */}
+          <div className="glass-card p-6 border-0">
+            <h3 className="text-xl font-semibold text-white mb-4">
+              Sent transaction info
+            </h3>
+
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">TxID</span>
+                <div className="font-mono text-sm text-white flex items-center gap-2 overflow-hidden text-ellipsis">
+                  {toTx.txId.substring(0, 20)}...
+                  <button 
+                    className="text-blue-400 hover:text-blue-300"
+                    onClick={() => navigator.clipboard.writeText(toTx.txId)}
+                  >
+                    <span className="sr-only">Copy</span>
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">View Receipt</span>
+                <a
+                  className="flex gap-2 text-blue-400 hover:text-blue-300"
+                  href={`https://ff.io/order/${orderDetails.ff_order_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View
+                </a>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Sending time</span>
+                <span className="text-white">{toTx.sentTime}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Block Time</span>
+                <span className="text-white">{toTx.blockTime}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Confirmations</span>
+                <span className="text-white">{toTx.confirmations}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Amount</span>
+                <span className="text-white">
+                  {toTx.amount} {orderDetails.to_currency}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Fee</span>
+                <span className="text-white">
+                  {toTx.fee} {toTx.feeCurrency}
+                </span>
+              </div>
             </div>
           </div>
         </div>
