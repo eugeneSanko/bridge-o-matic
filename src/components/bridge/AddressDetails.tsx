@@ -10,6 +10,8 @@ interface AddressDetailsProps {
   onCopyClick: () => void;
   addressAlt?: string | null;
   orderType: "fixed" | "float";
+  fromCurrency: string;
+  fromCurrencyName?: string;
 }
 
 export const AddressDetails = ({
@@ -18,6 +20,8 @@ export const AddressDetails = ({
   onCopyClick,
   addressAlt,
   orderType,
+  fromCurrency,
+  fromCurrencyName,
 }: AddressDetailsProps) => {
   const hasAddress =
     depositAddress &&
@@ -60,6 +64,11 @@ export const AddressDetails = ({
     }
   };
 
+  // Format the currency display to show both code and name if available
+  const currencyDisplay = fromCurrencyName 
+    ? `${fromCurrency.toUpperCase()} - ${fromCurrencyName}`
+    : fromCurrency.toUpperCase();
+
   return (
     <div className="col-span-5 glass-card p-6 rounded-xl">
       <div className="space-y-6">
@@ -95,6 +104,9 @@ export const AddressDetails = ({
         )}
 
         <div className="py-4 px-6 bg-secondary/20 rounded-lg text-sm text-gray-300 glass-card">
+          <p className="mb-2 text-[#9b87f5] font-semibold">
+            {currencyDisplay}
+          </p>
           {orderType === "fixed" ? (
             <>
               <p>

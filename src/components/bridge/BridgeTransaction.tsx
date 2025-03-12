@@ -78,6 +78,8 @@ export const BridgeTransaction = ({
           receiveAmount={orderDetails.receiveAmount}
           orderType={orderDetails.orderType}
           depositAddress={orderDetails.depositAddress}
+          fromCurrencyName={orderDetails.fromCurrencyName}
+          toCurrencyName={orderDetails.toCurrencyName}
         />
 
         <ProgressSteps 
@@ -105,6 +107,8 @@ export const BridgeTransaction = ({
                 onCopyClick={() => onCopyAddress(orderDetails.depositAddress)}
                 addressAlt={orderDetails.addressAlt}
                 orderType={orderDetails.orderType}
+                fromCurrency={orderDetails.fromCurrency}
+                fromCurrencyName={orderDetails.fromCurrencyName}
               />
               <QRCodeSection
                 depositAddress={orderDetails.depositAddress}

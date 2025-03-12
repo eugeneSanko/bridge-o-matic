@@ -1,3 +1,4 @@
+
 import { ArrowRight } from "lucide-react";
 import { AddressPlaceholder } from "./AddressPlaceholder";
 
@@ -9,6 +10,8 @@ interface TransactionSummaryProps {
   receiveAmount?: string;
   orderType?: "fixed" | "float";
   depositAddress?: string;
+  fromCurrencyName?: string;
+  toCurrencyName?: string;
 }
 
 export const TransactionSummary = ({
@@ -19,6 +22,8 @@ export const TransactionSummary = ({
   receiveAmount,
   orderType = "fixed",
   depositAddress = "",
+  fromCurrencyName,
+  toCurrencyName,
 }: TransactionSummaryProps) => {
   const getCurrencyIcon = (currency: string) => {
     const lowerCurrency = currency.toLowerCase();
@@ -64,6 +69,21 @@ export const TransactionSummary = ({
     return `${address.slice(0, 8)}...${address.slice(-8)}`;
   };
 
+  // Format the display for from/to currencies to show both code and name
+  const formatFromCurrencyDisplay = () => {
+    if (fromCurrencyName) {
+      return `${fromCurrency.toUpperCase()} - ${fromCurrencyName}`;
+    }
+    return fromCurrency.toUpperCase();
+  };
+
+  const formatToCurrencyDisplay = () => {
+    if (toCurrencyName) {
+      return `${toCurrency.toUpperCase()} - ${toCurrencyName}`;
+    }
+    return toCurrency.toUpperCase();
+  };
+
   return (
     <div className="glass-card p-8 md:p-12 rounded-xl mb-8 relative overflow-hidden">
       <div className="absolute inset-0 opacity-20">
@@ -93,7 +113,7 @@ export const TransactionSummary = ({
             </div>
             <div>
               <div className="text-2xl md:text-3xl font-bold mb-2 md:text-right">
-                {amount} {fromCurrency?.toUpperCase()}
+                {amount} {formatFromCurrencyDisplay()}
               </div>
               <div className="text-sm text-gray-400 font-mono">
                 Send funds:{" "}
@@ -133,7 +153,7 @@ export const TransactionSummary = ({
                 {orderType === "float" && (
                   <span className="text-gray-400 mr-1">≈</span>
                 )}
-                {receiveAmount || ""} {toCurrency?.toUpperCase()}
+                {receiveAmount || ""} {formatToCurrencyDisplay()}
               </div>
               <div className="text-sm text-gray-400 font-mono">
                 Receive at: {formatAddress(destinationAddress)}
