@@ -21,6 +21,8 @@ export interface OrderData {
   addressAlt?: string | null;
   type?: "fixed" | "float";
   receive_amount?: string;
+  fromCurrencyName?: string;
+  toCurrencyName?: string;
 }
 
 export interface OrderDetails {
@@ -40,6 +42,8 @@ export interface OrderDetails {
   addressAlt?: string | null;
   orderType: "fixed" | "float";
   receiveAmount?: string;
+  fromCurrencyName?: string;
+  toCurrencyName?: string;
   rawApiResponse?: any; // Store raw API response for debugging
 }
 
@@ -133,6 +137,10 @@ export function useBridgeOrder(
               localStorage.setItem('bridge_transaction_data', JSON.stringify(bridgeData));
             }
             
+            // Extract currency names if available in the API response
+            const fromCurrencyName = apiResponse.data.from?.name || bridgeData?.fromCurrencyName;
+            const toCurrencyName = apiResponse.data.to?.name || bridgeData?.toCurrencyName;
+            
             // Set order details from API data
             setOrderDetails({
               depositAddress: bridgeData?.depositAddress || apiResponse.data.from.address,
@@ -156,6 +164,8 @@ export function useBridgeOrder(
               addressAlt: bridgeData?.addressAlt || apiResponse.data.from.addressAlt || null,
               orderType: orderType,
               receiveAmount: bridgeData?.receiveAmount || apiResponse.data.to.amount,
+              fromCurrencyName: fromCurrencyName,
+              toCurrencyName: toCurrencyName,
               rawApiResponse: apiResponse.data
             });
             
@@ -193,7 +203,9 @@ export function useBridgeOrder(
           tagName: bridgeData.tagName || null,
           addressAlt: bridgeData.addressAlt || null,
           orderType: orderType,
-          receiveAmount: bridgeData.receiveAmount
+          receiveAmount: bridgeData.receiveAmount,
+          fromCurrencyName: bridgeData.fromCurrencyName,
+          toCurrencyName: bridgeData.toCurrencyName
         });
         
         setLoading(false);
@@ -214,6 +226,8 @@ export function useBridgeOrder(
         type: "float",
         receiveAmount: "0.39840800",
         expiresAt: new Date(Date.now() + 20 * 60000).toISOString(),
+        fromCurrencyName: "Tether USD",
+        toCurrencyName: "Solana"
       };
 
       setOrderDetails({
@@ -232,7 +246,9 @@ export function useBridgeOrder(
         tagName: null,
         addressAlt: null,
         orderType: fallbackData.type === 'float' ? 'float' : 'fixed',
-        receiveAmount: fallbackData.receiveAmount
+        receiveAmount: fallbackData.receiveAmount,
+        fromCurrencyName: fallbackData.fromCurrencyName,
+        toCurrencyName: fallbackData.toCurrencyName
       });
       
       setLoading(false);
@@ -243,7 +259,6 @@ export function useBridgeOrder(
     }
   }, [orderId, shouldFetch, forceApiCheck]);
 
-  // Helper function to calculate time remaining
   const calculateTimeRemaining = (input: string | number | null): string | null => {
     if (input === null) return null;
     
@@ -275,7 +290,6 @@ export function useBridgeOrder(
       setLoading(false);
     }
     
-    // Only set up polling if we want to fetch and have an actual order ID
     if (shouldFetch && orderId) {
       const interval = window.setInterval(fetchOrderDetails, 15000);
       setPollingInterval(interval);
