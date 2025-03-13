@@ -133,7 +133,7 @@ const BridgeAwaitingDeposit = () => {
 
     intervalRef.current = setInterval(() => {
       checkOrderStatus();
-    }, 15000);
+    }, 10000);
 
     return () => {
       clearInterval(intervalRef.current);
