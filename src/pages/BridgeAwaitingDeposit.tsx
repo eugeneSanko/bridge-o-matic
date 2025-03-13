@@ -31,7 +31,6 @@ const BridgeAwaitingDeposit = () => {
   const [pollCount, setPollCount] = useState(0);
   const [isPollingActive, setIsPollingActive] = useState(true);
   const [statusChanged, setStatusChanged] = useState(false);
-  const [forceRefreshKey, setForceRefreshKey] = useState(0); // Added to force re-renders
 
   const {
     orderDetails: originalOrderDetails,
@@ -70,9 +69,6 @@ const BridgeAwaitingDeposit = () => {
       
       // Update local state with original details
       setOrderDetails(originalOrderDetails);
-      
-      // Force re-render of child components
-      setForceRefreshKey(prev => prev + 1);
     }
   }, [originalOrderDetails]);
 
@@ -97,9 +93,6 @@ const BridgeAwaitingDeposit = () => {
         completionProcessedRef.current = true;
         handleOrderCompletion();
       }
-      
-      // Force re-render of child components
-      setForceRefreshKey(prev => prev + 1);
     } else {
       setOrderDetails(originalOrderDetails);
       
@@ -114,9 +107,6 @@ const BridgeAwaitingDeposit = () => {
             completionProcessedRef.current = true;
             handleOrderCompletion();
           }
-          
-          // Force re-render of child components
-          setForceRefreshKey(prev => prev + 1);
         }
       }
     }
@@ -169,9 +159,6 @@ const BridgeAwaitingDeposit = () => {
     }
     
     setPollCount(prev => prev + 1);
-    
-    // Force re-render of child components
-    setForceRefreshKey(prev => prev + 1);
   };
 
   const handleOrderCompletion = () => {
@@ -255,9 +242,6 @@ const BridgeAwaitingDeposit = () => {
             }
             setIsPollingActive(false);
           }
-          
-          // Force re-render of child components
-          setForceRefreshKey(prev => prev + 1);
         } else {
           setOrderDetails((prevDetails) => {
             if (!prevDetails) return null;
@@ -338,9 +322,6 @@ const BridgeAwaitingDeposit = () => {
     setPollCount(prev => prev + 1);
     checkOrderStatus();
     
-    // Force re-render of child components
-    setForceRefreshKey(prev => prev + 1);
-    
     toast({
       title: "Refreshing Status",
       description: "Checking for the latest transaction status...",
@@ -376,7 +357,6 @@ const BridgeAwaitingDeposit = () => {
         <p>Last Known Status: {lastKnownStatusRef.current || "None"}</p>
         <p>Status Changed: {statusChanged ? "Yes" : "No"}</p>
         <p>Completion Processed: {completionProcessedRef.current ? "Yes" : "No"}</p>
-        <p>Force Refresh Key: {forceRefreshKey}</p>
       </div>
 
       {loading && <LoadingState />}
@@ -387,7 +367,7 @@ const BridgeAwaitingDeposit = () => {
         <BridgeTransaction
           orderDetails={orderDetails}
           onCopyAddress={handleCopyAddress}
-          key={`transaction-${orderDetails.rawApiResponse?.status || "unknown"}-${pollCount}-${forceRefreshKey}`}
+          key={`transaction-${orderDetails.rawApiResponse?.status || "unknown"}-${pollCount}`}
         />
       )}
 
