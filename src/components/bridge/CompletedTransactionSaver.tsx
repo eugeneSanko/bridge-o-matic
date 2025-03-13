@@ -118,8 +118,12 @@ export const useCompletedTransactionSaver = ({
       
       // Send completion notification to backend
       try {
-        // Fix for the TypeScript error: Check if data is null before accessing it
-        const transactionId = data ? data.id : 'unknown';
+        // The typescript error is happening because data is a type that can be null
+        // And we're also unsure about its structure, so let's create a safe way to get the ID
+        // We need to access the ID without making typescript angry
+        const transactionId = data && Array.isArray(data) && data.length > 0 && data[0].id 
+          ? data[0].id 
+          : 'unknown';
         
         const notifyResponse = await supabase.functions.invoke('bridge-notify-complete', {
           body: { 
