@@ -37,8 +37,9 @@ export const BridgeTransaction = ({
       rawStatus: orderDetails.rawApiResponse?.status,
       currentStatus: orderDetails.currentStatus,
       apiStatus,
+      displayStatus
     });
-  }, [orderDetails, apiStatus]);
+  }, [orderDetails, apiStatus, displayStatus]);
 
   // Update displayStatus whenever apiStatus changes
   useEffect(() => {

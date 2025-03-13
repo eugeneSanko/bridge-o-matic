@@ -1,3 +1,4 @@
+
 import {
   Loader,
   Clock,
@@ -26,28 +27,29 @@ export const ProgressSteps = ({
   const getActiveStepIndex = (status: string): number => {
     if (!status) return 0;
     
+    // Updated API status map to give EXCHANGE its own step (step 2)
     const apiStatusMap: Record<string, number> = {
       NEW: 0,
       PENDING: 1,
-      EXCHANGE: 1,
-      WITHDRAW: 2,
-      DONE: 3,
+      EXCHANGE: 2, // Now EXCHANGE has its own distinct step
+      WITHDRAW: 3,
+      DONE: 4,
       EXPIRED: 0,
-      EMERGENCY: 3,
+      EMERGENCY: 4,
     };
 
     const appStatusMap: Record<string, number> = {
       new: 0,
       pending: 0,
       processing: 1,
-      exchanging: 1,
-      sending: 2,
-      completed: 3,
+      exchanging: 2, // Match the EXCHANGE step
+      sending: 3,
+      completed: 4,
       expired: 0,
       refunding: 1,
-      refunded: 3,
-      failed: 3,
-      emergency: 3,
+      refunded: 4,
+      failed: 4,
+      emergency: 4,
       unknown: 0,
     };
 
@@ -148,6 +150,7 @@ export const ProgressSteps = ({
   };
 
   const renderStepper = () => {
+    // Updated steps array to include a distinct "Exchanging" step
     const steps = [
       {
         label: "Awaiting deposit",
@@ -163,22 +166,28 @@ export const ProgressSteps = ({
         completed: activeStep > 1,
       },
       {
-        label: "Sending funds",
-        icon: SendHorizonal,
+        label: "Exchanging", // New dedicated step for EXCHANGE status
+        icon: ArrowLeftRight,
         active: activeStep === 2,
         completed: activeStep > 2,
       },
       {
+        label: "Sending funds",
+        icon: SendHorizonal,
+        active: activeStep === 3,
+        completed: activeStep > 3,
+      },
+      {
         label: "Done",
         icon: CircleCheckBig,
-        active: activeStep === 3,
+        active: activeStep === 4,
         completed: isCompleted,
         status: statusType !== "expired" ? statusType : "",
       },
     ];
 
     return (
-      <div className="grid grid-cols-4 gap-4 md:gap-8 relative">
+      <div className="grid grid-cols-5 gap-3 md:gap-6 relative">
         {steps.map((step, i) => {
           const Icon = step.icon;
           return (
@@ -227,7 +236,7 @@ export const ProgressSteps = ({
                   Time window expired
                 </div>
               )}
-              {i < 3 && (
+              {i < 4 && (
                 <div
                   className={`absolute top-4 left-[60%] w-[80%] h-[2px] ${
                     activeStep > i ? "bg-green-700" : "bg-gray-700"
@@ -247,7 +256,7 @@ export const ProgressSteps = ({
     return (
       <div className="p-0 rounded-xl mb-9 overflow-hidden">
         <div className="glass-card p-6 md:p-8 rounded-xl mb-9">
-          <div className="grid grid-cols-4 gap-4 md:gap-8 relative">
+          <div className="grid grid-cols-5 gap-3 md:gap-6 relative">
             <div className="text-center relative text-green-500">
               <div className="flex justify-center mb-3 -ml-10">
                 <Clock className="h-6 w-6 md:h-8 md:w-8" />
@@ -264,6 +273,16 @@ export const ProgressSteps = ({
               </div>
               <div className="text-xs md:text-sm font-medium -ml-10">
                 Awaiting confirmations
+              </div>
+              <div className="absolute top-4 left-[60%] w-[80%] h-[2px] bg-green-700" />
+            </div>
+            
+            <div className="text-center relative text-green-500">
+              <div className="flex justify-center mb-3 -ml-10">
+                <ArrowLeftRight className="h-6 w-6 md:h-8 md:w-8" />
+              </div>
+              <div className="text-xs md:text-sm font-medium -ml-10">
+                Exchanging
               </div>
               <div className="absolute top-4 left-[60%] w-[80%] h-[2px] bg-green-700" />
             </div>
