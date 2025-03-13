@@ -72,27 +72,33 @@ export const BridgeTransaction = ({
   const isOrderComplete =
     displayStatus === "DONE" || displayStatus?.toLowerCase() === "completed";
 
+  // Ensure we have valid strings for currency information
+  const fromCurrency = orderDetails.fromCurrency || "";
+  const toCurrency = orderDetails.toCurrency || "";
+  const fromCurrencyCoin = orderDetails.rawApiResponse?.from?.coin || fromCurrency || "";
+  const toCurrencyCoin = orderDetails.rawApiResponse?.to?.coin || toCurrency || "";
+
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
       <div className="max-w-6xl mx-auto">
         <TransactionSummary
-          fromCurrency={orderDetails.fromCurrency}
-          toCurrency={orderDetails.toCurrency}
-          amount={orderDetails.depositAmount}
-          destinationAddress={orderDetails.destinationAddress}
+          fromCurrency={fromCurrency}
+          toCurrency={toCurrency}
+          amount={orderDetails.depositAmount || "0"}
+          destinationAddress={orderDetails.destinationAddress || ""}
           receiveAmount={orderDetails.receiveAmount}
           orderType={orderDetails.orderType}
           depositAddress={orderDetails.depositAddress}
           fromCurrencyName={orderDetails.fromCurrencyName}
           toCurrencyName={orderDetails.toCurrencyName}
           // Use the coin property if available in rawApiResponse
-          fromCurrencyCoin={orderDetails.rawApiResponse?.from?.coin || orderDetails.fromCurrency}
-          toCurrencyCoin={orderDetails.rawApiResponse?.to?.coin || orderDetails.toCurrency}
+          fromCurrencyCoin={fromCurrencyCoin}
+          toCurrencyCoin={toCurrencyCoin}
         />
 
         {/* Always display ProgressSteps with the original status case */}
         <ProgressSteps
-          currentStatus={displayStatus}
+          currentStatus={displayStatus || ""}
           orderDetails={orderDetails}
         />
 
@@ -101,29 +107,29 @@ export const BridgeTransaction = ({
           <>
             <div className="grid grid-cols-12 gap-6 mb-12">
               <OrderDetails
-                orderId={orderDetails.orderId}
+                orderId={orderDetails.orderId || ""}
                 orderType={orderDetails.orderType}
                 timeRemaining={orderDetails.timeRemaining}
                 expiresAt={orderDetails.expiresAt}
-                currentStatus={displayStatus}
-                onCopyClick={() => onCopyAddress(orderDetails.orderId)}
+                currentStatus={displayStatus || ""}
+                onCopyClick={() => onCopyAddress(orderDetails.orderId || "")}
                 tag={orderDetails.tag}
                 tagName={orderDetails.tagName}
                 timeLeft={timeLeft}
               />
               <AddressDetails
-                depositAddress={orderDetails.depositAddress}
-                destinationAddress={orderDetails.destinationAddress}
-                onCopyClick={() => onCopyAddress(orderDetails.depositAddress)}
+                depositAddress={orderDetails.depositAddress || ""}
+                destinationAddress={orderDetails.destinationAddress || ""}
+                onCopyClick={() => onCopyAddress(orderDetails.depositAddress || "")}
                 addressAlt={orderDetails.addressAlt}
                 orderType={orderDetails.orderType}
-                fromCurrency={orderDetails.fromCurrency}
+                fromCurrency={fromCurrency}
                 fromCurrencyName={orderDetails.fromCurrencyName}
               />
               <QRCodeSection
-                depositAddress={orderDetails.depositAddress}
-                depositAmount={orderDetails.depositAmount}
-                fromCurrency={orderDetails.fromCurrency}
+                depositAddress={orderDetails.depositAddress || ""}
+                depositAmount={orderDetails.depositAmount || "0"}
+                fromCurrency={fromCurrency}
                 tag={orderDetails.tag}
               />
             </div>

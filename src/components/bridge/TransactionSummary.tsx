@@ -1,3 +1,4 @@
+
 import { ArrowRight } from "lucide-react";
 import { AddressPlaceholder } from "./AddressPlaceholder";
 
@@ -90,28 +91,28 @@ export const TransactionSummary = ({
     if (fromCurrencyName) {
       return (
         <>
-          {displayFromCurrency.toUpperCase()}
+          {displayFromCurrency ? displayFromCurrency.toUpperCase() : ""}
           <sup className="text-sm text-muted-foreground ml-1">
             {fromCurrencyName}
           </sup>
         </>
       );
     }
-    return displayFromCurrency.toUpperCase();
+    return displayFromCurrency ? displayFromCurrency.toUpperCase() : "";
   };
 
   const formatToCurrencyDisplay = () => {
     if (toCurrencyName) {
       return (
         <>
-          {displayToCurrency.toUpperCase()}
+          {displayToCurrency ? displayToCurrency.toUpperCase() : ""}
           <sup className="text-sm text-muted-foreground ml-1">
             {toCurrencyName}
           </sup>
         </>
       );
     }
-    return displayToCurrency.toUpperCase();
+    return displayToCurrency ? displayToCurrency.toUpperCase() : "";
   };
 
   return (
@@ -132,7 +133,7 @@ export const TransactionSummary = ({
             >
               <img
                 src={getCurrencyImageUrl(displayFromCurrency)}
-                alt={displayFromCurrency}
+                alt={displayFromCurrency || "Currency"}
                 className="w-full h-full object-contain p-2"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = "none";
@@ -169,7 +170,7 @@ export const TransactionSummary = ({
             >
               <img
                 src={getCurrencyImageUrl(displayToCurrency)}
-                alt={displayToCurrency}
+                alt={displayToCurrency || "Currency"}
                 className="w-full h-full object-contain p-2"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = "none";
