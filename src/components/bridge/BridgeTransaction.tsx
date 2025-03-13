@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
@@ -37,7 +36,7 @@ export const BridgeTransaction = ({
       rawStatus: orderDetails.rawApiResponse?.status,
       currentStatus: orderDetails.currentStatus,
       apiStatus,
-      displayStatus
+      displayStatus,
     });
   }, [orderDetails, apiStatus, displayStatus]);
 
@@ -53,13 +52,13 @@ export const BridgeTransaction = ({
   useEffect(() => {
     // Only mark as expired if the API explicitly says it's EXPIRED
     const isApiExpired = apiStatus === "EXPIRED";
-    
+
     console.log("Expiration checks:", {
       apiStatus,
       currentStatus: orderDetails.currentStatus,
       timeLeft,
       isApiExpired,
-      displayStatus
+      displayStatus,
     });
 
     // Only set as expired if the API status is EXPIRED
@@ -84,8 +83,10 @@ export const BridgeTransaction = ({
   // Ensure we have valid strings for currency information
   const fromCurrency = orderDetails.fromCurrency || "";
   const toCurrency = orderDetails.toCurrency || "";
-  const fromCurrencyCoin = orderDetails.rawApiResponse?.from?.coin || fromCurrency || "";
-  const toCurrencyCoin = orderDetails.rawApiResponse?.to?.coin || toCurrency || "";
+  const fromCurrencyCoin =
+    orderDetails.rawApiResponse?.from?.coin || fromCurrency || "";
+  const toCurrencyCoin =
+    orderDetails.rawApiResponse?.to?.coin || toCurrency || "";
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
@@ -130,7 +131,9 @@ export const BridgeTransaction = ({
               <AddressDetails
                 depositAddress={orderDetails.depositAddress || ""}
                 destinationAddress={orderDetails.destinationAddress || ""}
-                onCopyClick={() => onCopyAddress(orderDetails.depositAddress || "")}
+                onCopyClick={() =>
+                  onCopyAddress(orderDetails.depositAddress || "")
+                }
                 addressAlt={orderDetails.addressAlt}
                 orderType={orderDetails.orderType}
                 fromCurrency={fromCurrency}
@@ -154,9 +157,12 @@ export const BridgeTransaction = ({
         {/* Show success message if order is complete */}
         {isOrderComplete && (
           <div className="mt-8 p-6 bg-green-900/20 border border-green-500/30 rounded-lg text-center">
-            <h3 className="text-2xl font-bold text-green-400 mb-2">Transaction Complete!</h3>
+            <h3 className="text-2xl font-bold text-green-400 mb-2">
+              Transaction Complete!
+            </h3>
             <p className="text-green-200">
-              Your funds have been successfully transferred. They should appear in your destination wallet shortly.
+              Your funds have been successfully transferred. They should appear
+              in your destination wallet shortly.
             </p>
           </div>
         )}

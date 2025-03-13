@@ -1,4 +1,3 @@
-
 import {
   Loader,
   Clock,
@@ -26,7 +25,7 @@ export const ProgressSteps = ({
 }: ProgressStepsProps) => {
   const getActiveStepIndex = (status: string): number => {
     if (!status) return 0;
-    
+
     // Updated API status map to give EXCHANGE its own step (step 2)
     const apiStatusMap: Record<string, number> = {
       NEW: 0,
@@ -62,7 +61,7 @@ export const ProgressSteps = ({
 
   const getStatusType = (status: string): string => {
     if (!status) return "";
-    
+
     if (status === "DONE") return "completed";
     if (status === "EMERGENCY") return "failed";
     if (status === "EXPIRED") return "expired";
@@ -87,7 +86,7 @@ export const ProgressSteps = ({
   const isCompleted =
     statusType === "completed" ||
     currentStatus === "DONE" ||
-    (currentStatus?.toLowerCase() === "completed");
+    currentStatus?.toLowerCase() === "completed";
 
   const isExpired =
     statusType === "expired" ||
@@ -149,165 +148,11 @@ export const ProgressSteps = ({
     };
   };
 
-  const renderStepper = () => {
-    // Updated steps array to include a distinct "Exchanging" step
-    const steps = [
-      {
-        label: "Awaiting deposit",
-        icon: Clock,
-        active: activeStep === 0,
-        completed: activeStep > 0,
-        status: isExpired ? "expired" : "",
-      },
-      {
-        label: "Awaiting confirmations",
-        icon: Loader,
-        active: activeStep === 1,
-        completed: activeStep > 1,
-      },
-      {
-        label: "Exchanging", // New dedicated step for EXCHANGE status
-        icon: ArrowLeftRight,
-        active: activeStep === 2,
-        completed: activeStep > 2,
-      },
-      {
-        label: "Sending funds",
-        icon: SendHorizonal,
-        active: activeStep === 3,
-        completed: activeStep > 3,
-      },
-      {
-        label: "Done",
-        icon: CircleCheckBig,
-        active: activeStep === 4,
-        completed: isCompleted,
-        status: statusType !== "expired" ? statusType : "",
-      },
-    ];
-
-    return (
-      <div className="grid grid-cols-5 gap-3 md:gap-6 relative">
-        {steps.map((step, i) => {
-          const Icon = step.icon;
-          return (
-            <div
-              key={i}
-              className={`text-center relative ${
-                step.status === "failed"
-                  ? "text-red-500"
-                  : step.status === "refunded"
-                  ? "text-yellow-500"
-                  : step.status === "expired"
-                  ? "text-red-500"
-                  : step.status === "completed"
-                  ? "text-green-500"
-                  : step.active
-                  ? "text-[#0FA0CE]"
-                  : step.completed
-                  ? "text-green-500"
-                  : "text-gray-500"
-              }`}
-            >
-              <div className="flex justify-center mb-3 -ml-10">
-                <Icon
-                  className={`h-6 w-6 md:h-8 md:w-8 ${
-                    step.active && step.icon === Loader
-                      ? "animate-spin [animation-duration:3s]"
-                      : ""
-                  }`}
-                />
-              </div>
-              <div className="text-xs md:text-sm font-medium -ml-10">
-                {step.label}
-              </div>
-              {step.status === "failed" && (
-                <div className="text-xs text-red-500 mt-1 -ml-10">
-                  Transaction failed
-                </div>
-              )}
-              {step.status === "refunded" && (
-                <div className="text-xs text-yellow-500 mt-1 -ml-10">
-                  Funds refunded
-                </div>
-              )}
-              {step.status === "expired" && (
-                <div className="text-xs text-red-500 mt-1 -ml-10">
-                  Time window expired
-                </div>
-              )}
-              {i < 4 && (
-                <div
-                  className={`absolute top-4 left-[60%] w-[80%] h-[2px] ${
-                    activeStep > i ? "bg-green-700" : "bg-gray-700"
-                  }`}
-                />
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
   if (isCompleted && !skipCompletedStepper) {
     const txData = getTransactionData();
 
     return (
       <div className="p-0 rounded-xl mb-9 overflow-hidden">
-        <div className="glass-card p-6 md:p-8 rounded-xl mb-9">
-          <div className="grid grid-cols-5 gap-3 md:gap-6 relative">
-            <div className="text-center relative text-green-500">
-              <div className="flex justify-center mb-3 -ml-10">
-                <Clock className="h-6 w-6 md:h-8 md:w-8" />
-              </div>
-              <div className="text-xs md:text-sm font-medium -ml-10">
-                Awaiting deposit
-              </div>
-              <div className="absolute top-4 left-[60%] w-[80%] h-[2px] bg-green-700" />
-            </div>
-            
-            <div className="text-center relative text-green-500">
-              <div className="flex justify-center mb-3 -ml-10">
-                <Loader className="h-6 w-6 md:h-8 md:w-8" />
-              </div>
-              <div className="text-xs md:text-sm font-medium -ml-10">
-                Awaiting confirmations
-              </div>
-              <div className="absolute top-4 left-[60%] w-[80%] h-[2px] bg-green-700" />
-            </div>
-            
-            <div className="text-center relative text-green-500">
-              <div className="flex justify-center mb-3 -ml-10">
-                <ArrowLeftRight className="h-6 w-6 md:h-8 md:w-8" />
-              </div>
-              <div className="text-xs md:text-sm font-medium -ml-10">
-                Exchanging
-              </div>
-              <div className="absolute top-4 left-[60%] w-[80%] h-[2px] bg-green-700" />
-            </div>
-            
-            <div className="text-center relative text-green-500">
-              <div className="flex justify-center mb-3 -ml-10">
-                <SendHorizonal className="h-6 w-6 md:h-8 md:w-8" />
-              </div>
-              <div className="text-xs md:text-sm font-medium -ml-10">
-                Sending funds
-              </div>
-              <div className="absolute top-4 left-[60%] w-[80%] h-[2px] bg-green-700" />
-            </div>
-            
-            <div className="text-center relative text-green-500">
-              <div className="flex justify-center mb-3 -ml-10">
-                <CircleCheckBig className="h-6 w-6 md:h-8 md:w-8" />
-              </div>
-              <div className="text-xs md:text-sm font-medium -ml-10">
-                Done
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 boarder-0">
           <Card className="p-6 space-y-4 glass-card">
             <div className="border-b border-white/10 pb-3">
@@ -575,7 +420,7 @@ export const ProgressSteps = ({
 
   return (
     <div className="glass-card p-6 md:p-8 rounded-xl mb-9">
-      {renderStepper()}
+      {/* {renderStepper()} */}
     </div>
   );
 };
