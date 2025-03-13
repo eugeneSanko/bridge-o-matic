@@ -1,6 +1,7 @@
 
 import {
   Loader,
+  LoaderPinwheel,
   Clock,
   ArrowLeftRight,
   CircleCheckBig,
@@ -100,64 +101,6 @@ export const ProgressSteps = ({
     currentStatus === "EXPIRED" ||
     currentStatus?.toLowerCase() === "expired";
 
-  // Format a Unix timestamp to human-readable date
-  const formatTimestamp = (timestamp: number | undefined) => {
-    if (!timestamp) return "N/A";
-    return new Date(timestamp * 1000).toLocaleString();
-  };
-
-  // Format a time difference for display (e.g., "19 hours ago")
-  const formatTimeAgo = (timestamp: number | undefined) => {
-    if (!timestamp) return "N/A";
-    
-    const now = Date.now();
-    const then = timestamp * 1000;
-    const diffMs = now - then;
-    
-    const minutes = Math.floor(diffMs / 60000);
-    if (minutes < 60) {
-      return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
-    }
-    
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) {
-      return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
-    }
-    
-    const days = Math.floor(hours / 24);
-    return `${days} day${days !== 1 ? 's' : ''} ago`;
-  };
-
-  // Extract transaction data from API response
-  const getTransactionData = () => {
-    const apiResponse = orderDetails?.rawApiResponse;
-    if (!apiResponse) return null;
-    
-    const timeData = apiResponse.time || {};
-    const fromTx = apiResponse.from?.tx || {};
-    const toTx = apiResponse.to?.tx || {};
-    
-    return {
-      creationTime: formatTimestamp(timeData.reg),
-      receivedTime: formatTimestamp(timeData.start),
-      completedTime: formatTimestamp(timeData.finish),
-      creationTimeAgo: formatTimeAgo(timeData.reg),
-      receivedTimeAgo: formatTimeAgo(timeData.start),
-      completedTimeAgo: formatTimeAgo(timeData.finish),
-      fromTxId: fromTx.id || "",
-      fromAmount: fromTx.amount || "",
-      fromFee: fromTx.fee || "0",
-      fromFeeCurrency: fromTx.ccyfee || "",
-      fromConfirmations: fromTx.confirmations || "0",
-      fromMaxConfirmations: apiResponse.from?.reqConfirmations || "1",
-      toTxId: toTx.id || "",
-      toAmount: toTx.amount || "",
-      toFee: toTx.fee || "0",
-      toFeeCurrency: toTx.ccyfee || "",
-      toConfirmations: toTx.confirmations || "0"
-    };
-  };
-
   // Render stepper component (for non-completed states)
   const renderStepper = () => {
     const steps = [
@@ -255,8 +198,6 @@ export const ProgressSteps = ({
 
   // If completed, show the completed transaction view
   if (isCompleted) {
-    const txData = getTransactionData();
-    
     return (
       <div className=" p-0 rounded-xl mb-9 overflow-hidden">
         {/* Render stepper at the top for completed state too - but don't call ProgressSteps recursively */}
@@ -271,8 +212,7 @@ export const ProgressSteps = ({
               <div className="text-gray-400 text-sm">Order ID</div>
               <div className="text-[#f0b90b] font-mono font-semibold text-xl flex items-center gap-2">
                 {orderDetails?.orderId || "GDBHQ4"}
-                <Button variant="ghost" size="icon" className="h-6 w-6" 
-                  onClick={() => navigator.clipboard.writeText(orderDetails?.orderId || "")}>
+                <Button variant="ghost" size="icon" className="h-6 w-6">
                   <Copy className="h-4 w-4 text-gray-400" />
                 </Button>
               </div>
@@ -297,21 +237,21 @@ export const ProgressSteps = ({
             <div className="border-b border-white/10 pb-3">
               <div className="text-gray-400 text-sm">Creation Time</div>
               <div className="text-white text-lg">
-                {txData?.creationTime || new Date().toLocaleString()}
+                {new Date().toLocaleString()}
               </div>
             </div>
 
             <div className="border-b border-white/10 pb-3">
               <div className="text-gray-400 text-sm">Received Time</div>
               <div className="text-white text-lg">
-                {txData?.receivedTime || new Date(Date.now() - 5 * 60000).toLocaleString()}
+                {new Date(Date.now() - 5 * 60000).toLocaleString()}
               </div>
             </div>
 
             <div>
               <div className="text-gray-400 text-sm">Completed Time</div>
               <div className="text-white text-lg">
-                {txData?.completedTime || new Date().toLocaleString()}
+                {new Date().toLocaleString()}
               </div>
             </div>
           </Card>
@@ -375,25 +315,20 @@ export const ProgressSteps = ({
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">TxID</span>
                 <div className="font-mono text-sm text-white flex items-center gap-2">
-                  {txData?.fromTxId 
-                    ? `${txData.fromTxId.substring(0, 20)}...`
-                    : "9b942cf8b8e3aa944be74lc462c0c243c7a..."}
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-6 w-6"
-                    onClick={() => navigator.clipboard.writeText(txData?.fromTxId || "")}
-                  >
+                  9b942cf8b8e3aa944be74lc462c0c243c7a...
+                  <Button variant="ghost" size="icon" className="h-6 w-6">
                     <Copy className="h-4 w-4 text-gray-400" />
                   </Button>
                 </div>
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="text-gray-400">View Receipt</span>
+                <span className="text-gray-400">View View Receipt</span>
                 <a
                   className="flex gap-2"
-                  href={`https://ff.io/order/${orderDetails?.orderId || "GDBHQ4"}`}
+                  href={`https://ff.io/order/${
+                    orderDetails?.orderId || "GDBHQ4"
+                  }`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -403,23 +338,23 @@ export const ProgressSteps = ({
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Received Time</span>
-                <span className="text-white">{txData?.receivedTimeAgo || "19 hours ago"}</span>
+                <span className="text-white">19 hours ago</span>
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Block Time</span>
-                <span className="text-white">{txData?.receivedTimeAgo || "19 hours ago"}</span>
+                <span className="text-white">19 hours ago</span>
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Confirmations</span>
-                <span className="text-white">{txData?.fromConfirmations || "40"}</span>
+                <span className="text-white">40</span>
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Amount</span>
                 <span className="text-white">
-                  {txData?.fromAmount || orderDetails?.depositAmount || "200"}{" "}
+                  {orderDetails?.depositAmount || "200"}{" "}
                   {orderDetails?.fromCurrency || "ADA"}
                 </span>
               </div>
@@ -427,7 +362,7 @@ export const ProgressSteps = ({
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Fee</span>
                 <span className="text-white">
-                  {txData?.fromFee || "0.168845"} {txData?.fromFeeCurrency || orderDetails?.fromCurrency || "ADA"}
+                  0.168845 {orderDetails?.fromCurrency || "ADA"}
                 </span>
               </div>
             </div>
@@ -443,15 +378,8 @@ export const ProgressSteps = ({
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">TxID</span>
                 <div className="font-mono text-sm text-white flex items-center gap-2">
-                  {txData?.toTxId 
-                    ? `${txData.toTxId.substring(0, 20)}...`
-                    : "0x7ba710acc700ca056cfabb22e8dda54fa..."}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => navigator.clipboard.writeText(txData?.toTxId || "")}
-                  >
+                  0x7ba710acc700ca056cfabb22e8dda54fa...
+                  <Button variant="ghost" size="icon" className="h-6 w-6">
                     <Copy className="h-4 w-4 text-gray-400" />
                   </Button>
                 </div>
@@ -461,7 +389,9 @@ export const ProgressSteps = ({
                 <span className="text-gray-400">View Receipt</span>
                 <a
                   className="flex gap-2"
-                  href={`https://ff.io/order/${orderDetails?.orderId || "GDBHQ4"}`}
+                  href={`https://ff.io/order/${
+                    orderDetails?.orderId || "GDBHQ4"
+                  }`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -471,23 +401,23 @@ export const ProgressSteps = ({
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Sending time</span>
-                <span className="text-white">{txData?.completedTimeAgo || "19 hours ago"}</span>
+                <span className="text-white">19 hours ago</span>
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Block Time</span>
-                <span className="text-white">{txData?.completedTimeAgo || "19 hours ago"}</span>
+                <span className="text-white">19 hours ago</span>
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Confirmations</span>
-                <span className="text-white">{txData?.toConfirmations || "30"}</span>
+                <span className="text-white">30</span>
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Amount</span>
                 <span className="text-white">
-                  {txData?.toAmount || orderDetails?.receiveAmount || "0.0541047"}{" "}
+                  {orderDetails?.receiveAmount || "0.0541047"}{" "}
                   {orderDetails?.toCurrency || "ETH"}
                 </span>
               </div>
@@ -495,7 +425,7 @@ export const ProgressSteps = ({
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Fee</span>
                 <span className="text-white">
-                  {txData?.toFee || "0"} {txData?.toFeeCurrency || orderDetails?.toCurrency || "ETH"}
+                  0 {orderDetails?.toCurrency || "ETH"}
                 </span>
               </div>
             </div>

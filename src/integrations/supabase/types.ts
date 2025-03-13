@@ -407,7 +407,6 @@ export type Database = {
           ff_order_token: string
           from_currency: string
           id: string
-          raw_api_response: Json | null
           status: string
           to_currency: string
         }
@@ -421,7 +420,6 @@ export type Database = {
           ff_order_token: string
           from_currency: string
           id?: string
-          raw_api_response?: Json | null
           status?: string
           to_currency: string
         }
@@ -435,7 +433,6 @@ export type Database = {
           ff_order_token?: string
           from_currency?: string
           id?: string
-          raw_api_response?: Json | null
           status?: string
           to_currency?: string
         }

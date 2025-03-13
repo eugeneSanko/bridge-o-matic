@@ -1,9 +1,7 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { invokeFunctionWithRetry } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { CompletedTransaction } from "@/types/bridge";
 
 export interface OrderData {
   id: string;
@@ -25,7 +23,6 @@ export interface OrderData {
   receive_amount?: string;
   fromCurrencyName?: string;
   toCurrencyName?: string;
-  raw_api_response?: any;
 }
 
 export interface OrderDetails {
@@ -80,24 +77,20 @@ export function useBridgeOrder(
         console.error("Error checking completed transactions:", dbError);
       } else if (completedTransaction) {
         console.log("Found completed transaction:", completedTransaction);
-        
-        // Cast the completedTransaction to our CompletedTransaction type 
-        const typedTransaction = completedTransaction as unknown as CompletedTransaction;
-        
         setOrderDetails({
-          depositAddress: typedTransaction.deposit_address,
-          depositAmount: typedTransaction.amount.toString(),
+          depositAddress: completedTransaction.deposit_address,
+          depositAmount: completedTransaction.amount.toString(),
           currentStatus: "completed",
-          fromCurrency: typedTransaction.from_currency,
-          toCurrency: typedTransaction.to_currency,
-          orderId: typedTransaction.ff_order_id,
-          ffOrderId: typedTransaction.ff_order_id,
-          ffOrderToken: typedTransaction.ff_order_token,
-          destinationAddress: typedTransaction.destination_address,
+          fromCurrency: completedTransaction.from_currency,
+          toCurrency: completedTransaction.to_currency,
+          orderId: completedTransaction.ff_order_id,
+          ffOrderId: completedTransaction.ff_order_id,
+          ffOrderToken: completedTransaction.ff_order_token,
+          destinationAddress: completedTransaction.destination_address,
           expiresAt: null,
           timeRemaining: null,
           orderType: 'fixed',
-          rawApiResponse: typedTransaction.raw_api_response || {
+          rawApiResponse: {
             status: "DONE"
           }
         });

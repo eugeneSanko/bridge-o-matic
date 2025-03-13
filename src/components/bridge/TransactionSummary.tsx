@@ -1,4 +1,3 @@
-
 import { ArrowRight } from "lucide-react";
 import { AddressPlaceholder } from "./AddressPlaceholder";
 
@@ -39,7 +38,6 @@ export const TransactionSummary = ({
     if (lowerCurrency === "btc") return "₿";
     if (lowerCurrency === "eth") return "Ξ";
     if (lowerCurrency === "sol") return "◎";
-    if (lowerCurrency === "usdt") return "$";
     return currency.toUpperCase().substring(0, 1);
   };
 

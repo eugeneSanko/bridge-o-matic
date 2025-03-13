@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
@@ -66,7 +67,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Fetching order status for ID: ${id} with token: ${token}`);
+    console.log(`Fetching order status for ID: ${id}`);
     
     // Prepare request body for FixedFloat API
     const requestBody = { id, token };
