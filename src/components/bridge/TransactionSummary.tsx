@@ -1,4 +1,3 @@
-
 import { ArrowRight } from "lucide-react";
 import { AddressPlaceholder } from "./AddressPlaceholder";
 
@@ -136,7 +135,7 @@ export const TransactionSummary = ({
               />
             </div>
             <div>
-              <div className="text-2xl md:text-3xl font-bold mb-2 md:text-right">
+              <div className="text-2xl  font-bold mb-2 md:text-right">
                 {amount} {formatFromCurrencyDisplay()}
               </div>
               <div className="text-sm text-gray-400 font-mono">
@@ -173,7 +172,7 @@ export const TransactionSummary = ({
               />
             </div>
             <div>
-              <div className="text-2xl md:text-3xl font-bold mb-2 ">
+              <div className="text-2xl  font-bold mb-2 ">
                 {orderType === "float" && (
                   <span className="text-gray-400 mr-1">≈</span>
                 )}
