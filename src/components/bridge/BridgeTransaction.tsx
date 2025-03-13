@@ -1,14 +1,12 @@
-
 import React, { useEffect, useState } from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
 import { AddressDetails } from "./AddressDetails";
 import { QRCodeSection } from "./QRCodeSection";
-import { SuccessPage } from "./ProgressSteps";
+import { ProgressSteps } from "./ProgressSteps";
 import { InformationSection } from "./InformationSection";
 import { NotificationSection } from "./NotificationSection";
 import { OrderDetails as OrderDetailsType } from "@/hooks/useBridgeOrder";
-import { ProgressBar } from "./ProgressBar";
 
 interface BridgeTransactionProps {
   orderDetails: OrderDetailsType;
@@ -19,106 +17,79 @@ export const BridgeTransaction = ({
   orderDetails,
   onCopyAddress,
 }: BridgeTransactionProps) => {
-  // Extract the original API status directly from the raw response or currentStatus
-  // This ensures we pass the original case (uppercase) status to ProgressSteps
+  // Extract the original API status if available from the raw response
   const apiStatus =
     orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
 
   // Extract the time left from the raw API response (in seconds)
   const timeLeft = orderDetails.rawApiResponse?.time?.left || null;
 
-  // Check if order is expired based only on API status
+  // Check if order is expired based on various indicators
   const [isExpired, setIsExpired] = useState(false);
-  // Track the display status for components
-  const [displayStatus, setDisplayStatus] = useState(apiStatus);
 
-  // Debug status passed to the component
+  // Check for expired status
   useEffect(() => {
-    console.log("BridgeTransaction received status:", {
-      rawStatus: orderDetails.rawApiResponse?.status,
-      currentStatus: orderDetails.currentStatus,
-      apiStatus,
-      displayStatus,
-    });
-  }, [orderDetails, apiStatus, displayStatus]);
-
-  // Update displayStatus whenever apiStatus changes
-  useEffect(() => {
-    console.log("Updating display status from API status:", apiStatus);
-    if (apiStatus) {
-      setDisplayStatus(apiStatus);
-    }
-  }, [apiStatus]);
-
-  // Check for expired status - simplified to only check API response
-  useEffect(() => {
-    // Only mark as expired if the API explicitly says it's EXPIRED
+    // Check multiple conditions for expiration
     const isApiExpired = apiStatus === "EXPIRED";
+    const isStatusExpired = orderDetails.currentStatus === "expired";
+    const isTimerExpired = timeLeft !== null && timeLeft <= 0;
 
+    // Log expiration checks for debugging
     console.log("Expiration checks:", {
       apiStatus,
       currentStatus: orderDetails.currentStatus,
       timeLeft,
       isApiExpired,
-      displayStatus,
+      isStatusExpired,
+      isTimerExpired,
     });
 
-    // Only set as expired if the API status is EXPIRED
-    if (isApiExpired) {
+    // Set as expired if any condition is true
+    if (isApiExpired || isStatusExpired || isTimerExpired) {
       console.log("Order is expired");
       setIsExpired(true);
-      setDisplayStatus("EXPIRED");
     } else {
       setIsExpired(false);
     }
-  }, [apiStatus, timeLeft]);
+  }, [apiStatus, orderDetails.currentStatus, timeLeft]);
 
-  // Debug the displayStatus being passed to ProgressSteps
-  useEffect(() => {
-    console.log("Status passed to ProgressSteps:", displayStatus);
-  }, [displayStatus]);
+  // Log the raw API response for debugging if available
+  React.useEffect(() => {
+    if (orderDetails.rawApiResponse) {
+      console.log("Raw API response:", orderDetails.rawApiResponse);
+      if (orderDetails.rawApiResponse.time) {
+        console.log("Time info:", orderDetails.rawApiResponse.time);
+        console.log("Time left:", orderDetails.rawApiResponse.time.left);
+      }
+    }
+  }, [orderDetails.rawApiResponse]);
 
-  // Check if the order is complete - explicitly check for both DONE and completed
+  // Use the expired status to update the displayed status
+  const displayStatus = isExpired ? "EXPIRED" : apiStatus;
+
+  // Check if the order is complete
   const isOrderComplete =
-    displayStatus === "DONE" || displayStatus?.toLowerCase() === "completed";
-
-  // Ensure we have valid strings for currency information
-  const fromCurrency = orderDetails.fromCurrency || "";
-  const toCurrency = orderDetails.toCurrency || "";
-  const fromCurrencyCoin =
-    orderDetails.rawApiResponse?.from?.coin || fromCurrency || "";
-  const toCurrencyCoin =
-    orderDetails.rawApiResponse?.to?.coin || toCurrency || "";
+    displayStatus === "DONE" || displayStatus === "completed";
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
       <div className="max-w-6xl mx-auto">
         <TransactionSummary
-          fromCurrency={fromCurrency}
-          toCurrency={toCurrency}
-          amount={orderDetails.depositAmount || "0"}
-          destinationAddress={orderDetails.destinationAddress || ""}
+          fromCurrency={orderDetails.fromCurrency}
+          toCurrency={orderDetails.toCurrency}
+          amount={orderDetails.depositAmount}
+          destinationAddress={orderDetails.destinationAddress}
           receiveAmount={orderDetails.receiveAmount}
           orderType={orderDetails.orderType}
           depositAddress={orderDetails.depositAddress}
           fromCurrencyName={orderDetails.fromCurrencyName}
           toCurrencyName={orderDetails.toCurrencyName}
-          // Use the coin property if available in rawApiResponse
-          fromCurrencyCoin={fromCurrencyCoin}
-          toCurrencyCoin={toCurrencyCoin}
         />
 
-        {/* Add the new ProgressBar component */}
-        <ProgressBar 
-          currentStatus={displayStatus} 
-          timeRemaining={orderDetails.timeRemaining}
-        />
-
-        {/* Always display ProgressSteps with the original status case */}
-        <SuccessPage
-          currentStatus={displayStatus || ""}
+        {/* Always display ProgressSteps regardless of status */}
+        <ProgressSteps
+          currentStatus={displayStatus}
           orderDetails={orderDetails}
-          key={`progress-${displayStatus}`} // Force re-render when status changes
         />
 
         {/* Only show these sections if order is not complete */}
@@ -126,31 +97,29 @@ export const BridgeTransaction = ({
           <>
             <div className="grid grid-cols-12 gap-6 mb-12">
               <OrderDetails
-                orderId={orderDetails.orderId || ""}
+                orderId={orderDetails.orderId}
                 orderType={orderDetails.orderType}
                 timeRemaining={orderDetails.timeRemaining}
                 expiresAt={orderDetails.expiresAt}
-                currentStatus={displayStatus || ""}
-                onCopyClick={() => onCopyAddress(orderDetails.orderId || "")}
+                currentStatus={displayStatus}
+                onCopyClick={() => onCopyAddress(orderDetails.orderId)}
                 tag={orderDetails.tag}
                 tagName={orderDetails.tagName}
                 timeLeft={timeLeft}
               />
               <AddressDetails
-                depositAddress={orderDetails.depositAddress || ""}
-                destinationAddress={orderDetails.destinationAddress || ""}
-                onCopyClick={() =>
-                  onCopyAddress(orderDetails.depositAddress || "")
-                }
+                depositAddress={orderDetails.depositAddress}
+                destinationAddress={orderDetails.destinationAddress}
+                onCopyClick={() => onCopyAddress(orderDetails.depositAddress)}
                 addressAlt={orderDetails.addressAlt}
                 orderType={orderDetails.orderType}
-                fromCurrency={fromCurrency}
+                fromCurrency={orderDetails.fromCurrency}
                 fromCurrencyName={orderDetails.fromCurrencyName}
               />
               <QRCodeSection
-                depositAddress={orderDetails.depositAddress || ""}
-                depositAmount={orderDetails.depositAmount || "0"}
-                fromCurrency={fromCurrency}
+                depositAddress={orderDetails.depositAddress}
+                depositAmount={orderDetails.depositAmount}
+                fromCurrency={orderDetails.fromCurrency}
                 tag={orderDetails.tag}
               />
             </div>
@@ -160,19 +129,6 @@ export const BridgeTransaction = ({
               <NotificationSection />
             </div>
           </>
-        )}
-
-        {/* Show success message if order is complete */}
-        {isOrderComplete && (
-          <div className="mt-8 p-6 bg-green-900/20 border border-green-500/30 rounded-lg text-center">
-            <h3 className="text-2xl font-bold text-green-400 mb-2">
-              Transaction Complete!
-            </h3>
-            <p className="text-green-200">
-              Your funds have been successfully transferred. They should appear
-              in your destination wallet shortly.
-            </p>
-          </div>
         )}
       </div>
     </div>
