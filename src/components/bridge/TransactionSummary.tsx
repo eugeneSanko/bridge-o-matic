@@ -30,10 +30,13 @@ export const TransactionSummary = ({
   toCurrencyCoin,
 }: TransactionSummaryProps) => {
   // Prioritize using the coin over code for display
-  const displayFromCurrency = fromCurrencyCoin || fromCurrency;
-  const displayToCurrency = toCurrencyCoin || toCurrency;
+  // Add null checks to handle cases where properties might be undefined
+  const displayFromCurrency = fromCurrencyCoin || fromCurrency || "";
+  const displayToCurrency = toCurrencyCoin || toCurrency || "";
 
   const getCurrencyIcon = (currency: string) => {
+    if (!currency) return "";
+    
     const lowerCurrency = currency.toLowerCase();
     if (lowerCurrency === "btc") return "₿";
     if (lowerCurrency === "eth") return "Ξ";
@@ -43,6 +46,8 @@ export const TransactionSummary = ({
   };
 
   const getCurrencyImageUrl = (currency: string) => {
+    if (!currency) return "";
+    
     const lowerCurrency = currency.toLowerCase();
 
     if (lowerCurrency === "btc")
@@ -62,6 +67,8 @@ export const TransactionSummary = ({
   };
 
   const getCurrencyColor = (currency: string) => {
+    if (!currency) return "bg-[#0FA0CE]";
+    
     const lowerCurrency = currency.toLowerCase();
     if (lowerCurrency === "btc") return "bg-[#F7931A]";
     if (lowerCurrency === "eth") return "bg-[#627EEA]";
