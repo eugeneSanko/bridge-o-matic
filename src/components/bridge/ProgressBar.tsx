@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { 
   Package, 
   Clock, 
@@ -17,11 +17,6 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   currentStatus = "NEW",
   timeRemaining
 }) => {
-  // Debug for tracking status updates
-  useEffect(() => {
-    console.log("ProgressBar rendering with status:", currentStatus, "Time remaining:", timeRemaining);
-  }, [currentStatus, timeRemaining]);
-
   // Map API status to step index (0-based)
   const getActiveStepIndex = (status: string): number => {
     if (!status) return 0;

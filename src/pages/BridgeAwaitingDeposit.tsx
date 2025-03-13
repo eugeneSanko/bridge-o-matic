@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
@@ -45,31 +44,8 @@ const BridgeAwaitingDeposit = () => {
   const lastKnownStatusRef = useRef("");
   const completionProcessedRef = useRef(false);
 
-  // Log changes to help debug status issues
   useEffect(() => {
     console.log("Original Order Details updated:", originalOrderDetails);
-    
-    // When originalOrderDetails update, synchronize with local state immediately
-    if (originalOrderDetails) {
-      const apiStatus = originalOrderDetails.rawApiResponse?.status;
-      console.log("API Status from original order details:", apiStatus);
-      
-      if (apiStatus && apiStatus !== lastKnownStatusRef.current) {
-        console.log(`Status change detected in original details: ${lastKnownStatusRef.current} -> ${apiStatus}`);
-        lastKnownStatusRef.current = apiStatus;
-        setStatusChanged(true);
-        
-        // If status is DONE and not yet processed, handle completion
-        if (apiStatus === "DONE" && !completionProcessedRef.current) {
-          console.log("DONE status detected - handling completion");
-          completionProcessedRef.current = true;
-          handleOrderCompletion();
-        }
-      }
-      
-      // Update local state with original details
-      setOrderDetails(originalOrderDetails);
-    }
   }, [originalOrderDetails]);
 
   useEffect(() => {
@@ -321,11 +297,6 @@ const BridgeAwaitingDeposit = () => {
   const forceRefresh = () => {
     setPollCount(prev => prev + 1);
     checkOrderStatus();
-    
-    toast({
-      title: "Refreshing Status",
-      description: "Checking for the latest transaction status...",
-    });
   };
 
   return (

@@ -27,19 +27,60 @@ export const BridgeTransaction = ({
   // Extract the time left from the raw API response (in seconds)
   const timeLeft = orderDetails.rawApiResponse?.time?.left || null;
 
-  // For debug purposes
+  // Check if order is expired based only on API status
+  const [isExpired, setIsExpired] = useState(false);
+  // Track the display status for components
+  const [displayStatus, setDisplayStatus] = useState(apiStatus);
+
+  // Debug status passed to the component
   useEffect(() => {
-    console.log("BridgeTransaction rendering with status:", {
+    console.log("BridgeTransaction received status:", {
+      rawStatus: orderDetails.rawApiResponse?.status,
+      currentStatus: orderDetails.currentStatus,
+      apiStatus,
+      displayStatus,
+    });
+  }, [orderDetails, apiStatus, displayStatus]);
+
+  // Update displayStatus whenever apiStatus changes
+  useEffect(() => {
+    console.log("Updating display status from API status:", apiStatus);
+    if (apiStatus) {
+      setDisplayStatus(apiStatus);
+    }
+  }, [apiStatus]);
+
+  // Check for expired status - simplified to only check API response
+  useEffect(() => {
+    // Only mark as expired if the API explicitly says it's EXPIRED
+    const isApiExpired = apiStatus === "EXPIRED";
+
+    console.log("Expiration checks:", {
       apiStatus,
       currentStatus: orderDetails.currentStatus,
-      rawStatus: orderDetails.rawApiResponse?.status,
-      timeLeft
+      timeLeft,
+      isApiExpired,
+      displayStatus,
     });
-  }, [apiStatus, orderDetails, timeLeft]);
+
+    // Only set as expired if the API status is EXPIRED
+    if (isApiExpired) {
+      console.log("Order is expired");
+      setIsExpired(true);
+      setDisplayStatus("EXPIRED");
+    } else {
+      setIsExpired(false);
+    }
+  }, [apiStatus, timeLeft]);
+
+  // Debug the displayStatus being passed to ProgressSteps
+  useEffect(() => {
+    console.log("Status passed to ProgressSteps:", displayStatus);
+  }, [displayStatus]);
 
   // Check if the order is complete - explicitly check for both DONE and completed
   const isOrderComplete =
-    apiStatus === "DONE" || apiStatus?.toLowerCase() === "completed";
+    displayStatus === "DONE" || displayStatus?.toLowerCase() === "completed";
 
   // Ensure we have valid strings for currency information
   const fromCurrency = orderDetails.fromCurrency || "";
@@ -67,17 +108,17 @@ export const BridgeTransaction = ({
           toCurrencyCoin={toCurrencyCoin}
         />
 
-        {/* Progress Bar with direct API status and live time remaining */}
+        {/* Add the new ProgressBar component */}
         <ProgressBar 
-          currentStatus={apiStatus} 
+          currentStatus={displayStatus} 
           timeRemaining={orderDetails.timeRemaining}
         />
 
         {/* Always display ProgressSteps with the original status case */}
         <SuccessPage
-          currentStatus={apiStatus || ""}
+          currentStatus={displayStatus || ""}
           orderDetails={orderDetails}
-          key={`progress-${apiStatus}`} // Force re-render when status changes
+          key={`progress-${displayStatus}`} // Force re-render when status changes
         />
 
         {/* Only show these sections if order is not complete */}
@@ -89,7 +130,7 @@ export const BridgeTransaction = ({
                 orderType={orderDetails.orderType}
                 timeRemaining={orderDetails.timeRemaining}
                 expiresAt={orderDetails.expiresAt}
-                currentStatus={apiStatus || ""}
+                currentStatus={displayStatus || ""}
                 onCopyClick={() => onCopyAddress(orderDetails.orderId || "")}
                 tag={orderDetails.tag}
                 tagName={orderDetails.tagName}
