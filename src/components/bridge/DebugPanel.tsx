@@ -1,78 +1,89 @@
 
 import { useState } from "react";
-import { Code, ChevronDown, ChevronUp } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  RequestSection,
+import { 
+  RequestSection, 
+  ResponseSection, 
   SignatureSection,
   CurlCommandSection,
-  ResponseSection,
-  ErrorSection,
+  ErrorSection
 } from "./debug";
 
-interface DebugInfo {
-  requestDetails?: {
-    url: string;
-    method: string;
-    requestBody: any;
-    requestBodyString: string;
-  };
-  signatureInfo?: {
-    signature: string;
-    apiKey: string;
-  };
-  curlCommand?: string;
-  responseDetails?: {
-    status: string;
-    body: string;
-    headers?: Record<string, string>;
-  };
-  error?: {
-    type: string;
-    message: string;
-    stack?: string;
-    responseText?: string;
-  };
-}
-
 interface DebugPanelProps {
-  debugInfo?: DebugInfo;
+  debugInfo: any;
   isLoading?: boolean;
+  savedTransaction?: any;
 }
 
-export const DebugPanel = ({ debugInfo, isLoading = false }: DebugPanelProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  
-  if (!debugInfo && !isLoading) return null;
-  
-  const toggleExpand = () => setIsExpanded(!isExpanded);
-  
-  return (
-    <div className="glass-card p-4 rounded-xl mt-6 text-xs">
-      <div className="flex items-center justify-between cursor-pointer" onClick={toggleExpand}>
-        <div className="flex items-center gap-2">
-          <Code className="h-4 w-4 text-[#0FA0CE]" />
-          <h3 className="font-medium">Bridge API Debug Information</h3>
+export const DebugPanel = ({ 
+  debugInfo, 
+  isLoading = false,
+  savedTransaction
+}: DebugPanelProps) => {
+  const [expanded, setExpanded] = useState(false);
+
+  const toggleExpanded = () => {
+    setExpanded(!expanded);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="glass-card p-6 rounded-xl overflow-hidden">
+        <div className="text-lg font-semibold text-white mb-4 flex items-center justify-between">
+          <span>Debug Information</span>
+          <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-[#0FA0CE]"></div>
         </div>
-        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </Button>
+        <div className="text-gray-400">Loading debug information...</div>
       </div>
-      
-      {isExpanded && (
-        <div className="mt-4 space-y-4">
-          {isLoading ? (
-            <div className="text-gray-400 italic">Loading debug information...</div>
-          ) : debugInfo ? (
-            <>
-              <RequestSection requestDetails={debugInfo.requestDetails} />
-              <SignatureSection signatureInfo={debugInfo.signatureInfo} />
-              <CurlCommandSection curlCommand={debugInfo.curlCommand} />
-              <ResponseSection responseDetails={debugInfo.responseDetails} />
-              <ErrorSection error={debugInfo.error} />
-            </>
-          ) : (
-            <div className="text-gray-400 italic">No debug information available</div>
+    );
+  }
+
+  if (!debugInfo) return null;
+
+  return (
+    <div className="glass-card p-6 rounded-xl overflow-hidden">
+      <div 
+        className="text-lg font-semibold text-white mb-4 cursor-pointer flex items-center justify-between"
+        onClick={toggleExpanded}
+      >
+        <span>Debug Information</span>
+        <span className="text-xs px-2 py-1 bg-gray-800 rounded">
+          {expanded ? "Hide" : "Show"}
+        </span>
+      </div>
+
+      {expanded && (
+        <div className="space-y-6 overflow-x-auto text-xs">
+          {debugInfo.requestDetails && (
+            <RequestSection requestDetails={debugInfo.requestDetails} />
+          )}
+          
+          {debugInfo.signatureInfo && (
+            <SignatureSection signatureInfo={debugInfo.signatureInfo} />
+          )}
+
+          {debugInfo.curlCommand && (
+            <CurlCommandSection command={debugInfo.curlCommand} />
+          )}
+
+          {debugInfo.responseDetails && (
+            <ResponseSection responseDetails={debugInfo.responseDetails} />
+          )}
+
+          {debugInfo.error && (
+            <ErrorSection error={debugInfo.error} />
+          )}
+          
+          {savedTransaction && (
+            <div className="space-y-2">
+              <div className="font-medium text-green-500">
+                Transaction Saved to Database
+              </div>
+              <div className="bg-black/30 p-3 rounded-md font-mono">
+                <pre className="overflow-x-auto">
+                  {JSON.stringify(savedTransaction, null, 2)}
+                </pre>
+              </div>
+            </div>
           )}
         </div>
       )}

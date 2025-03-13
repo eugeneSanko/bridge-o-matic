@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
@@ -37,6 +38,7 @@ const BridgeAwaitingDeposit = () => {
   const [statusCheckError, setStatusCheckError] = useState(null);
   const [pollingInterval, setPollingInterval] = useState(POLLING_INTERVALS.DEFAULT);
   const [lastPollTimestamp, setLastPollTimestamp] = useState(0);
+  const [transactionSaved, setTransactionSaved] = useState(false);
   
   const { orderDetails: originalOrderDetails, loading, error, handleCopyAddress } = useBridgeOrder(
     orderId, 
@@ -164,6 +166,9 @@ const BridgeAwaitingDeposit = () => {
               }
             });
           }
+
+          // Save completed transaction to Supabase
+          saveCompletedTransaction(originalOrderDetails, data, false);
         }
       } else {
         console.error("API returned an error:", data);
@@ -241,6 +246,90 @@ const BridgeAwaitingDeposit = () => {
       clearInterval(intervalId);
     };
   }, [orderId, token, pollingInterval, checkOrderStatus]);
+
+  // Effect to monitor completion status and save to database
+  useEffect(() => {
+    // Check if order is completed via simulation
+    if (
+      simulateSuccess && 
+      orderDetails && 
+      orderDetails.currentStatus === "completed" && 
+      orderDetails.rawApiResponse?.status === "DONE" && 
+      !transactionSaved
+    ) {
+      // Save simulated completed transaction
+      saveCompletedTransaction(orderDetails, { data: orderDetails.rawApiResponse }, true);
+    }
+  }, [simulateSuccess, orderDetails, transactionSaved]);
+
+  // Function to save completed transaction to Supabase
+  const saveCompletedTransaction = async (details, apiResponse, isSimulated) => {
+    if (!details || transactionSaved) return;
+
+    try {
+      console.log("Saving completed transaction to database", { isSimulated });
+      
+      // Prepare transaction data
+      const transactionData = {
+        ff_order_id: details.ffOrderId || details.orderId,
+        ff_order_token: details.ffOrderToken || token,
+        from_currency: details.fromCurrency,
+        to_currency: details.toCurrency,
+        amount: parseFloat(details.depositAmount),
+        destination_address: details.destinationAddress,
+        deposit_address: details.depositAddress,
+        status: "completed",
+        raw_api_response: isSimulated 
+          ? { 
+              ...apiResponse.data,
+              simulated: true,
+              original_status: originalOrderDetails?.rawApiResponse?.status
+            }
+          : apiResponse.data,
+        client_metadata: {
+          device: navigator.userAgent,
+          timestamp: new Date().toISOString(),
+          ip: null, // Will be filled server-side
+          simulation: isSimulated,
+          user_agent: navigator.userAgent,
+          languages: navigator.languages,
+          debug_info: statusCheckDebugInfo
+        }
+      };
+
+      // Save to Supabase
+      const { data, error } = await supabase
+        .from('completed_bridge_transactions')
+        .insert([transactionData]);
+
+      if (error) {
+        console.error("Error saving completed transaction:", error);
+        toast({
+          title: "Database Error",
+          description: "Could not save transaction data",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log("Transaction saved successfully:", data);
+      setTransactionSaved(true);
+      
+      toast({
+        title: "Transaction Recorded",
+        description: "Transaction has been saved to database",
+        variant: "default"
+      });
+      
+      // Optionally redirect to a completion page
+      setTimeout(() => {
+        navigate(`/bridge/complete?orderId=${details.orderId}`);
+      }, 2000);
+      
+    } catch (err) {
+      console.error("Exception saving transaction:", err);
+    }
+  };
 
   if (loading) {
     return <LoadingState />;
