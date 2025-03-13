@@ -142,6 +142,7 @@ export function useBridgeOrder(
         };
         
         const currentStatus = statusMap[apiStatus] || apiStatus.toLowerCase();
+        console.log(`Mapping API status ${apiStatus} to UI status ${currentStatus}`);
         
         // Ensure orderType is correctly typed
         const orderType: "fixed" | "float" = 
@@ -175,7 +176,7 @@ export function useBridgeOrder(
           receiveAmount: apiResponse.data.to.amount,
           fromCurrencyName: fromCurrencyName,
           toCurrencyName: toCurrencyName,
-          rawApiResponse: apiResponse.data
+          rawApiResponse: apiResponse.data // Store entire API response object
         });
         
         setLoading(false);

@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
@@ -38,6 +39,7 @@ const BridgeAwaitingDeposit = () => {
   const [pollingInterval, setPollingInterval] = useState(POLLING_INTERVALS.DEFAULT);
   const [lastPollTimestamp, setLastPollTimestamp] = useState(0);
   const [transactionSaved, setTransactionSaved] = useState(false);
+  const [pollCount, setPollCount] = useState(0); // Added to force re-renders on polling
   
   const { orderDetails: originalOrderDetails, loading, error, handleCopyAddress } = useBridgeOrder(
     orderId, 
@@ -192,6 +194,7 @@ const BridgeAwaitingDeposit = () => {
     }
     
     setLastPollTimestamp(now);
+    setPollCount(prev => prev + 1); // Increment poll count to force re-renders
 
     try {
       console.log(`${force ? 'Forcing' : 'Scheduled'} order status check with bridge-status function`);
@@ -288,10 +291,25 @@ const BridgeAwaitingDeposit = () => {
           // For other statuses, just update the order details
           setOrderDetails(prevDetails => {
             if (!prevDetails) return null;
+            
+            // Make sure we're using the lower-case version of the API status for our app
+            const statusMap: Record<string, string> = {
+              'NEW': 'pending',
+              'PENDING': 'processing',
+              'EXCHANGE': 'exchanging',
+              'WITHDRAW': 'sending',
+              'DONE': 'completed',
+              'EXPIRED': 'expired',
+              'EMERGENCY': 'failed'
+            };
+            
+            const appStatus = statusMap[status] || status.toLowerCase();
+            console.log(`Mapping API status ${status} to app status ${appStatus}`);
+            
             return {
               ...prevDetails,
-              currentStatus: status.toLowerCase(),
-              rawApiResponse: data.data
+              currentStatus: appStatus,
+              rawApiResponse: data.data  // Store the entire API response
             };
           });
         }
@@ -305,8 +323,10 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [orderId, token, pollingInterval, lastPollTimestamp, transactionSaved, saveCompletedTransaction, checkCompletedTransaction, navigate]);
 
+  // Run status check on first mount
   useEffect(() => {
     if (orderId && token && !manualStatusCheckAttempted) {
+      console.log("Initial status check on component mount");
       checkOrderStatus(true);
     }
   }, [orderId, token, manualStatusCheckAttempted, checkOrderStatus]);
@@ -326,6 +346,7 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [apiAttempted, loading, error, orderDetails]);
 
+  // Handle deep link responses
   useEffect(() => {
     if (!deepLink) return;
 
@@ -361,12 +382,23 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [deepLink, addLog, transactionSaved, saveCompletedTransaction]);
 
+  // Set up regular polling for status updates
   useEffect(() => {
-    if (!orderId || !token || pollingInterval === null) return;
+    if (!orderId || !token) return;
+    
+    // Don't set up polling if interval is null (completed, expired, etc)
+    if (pollingInterval === null) {
+      console.log("Polling disabled for current status, clearing interval");
+      return;
+    }
     
     console.log(`Setting up polling with ${pollingInterval}ms interval`);
     
+    // Always do an immediate check to get latest status
+    checkOrderStatus(true);
+    
     const intervalId = setInterval(() => {
+      console.log("Polling interval triggered, checking status...");
       checkOrderStatus();
     }, pollingInterval);
     
@@ -374,7 +406,7 @@ const BridgeAwaitingDeposit = () => {
       console.log('Clearing polling interval');
       clearInterval(intervalId);
     };
-  }, [orderId, token, pollingInterval, checkOrderStatus]);
+  }, [orderId, token, pollingInterval, pollCount, checkOrderStatus]);
 
   if (loading) {
     return <LoadingState />;

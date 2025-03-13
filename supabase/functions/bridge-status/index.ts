@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
@@ -99,7 +100,8 @@ serve(async (req) => {
   -H "X-API-SIGN: ${signature}" \\
   -H "Content-Type: application/json; charset=UTF-8" \\
   -d '${requestBodyStr}' \\
-  "${FF_API_URL}/order" -L`
+  "${FF_API_URL}/order" -L`,
+      timestamp: new Date().toISOString()
     };
     
     console.log("Debug Info:", JSON.stringify(debugInfo, null, 2));
