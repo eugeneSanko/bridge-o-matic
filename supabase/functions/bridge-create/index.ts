@@ -2,8 +2,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // Validate required environment variables
-const API_KEY = "bzplvDU0N2Pa5crmQTbqteew6WJyuSGX9BEBPclU";
-const API_SECRET = "qIk7Vd6b5M3wqOmD3cnqRGQ6k3dGTDss47fvdng4";
+const API_KEY = "lvW17QIF4SzDIzxBLg2oUandukccoZjwhsNGs3GC";
+const API_SECRET = "RpPfjnFZx1TfRx6wmYzOgo5Y6QK3OgIETceFZLni";
 const API_URL = "https://ff.io/api/v2/create";
 
 // Check if API keys are properly configured

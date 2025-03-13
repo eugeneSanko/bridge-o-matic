@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
@@ -10,8 +9,8 @@ const corsHeaders = {
 console.log("Bridge Order Status Function Loaded");
 
 const FF_API_URL = "https://ff.io/api/v2";
-const FF_API_KEY = Deno.env.get("FF_API_KEY") || "bzplvDU0N2Pa5crmQTbqteew6WJyuSGX9BEBPclU";
-const FF_API_SECRET = Deno.env.get("FF_API_SECRET") || "qIk7Vd6b5M3wqOmD3cnqRGQ6k3dGTDss47fvdng4";
+const FF_API_KEY = "lvW17QIF4SzDIzxBLg2oUandukccoZjwhsNGs3GC";
+const FF_API_SECRET = "RpPfjnFZx1TfRx6wmYzOgo5Y6QK3OgIETceFZLni";
 
 async function generateSignature(body: any): Promise<string> {
   const encoder = new TextEncoder();

@@ -396,6 +396,51 @@ export type Database = {
           },
         ]
       }
+      completed_bridge_transactions: {
+        Row: {
+          amount: number
+          client_metadata: Json | null
+          created_at: string
+          deposit_address: string
+          destination_address: string
+          ff_order_id: string
+          ff_order_token: string
+          from_currency: string
+          id: string
+          raw_api_response: Json | null
+          status: string
+          to_currency: string
+        }
+        Insert: {
+          amount: number
+          client_metadata?: Json | null
+          created_at?: string
+          deposit_address: string
+          destination_address: string
+          ff_order_id: string
+          ff_order_token: string
+          from_currency: string
+          id?: string
+          raw_api_response?: Json | null
+          status?: string
+          to_currency: string
+        }
+        Update: {
+          amount?: number
+          client_metadata?: Json | null
+          created_at?: string
+          deposit_address?: string
+          destination_address?: string
+          ff_order_id?: string
+          ff_order_token?: string
+          from_currency?: string
+          id?: string
+          raw_api_response?: Json | null
+          status?: string
+          to_currency?: string
+        }
+        Relationships: []
+      }
       copy_trade_orders: {
         Row: {
           copy_trade_id: string

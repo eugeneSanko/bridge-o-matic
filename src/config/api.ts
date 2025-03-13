@@ -21,9 +21,9 @@ export const API_CONFIG = {
   // Direct API URL for backend requests
   FF_API_URL: "https://ff.io/api/v2",
   
-  // API credentials - using the hardcoded values for direct testing
-  FF_API_KEY: "bzplvDU0N2Pa5crmQTbqteew6WJyuSGX9BEBPclU",
-  FF_API_SECRET: "qIk7Vd6b5M3wqOmD3cnqRGQ6k3dGTDss47fvdng4",
+  // API credentials - updated with new keys
+  FF_API_KEY: "lvW17QIF4SzDIzxBLg2oUandukccoZjwhsNGs3GC",
+  FF_API_SECRET: "RpPfjnFZx1TfRx6wmYzOgo5Y6QK3OgIETceFZLni",
   
   // Maximum retries for API calls
   MAX_RETRIES: 3,
