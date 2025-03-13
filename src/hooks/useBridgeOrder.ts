@@ -50,12 +50,6 @@ export interface OrderDetails {
   rawApiResponse?: any;
 }
 
-// Statuses that should continue polling
-const ACTIVE_POLLING_STATUSES = ['NEW', 'PENDING', 'EXCHANGE', 'WITHDRAW'];
-
-// Terminal statuses that should stop polling
-const TERMINAL_STATUSES = ['DONE', 'EXPIRED', 'EMERGENCY'];
-
 export function useBridgeOrder(
   orderId: string | null, 
   shouldFetch: boolean = true,
@@ -64,6 +58,7 @@ export function useBridgeOrder(
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(shouldFetch);
   const [error, setError] = useState<string | null>(null);
+  const [pollingInterval, setPollingInterval] = useState<number | null>(null);
 
   const fetchOrderDetails = useCallback(async () => {
     if (!orderId || !shouldFetch) {
@@ -118,8 +113,6 @@ export function useBridgeOrder(
         throw new Error("Missing order token");
       }
       
-      console.log(`Making bridge-status API call for order ${orderId} with token ${token}`);
-      
       // Pass both id and token to bridge-status function
       const { data: apiResponse, error: apiError } = await supabase.functions.invoke('bridge-status', {
         body: { 
@@ -127,8 +120,6 @@ export function useBridgeOrder(
           token: token 
         }
       });
-      
-      console.log("API response received:", apiResponse);
       
       if (apiError) {
         console.error("API error when fetching order status:", apiError);
@@ -276,9 +267,6 @@ export function useBridgeOrder(
     orderDetails,
     loading,
     error,
-    handleCopyAddress,
-    fetchOrderDetails,
-    ACTIVE_POLLING_STATUSES,
-    TERMINAL_STATUSES
+    handleCopyAddress
   };
 }

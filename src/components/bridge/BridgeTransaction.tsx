@@ -27,18 +27,6 @@ export const BridgeTransaction = ({
   // Check if order is expired based only on API status
   const [isExpired, setIsExpired] = useState(false);
 
-  // Enhanced logging for debugging status issues
-  useEffect(() => {
-    console.log("BridgeTransaction status values:", {
-      currentStatus: orderDetails.currentStatus,
-      apiStatus,
-      rawApiStatus: orderDetails.rawApiResponse?.status,
-      rawApiResponse: JSON.stringify(orderDetails.rawApiResponse || {}, null, 2),
-      timeLeft,
-      displayStatus: isExpired ? "EXPIRED" : apiStatus
-    });
-  }, [orderDetails, apiStatus, timeLeft, isExpired]);
-
   // Check for expired status - simplified to only check API response
   useEffect(() => {
     // Only mark as expired if the API explicitly says it's EXPIRED
@@ -58,7 +46,7 @@ export const BridgeTransaction = ({
     } else {
       setIsExpired(false);
     }
-  }, [apiStatus, timeLeft, orderDetails.currentStatus]);
+  }, [apiStatus, timeLeft]);
 
   // Use the expired status to update the displayed status
   // Keep the original API status if it's not expired - this is important for DONE status
@@ -92,40 +80,44 @@ export const BridgeTransaction = ({
           orderDetails={orderDetails}
         />
 
-        {/* Always show these sections regardless of status to keep the page consistent */}
-        <div className="grid grid-cols-12 gap-6 mb-12">
-          <OrderDetails
-            orderId={orderDetails.orderId}
-            orderType={orderDetails.orderType}
-            timeRemaining={orderDetails.timeRemaining}
-            expiresAt={orderDetails.expiresAt}
-            currentStatus={displayStatus}
-            onCopyClick={() => onCopyAddress(orderDetails.orderId)}
-            tag={orderDetails.tag}
-            tagName={orderDetails.tagName}
-            timeLeft={timeLeft}
-          />
-          <AddressDetails
-            depositAddress={orderDetails.depositAddress}
-            destinationAddress={orderDetails.destinationAddress}
-            onCopyClick={() => onCopyAddress(orderDetails.depositAddress)}
-            addressAlt={orderDetails.addressAlt}
-            orderType={orderDetails.orderType}
-            fromCurrency={orderDetails.fromCurrency}
-            fromCurrencyName={orderDetails.fromCurrencyName}
-          />
-          <QRCodeSection
-            depositAddress={orderDetails.depositAddress}
-            depositAmount={orderDetails.depositAmount}
-            fromCurrency={orderDetails.fromCurrency}
-            tag={orderDetails.tag}
-          />
-        </div>
+        {/* Only show these sections if order is not complete */}
+        {!isOrderComplete && (
+          <>
+            <div className="grid grid-cols-12 gap-6 mb-12">
+              <OrderDetails
+                orderId={orderDetails.orderId}
+                orderType={orderDetails.orderType}
+                timeRemaining={orderDetails.timeRemaining}
+                expiresAt={orderDetails.expiresAt}
+                currentStatus={displayStatus}
+                onCopyClick={() => onCopyAddress(orderDetails.orderId)}
+                tag={orderDetails.tag}
+                tagName={orderDetails.tagName}
+                timeLeft={timeLeft}
+              />
+              <AddressDetails
+                depositAddress={orderDetails.depositAddress}
+                destinationAddress={orderDetails.destinationAddress}
+                onCopyClick={() => onCopyAddress(orderDetails.depositAddress)}
+                addressAlt={orderDetails.addressAlt}
+                orderType={orderDetails.orderType}
+                fromCurrency={orderDetails.fromCurrency}
+                fromCurrencyName={orderDetails.fromCurrencyName}
+              />
+              <QRCodeSection
+                depositAddress={orderDetails.depositAddress}
+                depositAmount={orderDetails.depositAmount}
+                fromCurrency={orderDetails.fromCurrency}
+                tag={orderDetails.tag}
+              />
+            </div>
 
-        <div className="grid grid-cols-12 gap-6">
-          <InformationSection />
-          <NotificationSection />
-        </div>
+            <div className="grid grid-cols-12 gap-6">
+              <InformationSection />
+              <NotificationSection />
+            </div>
+          </>
+        )}
 
         {/* Show success message if order is complete */}
         {isOrderComplete && (

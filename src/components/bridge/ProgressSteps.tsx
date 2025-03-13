@@ -12,7 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Card } from "../ui/card";
-import { useEffect, useState } from "react";
 
 interface ProgressStepsProps {
   currentStatus?: string;
@@ -23,52 +22,10 @@ export const ProgressSteps = ({
   currentStatus = "pending",
   orderDetails,
 }: ProgressStepsProps) => {
-  // Add state to track processed status
-  const [processedStatus, setProcessedStatus] = useState<string>("pending");
-  
-  // Enhanced debug logging for status
-  useEffect(() => {
-    console.log("ProgressSteps received:", { 
-      currentStatus, 
-      apiStatus: orderDetails?.rawApiResponse?.status,
-      processedStatus,
-      orderDetails: orderDetails ? {
-        ffOrderId: orderDetails.ffOrderId,
-        currentStatus: orderDetails.currentStatus,
-        rawApiResponse: orderDetails.rawApiResponse ? {
-          status: orderDetails.rawApiResponse.status,
-          // Include other key properties for debugging
-          from: orderDetails.rawApiResponse.from ? { 
-            address: orderDetails.rawApiResponse.from.address,
-            currency: orderDetails.rawApiResponse.from.code
-          } : 'n/a',
-          to: orderDetails.rawApiResponse.to ? { 
-            address: orderDetails.rawApiResponse.to.address,
-            currency: orderDetails.rawApiResponse.to.code
-          } : 'n/a',
-          time: orderDetails.rawApiResponse.time ? {
-            expiration: orderDetails.rawApiResponse.time.expiration,
-            left: orderDetails.rawApiResponse.time.left
-          } : 'n/a'
-        } : 'n/a'
-      } : 'n/a'
-    });
-  }, [currentStatus, orderDetails, processedStatus]);
-
-  // Determine the actual status to use, with priority to the API response
-  useEffect(() => {
-    // Use the rawApiResponse status if available, otherwise fall back to currentStatus
-    const statusToUse = orderDetails?.rawApiResponse?.status || currentStatus || "pending";
-    console.log("Setting processed status to:", statusToUse);
-    setProcessedStatus(statusToUse);
-  }, [currentStatus, orderDetails?.rawApiResponse?.status]);
-
   // Map FF.io API status to step index
   const getActiveStepIndex = (status: string): number => {
     // Lowercase the status for case-insensitive comparison
     const lowerStatus = status?.toLowerCase() || "pending";
-    
-    console.log("Calculating active step index for status:", status);
 
     // Define direct mappings from FF.io API statuses
     const apiStatusMap: Record<string, number> = {
@@ -100,21 +57,15 @@ export const ProgressSteps = ({
 
     // First check if it's a direct FF.io API status
     if (status in apiStatusMap) {
-      const stepIndex = apiStatusMap[status];
-      console.log(`Using API status mapping: ${status} -> step ${stepIndex}`);
-      return stepIndex;
+      return apiStatusMap[status];
     }
 
     // Then check if it's our app status
-    const stepIndex = appStatusMap[lowerStatus] || 0;
-    console.log(`Using app status mapping: ${lowerStatus} -> step ${stepIndex}`);
-    return stepIndex;
+    return appStatusMap[lowerStatus] || 0;
   };
 
   // Returns appropriate visual status indicators
   const getStatusType = (status: string): string => {
-    console.log("Getting status type for:", status);
-    
     // First check uppercase FF.io API statuses
     if (status === "DONE") return "completed";
     if (status === "EMERGENCY") return "failed";
@@ -136,28 +87,18 @@ export const ProgressSteps = ({
     return "";
   };
 
-  // Get the true API status if available, otherwise use processedStatus
-  const actualStatus = processedStatus;
-  
-  const activeStep = getActiveStepIndex(actualStatus);
-  const statusType = getStatusType(actualStatus);
-  
-  console.log("ProgressSteps computed values:", {
-    actualStatus,
-    activeStep,
-    statusType
-  });
-  
+  const activeStep = getActiveStepIndex(currentStatus);
+  const statusType = getStatusType(currentStatus);
   const isCompleted =
     statusType === "completed" ||
-    actualStatus === "DONE" ||
-    actualStatus?.toLowerCase() === "completed";
+    currentStatus === "DONE" ||
+    currentStatus?.toLowerCase() === "completed";
 
   // For expired status, modify the first step icon and text
   const isExpired =
     statusType === "expired" ||
-    actualStatus === "EXPIRED" ||
-    actualStatus?.toLowerCase() === "expired";
+    currentStatus === "EXPIRED" ||
+    currentStatus?.toLowerCase() === "expired";
 
   // Format a Unix timestamp to human-readable date
   const formatTimestamp = (timestamp: number | undefined) => {
@@ -318,7 +259,7 @@ export const ProgressSteps = ({
     
     return (
       <div className=" p-0 rounded-xl mb-9 overflow-hidden">
-        {/* Render stepper at the top for completed state too */}
+        {/* Render stepper at the top for completed state too - but don't call ProgressSteps recursively */}
         <div className="glass-card p-6 md:p-8 rounded-xl mb-9">
           {renderStepper()}
         </div>
