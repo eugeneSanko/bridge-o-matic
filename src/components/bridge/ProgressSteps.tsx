@@ -7,38 +7,35 @@ import {
   ExternalLink,
   Check,
   Star,
+  SendHorizonal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { Card } from "../ui/card";
 
 interface ProgressStepsProps {
   currentStatus?: string;
   orderDetails?: any;
+  skipCompletedStepper?: boolean;
 }
 
 export const ProgressSteps = ({
   currentStatus = "pending",
   orderDetails,
+  skipCompletedStepper = false,
 }: ProgressStepsProps) => {
-  // Map FF.io API status to step index
   const getActiveStepIndex = (status: string): number => {
-    // Lowercase the status for case-insensitive comparison
-    const lowerStatus = status?.toLowerCase() || "pending";
-
-    // Define direct mappings from FF.io API statuses
+    if (!status) return 0;
+    
     const apiStatusMap: Record<string, number> = {
-      // FF.io API status codes (original case)
-      NEW: 0, // Awaiting deposit
-      PENDING: 1, // Transaction received, pending confirmation
-      EXCHANGE: 1, // Transaction confirmed, exchange in progress
-      WITHDRAW: 2, // Sending funds
-      DONE: 3, // Order completed
-      EXPIRED: 0, // Order expired
-      EMERGENCY: 3, // Emergency, customer choice required
+      NEW: 0,
+      PENDING: 1,
+      EXCHANGE: 1,
+      WITHDRAW: 2,
+      DONE: 3,
+      EXPIRED: 0,
+      EMERGENCY: 3,
     };
 
-    // Our app-specific status codes (lowercase)
     const appStatusMap: Record<string, number> = {
       new: 0,
       pending: 0,
@@ -54,24 +51,21 @@ export const ProgressSteps = ({
       unknown: 0,
     };
 
-    // First check if it's a direct FF.io API status
     if (status in apiStatusMap) {
       return apiStatusMap[status];
     }
 
-    // Then check if it's our app status
-    return appStatusMap[lowerStatus] || 0;
+    return appStatusMap[status.toLowerCase()] || 0;
   };
 
-  // Returns appropriate visual status indicators
   const getStatusType = (status: string): string => {
-    // First check uppercase FF.io API statuses
+    if (!status) return "";
+    
     if (status === "DONE") return "completed";
     if (status === "EMERGENCY") return "failed";
     if (status === "EXPIRED") return "expired";
 
-    // Then check lowercase app statuses
-    const lowerStatus = status?.toLowerCase() || "pending";
+    const lowerStatus = status.toLowerCase();
 
     if (["done", "completed"].includes(lowerStatus)) {
       return "completed";
@@ -91,21 +85,18 @@ export const ProgressSteps = ({
   const isCompleted =
     statusType === "completed" ||
     currentStatus === "DONE" ||
-    currentStatus?.toLowerCase() === "completed";
+    (currentStatus?.toLowerCase() === "completed");
 
-  // For expired status, modify the first step icon and text
   const isExpired =
     statusType === "expired" ||
     currentStatus === "EXPIRED" ||
     currentStatus?.toLowerCase() === "expired";
 
-  // Format a Unix timestamp to human-readable date
   const formatTimestamp = (timestamp: number | undefined) => {
     if (!timestamp) return "N/A";
     return new Date(timestamp * 1000).toLocaleString();
   };
 
-  // Format a time difference for display (e.g., "19 hours ago")
   const formatTimeAgo = (timestamp: number | undefined) => {
     if (!timestamp) return "N/A";
 
@@ -127,7 +118,6 @@ export const ProgressSteps = ({
     return `${days} day${days !== 1 ? "s" : ""} ago`;
   };
 
-  // Extract transaction data from API response
   const getTransactionData = () => {
     const apiResponse = orderDetails?.rawApiResponse;
     if (!apiResponse) return null;
@@ -157,25 +147,24 @@ export const ProgressSteps = ({
     };
   };
 
-  // Render stepper component (for non-completed states)
   const renderStepper = () => {
     const steps = [
       {
         label: "Awaiting deposit",
-        icon: Loader,
+        icon: Clock,
         active: activeStep === 0,
         completed: activeStep > 0,
         status: isExpired ? "expired" : "",
       },
       {
         label: "Awaiting confirmations",
-        icon: Clock,
+        icon: Loader,
         active: activeStep === 1,
         completed: activeStep > 1,
       },
       {
-        label: "Perform exchange",
-        icon: ArrowLeftRight,
+        label: "Sending funds",
+        icon: SendHorizonal,
         active: activeStep === 2,
         completed: activeStep > 2,
       },
@@ -183,7 +172,7 @@ export const ProgressSteps = ({
         label: "Done",
         icon: CircleCheckBig,
         active: activeStep === 3,
-        completed: false,
+        completed: isCompleted,
         status: statusType !== "expired" ? statusType : "",
       },
     ];
@@ -252,20 +241,56 @@ export const ProgressSteps = ({
     );
   };
 
-  // If completed, show the completed transaction view
-  if (isCompleted) {
+  if (isCompleted && !skipCompletedStepper) {
     const txData = getTransactionData();
 
     return (
-      <div className=" p-0 rounded-xl mb-9 overflow-hidden">
-        {/* Render stepper at the top for completed state too - but don't call ProgressSteps recursively */}
+      <div className="p-0 rounded-xl mb-9 overflow-hidden">
         <div className="glass-card p-6 md:p-8 rounded-xl mb-9">
-          <ProgressSteps></ProgressSteps>
+          <div className="grid grid-cols-4 gap-4 md:gap-8 relative">
+            <div className="text-center relative text-green-500">
+              <div className="flex justify-center mb-3 -ml-10">
+                <Clock className="h-6 w-6 md:h-8 md:w-8" />
+              </div>
+              <div className="text-xs md:text-sm font-medium -ml-10">
+                Awaiting deposit
+              </div>
+              <div className="absolute top-4 left-[60%] w-[80%] h-[2px] bg-green-700" />
+            </div>
+            
+            <div className="text-center relative text-green-500">
+              <div className="flex justify-center mb-3 -ml-10">
+                <Loader className="h-6 w-6 md:h-8 md:w-8" />
+              </div>
+              <div className="text-xs md:text-sm font-medium -ml-10">
+                Awaiting confirmations
+              </div>
+              <div className="absolute top-4 left-[60%] w-[80%] h-[2px] bg-green-700" />
+            </div>
+            
+            <div className="text-center relative text-green-500">
+              <div className="flex justify-center mb-3 -ml-10">
+                <SendHorizonal className="h-6 w-6 md:h-8 md:w-8" />
+              </div>
+              <div className="text-xs md:text-sm font-medium -ml-10">
+                Sending funds
+              </div>
+              <div className="absolute top-4 left-[60%] w-[80%] h-[2px] bg-green-700" />
+            </div>
+            
+            <div className="text-center relative text-green-500">
+              <div className="flex justify-center mb-3 -ml-10">
+                <CircleCheckBig className="h-6 w-6 md:h-8 md:w-8" />
+              </div>
+              <div className="text-xs md:text-sm font-medium -ml-10">
+                Done
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 boarder-0">
-          {/* Order Details Card (Left) */}
-          <Card className=" p-6 space-y-4 glass-card">
+          <Card className="p-6 space-y-4 glass-card">
             <div className="border-b border-white/10 pb-3">
               <div className="text-gray-400 text-sm">Order ID</div>
               <div className="text-[#f0b90b] font-mono font-semibold text-xl flex items-center gap-2">
@@ -322,9 +347,7 @@ export const ProgressSteps = ({
             </div>
           </Card>
 
-          {/* Confirmation Card (Right) */}
           <Card className="glass-card p-6 flex flex-col items-center justify-center relative overflow-hidden md:col-span-2">
-            {/* Robot image on the left */}
             <div className="hidden md:block absolute left-0 -bottom-14 opa-50">
               <img
                 src="/lovable-uploads/robo.png"
@@ -333,10 +356,7 @@ export const ProgressSteps = ({
               />
             </div>
 
-            {/* Content */}
             <div className="relative z-10 text-center space-y-8 md:pl-48">
-              {" "}
-              {/* Add padding-left to avoid text overlapping with the image */}
               <h2 className="text-3xl font-bold text-white flex items-center justify-center gap-2 md:justify-items-start">
                 Your {orderDetails?.toCurrency || "Ethereum"} was sent
                 <Check className="h-6 w-6 text-green-500" />
@@ -369,9 +389,7 @@ export const ProgressSteps = ({
           </Card>
         </div>
 
-        {/* Transaction Details (Bottom) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4  ">
-          {/* Accepted Transaction (Left) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
           <Card className=" p-6 border-0 glass-card">
             <h3 className="text-xl font-semibold text-white mb-4">
               Accepted transaction info
@@ -452,7 +470,6 @@ export const ProgressSteps = ({
             </div>
           </Card>
 
-          {/* Sent Transaction (Right) */}
           <Card className=" p-6 border-0 glass-card">
             <h3 className="text-xl font-semibold text-white mb-4">
               Sent transaction info

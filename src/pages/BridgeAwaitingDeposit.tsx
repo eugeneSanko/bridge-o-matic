@@ -10,10 +10,11 @@ import { BridgeTransaction } from "@/components/bridge/BridgeTransaction";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DebugPanel } from "@/components/bridge/DebugPanel";
+import { DebugControls, BridgeStatus } from "@/components/bridge/DebugControls";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { CompletedTransaction } from "@/types/bridge";
+import { ApiOrderResponse } from "@/types/bridge";
 
 // Include all valid statuses that should continue polling
 const REFRESHABLE_STATUSES = ["NEW", "PENDING", "EXCHANGE", "WITHDRAW", "EMERGENCY"];
@@ -66,6 +67,55 @@ const BridgeAwaitingDeposit = () => {
       setOrderDetails(originalOrderDetails);
     }
   }, [originalOrderDetails, simulateSuccess]);
+
+  // Handle debug status change
+  const handleStatusChange = (newStatus: BridgeStatus, mockApiResponse: ApiOrderResponse['data']) => {
+    console.log(`Setting debug status to: ${newStatus}`, mockApiResponse);
+    
+    // Only update if we have order details
+    if (!orderDetails) {
+      toast({
+        title: "Cannot change status",
+        description: "No order details loaded yet",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Create updated order details with the new status
+    const updatedOrderDetails = {
+      ...orderDetails,
+      currentStatus: newStatus, // Use uppercase API status
+      rawApiResponse: {
+        ...orderDetails.rawApiResponse,
+        ...mockApiResponse,
+        status: newStatus,
+      },
+    };
+    
+    // Update orderDetails state with new status
+    setOrderDetails(updatedOrderDetails);
+    
+    // Show toast notification
+    toast({
+      title: `Status Updated: ${newStatus}`,
+      description: `Simulating bridge status: ${newStatus}`,
+    });
+    
+    // Handle completion if status is DONE
+    if (newStatus === "DONE") {
+      setTransactionSaved(true);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    } else if (REFRESHABLE_STATUSES.includes(newStatus)) {
+      // Re-enable polling for refreshable statuses
+      setTransactionSaved(false);
+    }
+    
+    // Force a polling count update to trigger re-renders
+    setPollCount(prev => prev + 1);
+  };
 
   const checkOrderStatus = async () => {
     if (!orderId || !token) {
@@ -178,6 +228,12 @@ const BridgeAwaitingDeposit = () => {
 
   return (
     <>
+      {/* Debug status controls panel */}
+      <DebugControls 
+        onStatusChange={handleStatusChange}
+        currentStatus={orderDetails?.rawApiResponse?.status || "N/A"}
+      />
+
       <div className="fixed top-4 right-4 z-50 bg-black/80 p-3 rounded-lg flex items-center gap-3">
         <Switch
           id="simulate-success"

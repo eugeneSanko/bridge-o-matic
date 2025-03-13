@@ -28,6 +28,8 @@ export const BridgeTransaction = ({
 
   // Check if order is expired based only on API status
   const [isExpired, setIsExpired] = useState(false);
+  // Track the display status for components
+  const [displayStatus, setDisplayStatus] = useState(apiStatus);
 
   // Debug status passed to the component
   useEffect(() => {
@@ -38,6 +40,12 @@ export const BridgeTransaction = ({
     });
   }, [orderDetails, apiStatus]);
 
+  // Update displayStatus whenever apiStatus changes
+  useEffect(() => {
+    console.log("Updating display status from API status:", apiStatus);
+    setDisplayStatus(apiStatus || "");
+  }, [apiStatus]);
+
   // Check for expired status - simplified to only check API response
   useEffect(() => {
     // Only mark as expired if the API explicitly says it's EXPIRED
@@ -47,21 +55,19 @@ export const BridgeTransaction = ({
       apiStatus,
       currentStatus: orderDetails.currentStatus,
       timeLeft,
-      isApiExpired
+      isApiExpired,
+      displayStatus
     });
 
     // Only set as expired if the API status is EXPIRED
     if (isApiExpired) {
       console.log("Order is expired");
       setIsExpired(true);
+      setDisplayStatus("EXPIRED");
     } else {
       setIsExpired(false);
     }
   }, [apiStatus, timeLeft]);
-
-  // Use the expired status to update the displayed status
-  // Keep the original API status if it's not expired - this is important for DONE status
-  const displayStatus = isExpired ? "EXPIRED" : apiStatus;
 
   // Debug the displayStatus being passed to ProgressSteps
   useEffect(() => {
