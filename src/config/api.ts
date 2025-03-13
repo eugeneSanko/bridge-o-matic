@@ -1,6 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import * as crypto from 'crypto';
+import * as crypto from "crypto";
 import { toast } from "@/hooks/use-toast";
 
 // Base URL for Supabase functions
@@ -17,20 +16,20 @@ export const API_CONFIG = {
   FF_ORDER: "/api/order",
   FF_STATUS: "/api/status",
   FF_TEST: "/api/test", // Test endpoint
-  
+
   // Direct API URL for backend requests
   FF_API_URL: "https://ff.io/api/v2",
-  
+
   // API credentials - using the hardcoded values for direct testing
-  FF_API_KEY: "bzplvDU0N2Pa5crmQTbqteew6WJyuSGX9BEBPclU",
-  FF_API_SECRET: "qIk7Vd6b5M3wqOmD3cnqRGQ6k3dGTDss47fvdng4",
-  
+  API_KEY: "lvW17QIF4SzDIzxBLg2oUandukccoZjwhsNGs3GC",
+  API_SECRET: "RpPfjnFZx1TfRx6wmYzOgo5Y6QK3OgIETceFZLni",
+
   // Maximum retries for API calls
   MAX_RETRIES: 3,
   RETRY_DELAY: 1000,
-  
+
   // Request timeout in milliseconds
-  TIMEOUT: 30000
+  TIMEOUT: 30000,
 };
 
 /**
@@ -40,14 +39,14 @@ export const API_CONFIG = {
  */
 export function generateFixedFloatSignature(body: any): string {
   // Convert body to string - if empty, use '{}' as that's what the API expects
-  const bodyStr = body ? JSON.stringify(body) : '{}';
-  
+  const bodyStr = body ? JSON.stringify(body) : "{}";
+
   // Create HMAC signature
-  const hmac = crypto.createHmac('sha256', API_CONFIG.FF_API_SECRET);
+  const hmac = crypto.createHmac("sha256", API_CONFIG.API_SECRET);
   hmac.update(bodyStr);
-  
+
   // Return the signature as a hex string
-  return hmac.digest('hex');
+  return hmac.digest("hex");
 }
 
 // API request wrapper specifically for Supabase functions with timeout, retry logic, and detailed error handling
@@ -56,23 +55,25 @@ export async function invokeFunctionWithRetry(
   options: any = {}
 ) {
   const { timeout = API_CONFIG.TIMEOUT, ...invokeOptions } = options;
-  
+
   // If this is a FixedFloat API request, append the needed headers
-  if (functionName.startsWith('ff-')) {
+  if (functionName.startsWith("ff-")) {
     // Ensure we have a body object
     const body = options.body || {};
-    
+
     // Generate the API signature
     const signature = generateFixedFloatSignature(body);
-    
+
     // Add FixedFloat API headers to the request
     invokeOptions.headers = {
       ...invokeOptions.headers,
-      'X-API-KEY': API_CONFIG.FF_API_KEY,
-      'X-API-SIGN': signature
+      "X-API-KEY": API_CONFIG.API_KEY,
+      "X-API-SIGN": signature,
     };
-    
-    console.log(`Prepared FixedFloat API request for ${functionName} with signature: ${signature}`);
+
+    console.log(
+      `Prepared FixedFloat API request for ${functionName} with signature: ${signature}`
+    );
   }
 
   let lastError: Error | null = null;
