@@ -1056,6 +1056,7 @@ export type Database = {
           username: string | null
           wallet_address: string | null
           wallet_connection_status: string | null
+          wallet_type: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -1066,6 +1067,7 @@ export type Database = {
           username?: string | null
           wallet_address?: string | null
           wallet_connection_status?: string | null
+          wallet_type?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -1076,6 +1078,7 @@ export type Database = {
           username?: string | null
           wallet_address?: string | null
           wallet_connection_status?: string | null
+          wallet_type?: string | null
         }
         Relationships: []
       }
@@ -1314,6 +1317,99 @@ export type Database = {
           },
         ]
       }
+      tradenly_analysis_results: {
+        Row: {
+          analysis: Json | null
+          analysis_summary: string
+          chain: string
+          confidence_score: number | null
+          contract_address: string
+          created_at: string
+          documentation_url: string | null
+          fundamentals_score: number | null
+          github_profile: string | null
+          holder_data: Json | null
+          id: string
+          market_activity_score: number | null
+          on_chain_data: Json | null
+          price_data: Json | null
+          project_name: string
+          risk_level: Database["public"]["Enums"]["risk_level"]
+          risk_rating_score: number | null
+          risk_score: number
+          sentiment_analysis: string | null
+          social_media_handle: string | null
+          social_media_url: string | null
+          social_sentiment_score: number | null
+          token_stats: Json | null
+          value_opportunity_score: number | null
+          volume_1h: number | null
+          volume_24h: number | null
+          wallet_address: string | null
+          website_url: string | null
+        }
+        Insert: {
+          analysis?: Json | null
+          analysis_summary: string
+          chain: string
+          confidence_score?: number | null
+          contract_address: string
+          created_at?: string
+          documentation_url?: string | null
+          fundamentals_score?: number | null
+          github_profile?: string | null
+          holder_data?: Json | null
+          id?: string
+          market_activity_score?: number | null
+          on_chain_data?: Json | null
+          price_data?: Json | null
+          project_name: string
+          risk_level: Database["public"]["Enums"]["risk_level"]
+          risk_rating_score?: number | null
+          risk_score: number
+          sentiment_analysis?: string | null
+          social_media_handle?: string | null
+          social_media_url?: string | null
+          social_sentiment_score?: number | null
+          token_stats?: Json | null
+          value_opportunity_score?: number | null
+          volume_1h?: number | null
+          volume_24h?: number | null
+          wallet_address?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          analysis?: Json | null
+          analysis_summary?: string
+          chain?: string
+          confidence_score?: number | null
+          contract_address?: string
+          created_at?: string
+          documentation_url?: string | null
+          fundamentals_score?: number | null
+          github_profile?: string | null
+          holder_data?: Json | null
+          id?: string
+          market_activity_score?: number | null
+          on_chain_data?: Json | null
+          price_data?: Json | null
+          project_name?: string
+          risk_level?: Database["public"]["Enums"]["risk_level"]
+          risk_rating_score?: number | null
+          risk_score?: number
+          sentiment_analysis?: string | null
+          social_media_handle?: string | null
+          social_media_url?: string | null
+          social_sentiment_score?: number | null
+          token_stats?: Json | null
+          value_opportunity_score?: number | null
+          volume_1h?: number | null
+          volume_24h?: number | null
+          wallet_address?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       typescript_definitions: {
         Row: {
           content: string
@@ -1486,6 +1582,17 @@ export type Database = {
         Returns: {
           id: string
           status: string
+        }[]
+      }
+      get_token_analysis_status: {
+        Args: {
+          p_contract_address: string
+          p_chain: string
+        }
+        Returns: {
+          analysis_exists: boolean
+          created_at: string
+          is_recent: boolean
         }[]
       }
     }
