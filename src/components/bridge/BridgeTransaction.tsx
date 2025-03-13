@@ -44,7 +44,9 @@ export const BridgeTransaction = ({
   // Update displayStatus whenever apiStatus changes
   useEffect(() => {
     console.log("Updating display status from API status:", apiStatus);
-    setDisplayStatus(apiStatus || "");
+    if (apiStatus) {
+      setDisplayStatus(apiStatus);
+    }
   }, [apiStatus]);
 
   // Check for expired status - simplified to only check API response
@@ -107,6 +109,7 @@ export const BridgeTransaction = ({
         <ProgressSteps
           currentStatus={displayStatus || ""}
           orderDetails={orderDetails}
+          key={`progress-${displayStatus}`} // Force re-render when status changes
         />
 
         {/* Only show these sections if order is not complete */}
