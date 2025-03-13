@@ -21,8 +21,8 @@ export const API_CONFIG = {
   FF_API_URL: "https://ff.io/api/v2",
 
   // API credentials - using the hardcoded values for direct testing
-  API_KEY: "lvW17QIF4SzDIzxBLg2oUandukccoZjwhsNGs3GC",
-  API_SECRET: "RpPfjnFZx1TfRx6wmYzOgo5Y6QK3OgIETceFZLni",
+  FF_API_KEY: "lvW17QIF4SzDIzxBLg2oUandukccoZjwhsNGs3GC",
+  FF_API_SECRET: "RpPfjnFZx1TfRx6wmYzOgo5Y6QK3OgIETceFZLni",
 
   // Maximum retries for API calls
   MAX_RETRIES: 3,
@@ -42,7 +42,7 @@ export function generateFixedFloatSignature(body: any): string {
   const bodyStr = body ? JSON.stringify(body) : "{}";
 
   // Create HMAC signature
-  const hmac = crypto.createHmac("sha256", API_CONFIG.API_SECRET);
+  const hmac = crypto.createHmac("sha256", API_CONFIG.FF_API_SECRET);
   hmac.update(bodyStr);
 
   // Return the signature as a hex string
@@ -67,7 +67,7 @@ export async function invokeFunctionWithRetry(
     // Add FixedFloat API headers to the request
     invokeOptions.headers = {
       ...invokeOptions.headers,
-      "X-API-KEY": API_CONFIG.API_KEY,
+      "X-API-KEY": API_CONFIG.FF_API_KEY,
       "X-API-SIGN": signature,
     };
 
