@@ -96,7 +96,7 @@ const BridgeAwaitingDeposit = () => {
 
           setTransactionSaved(true);
           clearInterval(intervalRef.current);
-          navigate(`/bridge/order-complete?orderId=${orderId}`);
+          // navigate(`/bridge/order-complete?orderId=${orderId}`);
         }
 
         if (!REFRESHABLE_STATUSES.includes(status)) {
