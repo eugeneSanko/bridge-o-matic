@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
@@ -13,7 +12,6 @@ import { DebugPanel } from "@/components/bridge/DebugPanel";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
-// Dynamic polling intervals (in milliseconds) based on status
 const POLLING_INTERVALS = {
   DEFAULT: 15000,     // Default: 15 seconds
   NEW: 10000,         // Awaiting deposit: 10 seconds  
@@ -31,10 +29,8 @@ const BridgeAwaitingDeposit = () => {
   const orderId = searchParams.get("orderId");
   const token = searchParams.get("token") || "";
   
-  // Testing controls - simulate completed state
   const [simulateSuccess, setSimulateSuccess] = useState(false);
   
-  // Always use real data and force API check
   const [apiAttempted, setApiAttempted] = useState(false);
   const [manualStatusCheckAttempted, setManualStatusCheckAttempted] = useState(false);
   const [statusCheckDebugInfo, setStatusCheckDebugInfo] = useState(null);
@@ -42,22 +38,18 @@ const BridgeAwaitingDeposit = () => {
   const [pollingInterval, setPollingInterval] = useState(POLLING_INTERVALS.DEFAULT);
   const [lastPollTimestamp, setLastPollTimestamp] = useState(0);
   
-  // Set forceApiCheck to true to always attempt API call
   const { orderDetails: originalOrderDetails, loading, error, handleCopyAddress } = useBridgeOrder(
     orderId, 
     true, // Always try to fetch from API
     true  // Force API check even if we have local data
   );
   
-  // Create a modified version of orderDetails that can be overridden by the success toggle
   const [orderDetails, setOrderDetails] = useState(originalOrderDetails);
   
-  // Update orderDetails when the original changes or when simulateSuccess changes
   useEffect(() => {
     if (!originalOrderDetails) return;
     
     if (simulateSuccess) {
-      // Clone the original and override the status
       const simulatedDetails = {
         ...originalOrderDetails,
         currentStatus: "completed",
@@ -76,7 +68,6 @@ const BridgeAwaitingDeposit = () => {
         simulatedDetails
       });
     } else {
-      // Use the original orderDetails
       setOrderDetails(originalOrderDetails);
       
       console.log("Using original state:", {
@@ -88,7 +79,6 @@ const BridgeAwaitingDeposit = () => {
   
   const { deepLink, logs, addLog } = useDeepLink();
 
-  // Update polling interval based on current status
   useEffect(() => {
     if (!orderDetails || !orderDetails.rawApiResponse) return;
     
@@ -99,7 +89,6 @@ const BridgeAwaitingDeposit = () => {
     setPollingInterval(newInterval);
   }, [orderDetails?.rawApiResponse?.status]);
 
-  // Show message if no order data is found
   useEffect(() => {
     if (!orderId) {
       toast({
@@ -112,7 +101,6 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [orderId, token]);
 
-  // Manual status check function that uses our bridge-status function
   const checkOrderStatus = useCallback(async (force = false) => {
     if (!orderId || !token) {
       console.error("Missing order ID or token for status check");
@@ -120,20 +108,17 @@ const BridgeAwaitingDeposit = () => {
       return;
     }
     
-    // Skip if polling is disabled (null interval) and not forced
     if (pollingInterval === null && !force) {
       console.log("Polling disabled for current status, skipping check");
       return;
     }
     
-    // Skip if not enough time has passed since last poll
     const now = Date.now();
     if (!force && (now - lastPollTimestamp) < pollingInterval) {
       console.log(`Not enough time elapsed since last poll (${(now - lastPollTimestamp)/1000}s), skipping`);
       return;
     }
     
-    // Update last poll timestamp
     setLastPollTimestamp(now);
 
     try {
@@ -158,11 +143,9 @@ const BridgeAwaitingDeposit = () => {
       }
       
       if (data.code === 0 && data.data) {
-        // If we get a successful response, handle status updates
         const status = data.data.status;
         console.log(`Order status from API: ${status}`);
         
-        // If order completed, show a notification but stay on this page
         if (status === 'DONE') {
           console.log("Order is complete, showing notification");
           toast({
@@ -171,7 +154,6 @@ const BridgeAwaitingDeposit = () => {
             variant: "default"
           });
           
-          // Force a refresh of the order details
           if (originalOrderDetails) {
             setOrderDetails({
               ...originalOrderDetails,
@@ -193,10 +175,9 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [orderId, token, pollingInterval, lastPollTimestamp, originalOrderDetails]);
 
-  // Run a manual status check on component mount
   useEffect(() => {
     if (orderId && token && !manualStatusCheckAttempted) {
-      checkOrderStatus(true); // Force first check
+      checkOrderStatus(true);
     }
   }, [orderId, token, manualStatusCheckAttempted, checkOrderStatus]);
 
@@ -204,7 +185,6 @@ const BridgeAwaitingDeposit = () => {
     if (!apiAttempted && (loading || error || orderDetails)) {
       setApiAttempted(true);
       
-      // If we get an error, show a toast
       if (error) {
         console.error("API error detected:", error);
         toast({
@@ -231,7 +211,6 @@ const BridgeAwaitingDeposit = () => {
       const status = params.get("status");
       addLog(`Status from deep link: ${status}`);
       
-      // If we get a completed status from the deep link, show a toast
       if (status === 'completed') {
         console.log("Got completed status from deep link");
         toast({
@@ -248,7 +227,6 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [deepLink, addLog]);
 
-  // Periodically check status with dynamic interval
   useEffect(() => {
     if (!orderId || !token || pollingInterval === null) return;
     
@@ -264,12 +242,10 @@ const BridgeAwaitingDeposit = () => {
     };
   }, [orderId, token, pollingInterval, checkOrderStatus]);
 
-  // Show loading state while fetching order details
   if (loading) {
     return <LoadingState />;
   }
 
-  // Show error state if there was an error
   if (error) {
     return (
       <>
@@ -283,7 +259,6 @@ const BridgeAwaitingDeposit = () => {
     );
   }
 
-  // Show empty state if no order details were found
   if (!orderDetails) {
     return (
       <>
@@ -297,10 +272,8 @@ const BridgeAwaitingDeposit = () => {
     );
   }
 
-  // Show the bridge transaction with the order details
   return (
     <>
-      {/* Test controls */}
       <div className="fixed top-4 right-4 z-50 bg-black/80 p-3 rounded-lg flex items-center gap-3">
         <Switch 
           id="simulate-success"
@@ -312,9 +285,7 @@ const BridgeAwaitingDeposit = () => {
         </Label>
       </div>
       
-      {/* Pass a key to force re-render when status changes */}
       <BridgeTransaction 
-        key={`bridge-transaction-${orderDetails?.currentStatus || "unknown"}-${simulateSuccess ? "simulated" : "real"}-${Date.now()}`}
         orderDetails={orderDetails} 
         onCopyAddress={handleCopyAddress} 
       />
