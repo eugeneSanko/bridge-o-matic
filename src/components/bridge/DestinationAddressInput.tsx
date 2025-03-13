@@ -1,3 +1,4 @@
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { QrCode, Clipboard, AlertCircle } from "lucide-react";
@@ -27,8 +28,9 @@ export const DestinationAddressInput = ({
   const handlePaste = async () => {
     try {
       const clipboardText = await navigator.clipboard.readText();
-      onChange(clipboardText);
-      validateAddress(clipboardText);
+      const trimmedText = clipboardText.trim();
+      onChange(trimmedText);
+      validateAddress(trimmedText);
     } catch (error) {
       console.error("Failed to read clipboard:", error);
     }
@@ -46,7 +48,7 @@ export const DestinationAddressInput = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
+    const newValue = e.target.value.trim();
     onChange(newValue);
     validateAddress(newValue);
   };

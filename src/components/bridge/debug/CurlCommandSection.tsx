@@ -3,16 +3,16 @@ import { DebugSection } from "./DebugSection";
 import { CodeBlock } from "./CodeBlock";
 
 interface CurlCommandSectionProps {
-  curlCommand?: string;
+  command?: string;
 }
 
-export const CurlCommandSection = ({ curlCommand }: CurlCommandSectionProps) => {
-  if (!curlCommand) return null;
+export const CurlCommandSection = ({ command }: CurlCommandSectionProps) => {
+  if (!command) return null;
 
   return (
     <DebugSection title="cURL Command">
       <CodeBlock 
-        content={curlCommand} 
+        content={command} 
         label="cURL command" 
         tryParseJson={false} 
       />

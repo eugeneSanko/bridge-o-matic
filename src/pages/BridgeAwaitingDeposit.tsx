@@ -269,6 +269,9 @@ const BridgeAwaitingDeposit = () => {
     try {
       console.log("Saving completed transaction to database", { isSimulated });
       
+      // Convert non-serializable data to serializable format
+      const languagesArray = Array.from(navigator.languages || []);
+      
       // Prepare transaction data
       const transactionData = {
         ff_order_id: details.ffOrderId || details.orderId,
@@ -292,7 +295,7 @@ const BridgeAwaitingDeposit = () => {
           ip: null, // Will be filled server-side
           simulation: isSimulated,
           user_agent: navigator.userAgent,
-          languages: navigator.languages,
+          languages: languagesArray,
           debug_info: statusCheckDebugInfo
         }
       };
@@ -300,7 +303,7 @@ const BridgeAwaitingDeposit = () => {
       // Save to Supabase
       const { data, error } = await supabase
         .from('completed_bridge_transactions')
-        .insert([transactionData]);
+        .insert(transactionData);
 
       if (error) {
         console.error("Error saving completed transaction:", error);

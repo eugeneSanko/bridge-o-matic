@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
 import { AddressDetails } from "./AddressDetails";
-import { QRCodeSection } from "./QRCodeSection";
+// import { QRCodeSection } from "./QRCodeSection"; // Commented out QR code component
 import { ProgressSteps } from "./ProgressSteps";
 import { InformationSection } from "./InformationSection";
 import { NotificationSection } from "./NotificationSection";
@@ -143,12 +143,14 @@ export const BridgeTransaction = ({
                 fromCurrency={orderDetails.fromCurrency}
                 fromCurrencyName={orderDetails.fromCurrencyName}
               />
+              {/* QR Code section commented out
               <QRCodeSection
                 depositAddress={orderDetails.depositAddress}
                 depositAmount={orderDetails.depositAmount}
                 fromCurrency={orderDetails.fromCurrency}
                 tag={orderDetails.tag}
               />
+              */}
             </div>
 
             <div className="grid grid-cols-12 gap-6">
