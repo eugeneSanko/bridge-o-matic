@@ -130,6 +130,20 @@ export interface ApiOrderResponse {
       name: string;
       amount: string;
       address: string;
+      tag?: string | null;
+      tagName?: string | null;
+      addressAlt?: string | null;
+      reqConfirmations?: number;
+      maxConfirmations?: number;
+      tx?: {
+        id: string;
+        amount: string;
+        fee: string;
+        ccyfee: string;
+        timeReg: number;
+        timeBlock: number;
+        confirmations: string;
+      };
     };
     to: {
       code: string;
@@ -138,6 +152,17 @@ export interface ApiOrderResponse {
       name: string;
       amount: string;
       address: string;
+      tag?: string | null;
+      tagName?: string | null;
+      tx?: {
+        id: string;
+        amount: string;
+        fee: string;
+        ccyfee: string;
+        timeReg: number;
+        timeBlock: number;
+        confirmations: string;
+      };
     };
   } | null;
 }
@@ -171,4 +196,20 @@ export interface AuthTestResult {
     error?: string;
   }>;
   error?: string;
+}
+
+// Updated CompletedTransaction interface to include raw_api_response
+export interface CompletedTransaction {
+  amount: number;
+  client_metadata: any;
+  created_at: string;
+  deposit_address: string;
+  destination_address: string;
+  ff_order_id: string;
+  ff_order_token: string;
+  from_currency: string;
+  id: string;
+  status: string;
+  to_currency: string;
+  raw_api_response?: ApiOrderResponse['data'];
 }

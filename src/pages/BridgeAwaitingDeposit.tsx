@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DebugPanel } from "@/components/bridge/DebugPanel";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { CompletedTransaction } from "@/types/bridge";
 
 const POLLING_INTERVALS = {
   DEFAULT: 15000,     // Default: 15 seconds
@@ -78,7 +79,8 @@ const BridgeAwaitingDeposit = () => {
         return null;
       }
       
-      return transaction;
+      // Cast to our CompletedTransaction type
+      return transaction as unknown as CompletedTransaction; 
     } catch (error) {
       console.error("Error in checkCompletedTransaction:", error);
       return null;
@@ -113,6 +115,7 @@ const BridgeAwaitingDeposit = () => {
       
       const clientMetadata = collectClientMetadata();
       
+      // Store the full API response for later use
       const { data, error } = await supabase
         .from('completed_bridge_transactions')
         .insert({
@@ -123,7 +126,9 @@ const BridgeAwaitingDeposit = () => {
           amount: parseFloat(orderDetails.depositAmount),
           destination_address: orderDetails.destinationAddress,
           deposit_address: orderDetails.depositAddress,
-          client_metadata: clientMetadata
+          client_metadata: clientMetadata,
+          raw_api_response: orderDetails.rawApiResponse,
+          status: "completed"
         });
       
       if (error) {
@@ -134,10 +139,13 @@ const BridgeAwaitingDeposit = () => {
       console.log("Transaction saved successfully:", data);
       setTransactionSaved(true);
       
+      // Navigate to success page
+      navigate(`/bridge/order-complete?orderId=${orderDetails.ffOrderId}`);
+      
     } catch (error) {
       console.error("Error in saveCompletedTransaction:", error);
     }
-  }, [orderDetails, transactionSaved, collectClientMetadata]);
+  }, [orderDetails, transactionSaved, collectClientMetadata, navigate]);
 
   useEffect(() => {
     if (!orderDetails || !orderDetails.rawApiResponse) return;
@@ -195,11 +203,16 @@ const BridgeAwaitingDeposit = () => {
         setOrderDetails(prevDetails => ({
           ...prevDetails!,
           currentStatus: "completed",
-          rawApiResponse: {
+          rawApiResponse: completedTransaction.raw_api_response || {
             ...prevDetails?.rawApiResponse,
             status: "DONE"
           }
         }));
+        
+        // Redirect to success page if we found a completed transaction
+        if (!transactionSaved) {
+          navigate(`/bridge/order-complete?orderId=${orderId}`);
+        }
         return;
       }
 
@@ -231,16 +244,19 @@ const BridgeAwaitingDeposit = () => {
             setOrderDetails(prevDetails => ({
               ...prevDetails!,
               currentStatus: "completed",
-              rawApiResponse: {
+              rawApiResponse: completedTransaction.raw_api_response || {
                 ...prevDetails?.rawApiResponse,
                 status: "DONE"
               }
             }));
+            
+            navigate(`/bridge/order-complete?orderId=${orderId}`);
             return;
           }
         }
         
-        if (status === 'DONE' && !transactionSaved) {
+        // If status is DONE, save to database and redirect
+        if (status === 'DONE') {
           console.log("Order is complete, showing notification and saving data");
           toast({
             title: "Transaction Complete",
@@ -248,7 +264,36 @@ const BridgeAwaitingDeposit = () => {
             variant: "default"
           });
           
-          saveCompletedTransaction();
+          // Update order details with the API response
+          setOrderDetails(prevDetails => {
+            if (!prevDetails) return null;
+            return {
+              ...prevDetails,
+              currentStatus: "completed",
+              rawApiResponse: data.data
+            };
+          });
+          
+          // Stop further polling
+          setPollingInterval(null);
+          
+          // Set a flag to indicate we're saving
+          if (!transactionSaved) {
+            // Wait for state to update before proceeding
+            setTimeout(() => {
+              saveCompletedTransaction();
+            }, 100);
+          }
+        } else {
+          // For other statuses, just update the order details
+          setOrderDetails(prevDetails => {
+            if (!prevDetails) return null;
+            return {
+              ...prevDetails,
+              currentStatus: status.toLowerCase(),
+              rawApiResponse: data.data
+            };
+          });
         }
       } else {
         console.error("API returned an error:", data);
@@ -258,7 +303,7 @@ const BridgeAwaitingDeposit = () => {
       console.error("Error checking order status:", error);
       setStatusCheckError(`Error: ${error.message}`);
     }
-  }, [orderId, token, pollingInterval, lastPollTimestamp, transactionSaved, saveCompletedTransaction, checkCompletedTransaction]);
+  }, [orderId, token, pollingInterval, lastPollTimestamp, transactionSaved, saveCompletedTransaction, checkCompletedTransaction, navigate]);
 
   useEffect(() => {
     if (orderId && token && !manualStatusCheckAttempted) {
