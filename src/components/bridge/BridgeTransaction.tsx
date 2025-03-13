@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
@@ -7,6 +8,7 @@ import { SuccessPage } from "./ProgressSteps";
 import { InformationSection } from "./InformationSection";
 import { NotificationSection } from "./NotificationSection";
 import { OrderDetails as OrderDetailsType } from "@/hooks/useBridgeOrder";
+import { ProgressBar } from "./ProgressBar";
 
 interface BridgeTransactionProps {
   orderDetails: OrderDetailsType;
@@ -104,6 +106,12 @@ export const BridgeTransaction = ({
           // Use the coin property if available in rawApiResponse
           fromCurrencyCoin={fromCurrencyCoin}
           toCurrencyCoin={toCurrencyCoin}
+        />
+
+        {/* Add the new ProgressBar component */}
+        <ProgressBar 
+          currentStatus={displayStatus} 
+          timeRemaining={orderDetails.timeRemaining}
         />
 
         {/* Always display ProgressSteps with the original status case */}

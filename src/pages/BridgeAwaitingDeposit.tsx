@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
@@ -16,7 +15,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ApiOrderResponse } from "@/types/bridge";
 
-// Include all valid statuses that should continue polling
 const REFRESHABLE_STATUSES = ["NEW", "PENDING", "EXCHANGE", "WITHDRAW", "EMERGENCY"];
 
 const BridgeAwaitingDeposit = () => {
@@ -30,7 +28,8 @@ const BridgeAwaitingDeposit = () => {
   const [statusCheckError, setStatusCheckError] = useState(null);
   const [statusCheckDebugInfo, setStatusCheckDebugInfo] = useState(null);
   const [pollCount, setPollCount] = useState(0);
-  const [isPollingActive, setIsPollingActive] = useState(true); // Track if polling is active
+  const [isPollingActive, setIsPollingActive] = useState(true);
+  const [statusChanged, setStatusChanged] = useState(false);
 
   const {
     orderDetails: originalOrderDetails,
@@ -42,9 +41,9 @@ const BridgeAwaitingDeposit = () => {
   const [orderDetails, setOrderDetails] = useState(originalOrderDetails);
   const { deepLink, addLog } = useDeepLink();
   const intervalRef = useRef(null);
-  const lastKnownStatusRef = useRef(""); // To track the last known status
+  const lastKnownStatusRef = useRef("");
+  const completionProcessedRef = useRef(false);
 
-  // Debug state changes
   useEffect(() => {
     console.log("Original Order Details updated:", originalOrderDetails);
   }, [originalOrderDetails]);
@@ -53,7 +52,6 @@ const BridgeAwaitingDeposit = () => {
     console.log("Order Details state updated:", orderDetails);
   }, [orderDetails]);
 
-  // Handle received order details from the hook
   useEffect(() => {
     if (!originalOrderDetails) return;
 
@@ -66,21 +64,33 @@ const BridgeAwaitingDeposit = () => {
           status: "DONE",
         },
       });
+      
+      if (!completionProcessedRef.current) {
+        completionProcessedRef.current = true;
+        handleOrderCompletion();
+      }
     } else {
       setOrderDetails(originalOrderDetails);
-    }
-
-    // Track the current status for comparison later
-    if (originalOrderDetails?.rawApiResponse?.status) {
-      lastKnownStatusRef.current = originalOrderDetails.rawApiResponse.status;
+      
+      if (originalOrderDetails?.rawApiResponse?.status) {
+        const newStatus = originalOrderDetails.rawApiResponse.status;
+        if (lastKnownStatusRef.current !== newStatus) {
+          console.log(`Status changed from ${lastKnownStatusRef.current} to ${newStatus}`);
+          lastKnownStatusRef.current = newStatus;
+          setStatusChanged(true);
+          
+          if (newStatus === "DONE" && !completionProcessedRef.current) {
+            completionProcessedRef.current = true;
+            handleOrderCompletion();
+          }
+        }
+      }
     }
   }, [originalOrderDetails, simulateSuccess]);
 
-  // Handle debug status change
   const handleStatusChange = (newStatus: BridgeStatus, mockApiResponse: ApiOrderResponse['data']) => {
     console.log(`Setting debug status to: ${newStatus}`, mockApiResponse);
     
-    // Only update if we have order details
     if (!orderDetails) {
       toast({
         title: "Cannot change status",
@@ -90,10 +100,9 @@ const BridgeAwaitingDeposit = () => {
       return;
     }
     
-    // Create updated order details with the new status
     const updatedOrderDetails = {
       ...orderDetails,
-      currentStatus: newStatus, // Use uppercase API status
+      currentStatus: newStatus,
       rawApiResponse: {
         ...orderDetails.rawApiResponse,
         ...mockApiResponse,
@@ -101,43 +110,45 @@ const BridgeAwaitingDeposit = () => {
       },
     };
     
-    // Update orderDetails state with new status
     setOrderDetails(updatedOrderDetails);
-    lastKnownStatusRef.current = newStatus; // Update the last known status
     
-    // Show toast notification
-    toast({
-      title: `Status Updated: ${newStatus}`,
-      description: `Simulating bridge status: ${newStatus}`,
-    });
-    
-    // Handle completion if status is DONE
-    if (newStatus === "DONE") {
-      handleOrderCompletion();
-    } else if (REFRESHABLE_STATUSES.includes(newStatus)) {
-      // Re-enable polling for refreshable statuses
-      setTransactionSaved(false);
-      setIsPollingActive(true);
-    } else {
-      // For any other non-refreshable status, disable polling
-      setIsPollingActive(false);
+    if (lastKnownStatusRef.current !== newStatus) {
+      console.log(`Status changed from ${lastKnownStatusRef.current} to ${newStatus}`);
+      lastKnownStatusRef.current = newStatus;
+      setStatusChanged(true);
+      
+      toast({
+        title: `Status Updated: ${newStatus}`,
+        description: `Simulating bridge status: ${newStatus}`,
+      });
+      
+      if (newStatus === "DONE" && !completionProcessedRef.current) {
+        completionProcessedRef.current = true;
+        handleOrderCompletion();
+      } else if (REFRESHABLE_STATUSES.includes(newStatus)) {
+        setTransactionSaved(false);
+        setIsPollingActive(true);
+        completionProcessedRef.current = false;
+      } else {
+        setIsPollingActive(false);
+      }
     }
     
-    // Force a polling count update to trigger re-renders
     setPollCount(prev => prev + 1);
   };
 
-  // Centralized function to handle order completion
   const handleOrderCompletion = () => {
     console.log("Handling order completion");
     
-    // Stop polling when complete
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
     
     setIsPollingActive(false);
     setTransactionSaved(true);
+    
+    setPollCount(prev => prev + 1);
     
     toast({
       title: "Transaction Complete",
@@ -176,30 +187,45 @@ const BridgeAwaitingDeposit = () => {
         const previousStatus = lastKnownStatusRef.current;
         console.log(`Order ${orderId} status update: ${status} (previous: ${previousStatus})`);
 
-        // Update the order details with the new status
-        setOrderDetails((prevDetails) => {
-          if (!prevDetails) return null;
+        const hasStatusChanged = previousStatus !== status;
+        
+        if (hasStatusChanged) {
+          console.log(`Status changed from ${previousStatus} to ${status}`);
+          setStatusChanged(true);
           
-          return {
-            ...prevDetails,
-            currentStatus: status,
-            rawApiResponse: data.data,
-          };
-        });
-
-        // Update the last known status
-        lastKnownStatusRef.current = status;
-
-        // Increment poll count to force component updates
-        setPollCount(prev => prev + 1);
-
-        // Handle specific status transitions
-        if (status === "DONE" && !transactionSaved) {
-          handleOrderCompletion();
-        } else if (!REFRESHABLE_STATUSES.includes(status)) {
-          console.log(`Status ${status} is not refreshable, stopping polling`);
-          clearInterval(intervalRef.current);
-          setIsPollingActive(false);
+          lastKnownStatusRef.current = status;
+          
+          setOrderDetails((prevDetails) => {
+            if (!prevDetails) return null;
+            
+            return {
+              ...prevDetails,
+              currentStatus: status,
+              rawApiResponse: data.data,
+            };
+          });
+          
+          setPollCount(prev => prev + 1);
+          
+          if (status === "DONE" && !completionProcessedRef.current) {
+            completionProcessedRef.current = true;
+            handleOrderCompletion();
+          } else if (!REFRESHABLE_STATUSES.includes(status)) {
+            console.log(`Status ${status} is not refreshable, stopping polling`);
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+              intervalRef.current = null;
+            }
+            setIsPollingActive(false);
+          }
+        } else {
+          setOrderDetails((prevDetails) => {
+            if (!prevDetails) return null;
+            return {
+              ...prevDetails,
+              rawApiResponse: data.data,
+            };
+          });
         }
       } else {
         setStatusCheckError(`API Error: ${data.msg || "Unknown error"}`);
@@ -220,7 +246,6 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [orderId]);
 
-  // Check status immediately on mount
   useEffect(() => {
     if (orderId && token) {
       console.log("Initial status check on component mount");
@@ -228,15 +253,22 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [orderId, token]);
 
-  // Auto-refresh for specific statuses every 15 seconds
   useEffect(() => {
-    // Clear any existing interval first
+    if (statusChanged) {
+      const timer = setTimeout(() => {
+        setStatusChanged(false);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [statusChanged]);
+
+  useEffect(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
 
-    // If polling is not active or necessary based on status, don't set a new interval
     if (!isPollingActive || !orderDetails || transactionSaved) {
       console.log("Polling is disabled or not needed");
       return;
@@ -244,7 +276,6 @@ const BridgeAwaitingDeposit = () => {
 
     const currentStatus = orderDetails.rawApiResponse?.status;
     
-    // Only set polling for refreshable statuses
     if (currentStatus && REFRESHABLE_STATUSES.includes(currentStatus)) {
       console.log(`Setting up polling interval for status ${currentStatus}`);
       
@@ -256,7 +287,6 @@ const BridgeAwaitingDeposit = () => {
       console.log(`Status ${currentStatus} is not refreshable, not setting up polling`);
     }
 
-    // Cleanup function
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -264,7 +294,6 @@ const BridgeAwaitingDeposit = () => {
     };
   }, [isPollingActive, orderDetails?.rawApiResponse?.status, transactionSaved, orderId, token]);
 
-  // Force a UI refresh for visual status updates
   const forceRefresh = () => {
     setPollCount(prev => prev + 1);
     checkOrderStatus();
@@ -272,7 +301,6 @@ const BridgeAwaitingDeposit = () => {
 
   return (
     <>
-      {/* Debug status controls panel */}
       <DebugControls 
         onStatusChange={handleStatusChange}
         currentStatus={orderDetails?.rawApiResponse?.status || "N/A"}
@@ -293,12 +321,13 @@ const BridgeAwaitingDeposit = () => {
         Refresh Status
       </Button>
 
-      {/* Debug status display */}
       <div className="mb-4 p-2 bg-black/50 text-xs rounded">
         <p>Current API Status: {orderDetails?.rawApiResponse?.status || "N/A"}</p>
         <p>Polling Active: {isPollingActive ? "Yes" : "No"}</p>
         <p>Poll Count: {pollCount}</p>
         <p>Last Known Status: {lastKnownStatusRef.current || "None"}</p>
+        <p>Status Changed: {statusChanged ? "Yes" : "No"}</p>
+        <p>Completion Processed: {completionProcessedRef.current ? "Yes" : "No"}</p>
       </div>
 
       {loading && <LoadingState />}
