@@ -3,7 +3,7 @@ import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
 import { AddressDetails } from "./AddressDetails";
 import { QRCodeSection } from "./QRCodeSection";
-import { ProgressSteps } from "./ProgressSteps";
+import { SuccessPage } from "./ProgressSteps";
 import { InformationSection } from "./InformationSection";
 import { NotificationSection } from "./NotificationSection";
 import { OrderDetails as OrderDetailsType } from "@/hooks/useBridgeOrder";
@@ -107,7 +107,7 @@ export const BridgeTransaction = ({
         />
 
         {/* Always display ProgressSteps with the original status case */}
-        <ProgressSteps
+        <SuccessPage
           currentStatus={displayStatus || ""}
           orderDetails={orderDetails}
           key={`progress-${displayStatus}`} // Force re-render when status changes

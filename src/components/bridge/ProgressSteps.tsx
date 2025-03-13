@@ -12,17 +12,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "../ui/card";
 
-interface ProgressStepsProps {
+interface SuccessPageProps {
   currentStatus?: string;
   orderDetails?: any;
   skipCompletedStepper?: boolean;
 }
 
-export const ProgressSteps = ({
+export const SuccessPage = ({
   currentStatus = "pending",
   orderDetails,
   skipCompletedStepper = false,
-}: ProgressStepsProps) => {
+}: SuccessPageProps) => {
   const getActiveStepIndex = (status: string): number => {
     if (!status) return 0;
 
