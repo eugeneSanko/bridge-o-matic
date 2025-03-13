@@ -14,6 +14,18 @@ interface ResponseSectionProps {
 export const ResponseSection = ({ responseDetails }: ResponseSectionProps) => {
   if (!responseDetails) return null;
 
+  // Try to parse the body as JSON for better formatting
+  let formattedBody = responseDetails.body;
+  try {
+    if (responseDetails.body) {
+      const parsedBody = JSON.parse(responseDetails.body);
+      formattedBody = JSON.stringify(parsedBody, null, 2);
+    }
+  } catch (e) {
+    // If parsing fails, use the original body
+    console.log("Could not parse response body as JSON");
+  }
+
   return (
     <DebugSection
       title="Response Details"
@@ -39,10 +51,10 @@ export const ResponseSection = ({ responseDetails }: ResponseSectionProps) => {
       {/* Body section */}
       <div className="mt-2">
         <div className="text-xs text-[#0FA0CE] mb-1">Response Body:</div>
-        {responseDetails.body ? (
+        {formattedBody ? (
           <div className="overflow-x-auto bg-black/20 p-2 rounded">
             <CodeBlock 
-              content={responseDetails.body} 
+              content={formattedBody} 
               label="Response body" 
               showCopyButton={false}
             />

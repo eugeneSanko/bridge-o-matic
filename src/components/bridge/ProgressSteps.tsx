@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Card } from "../ui/card";
+import { useEffect, useState } from "react";
 
 interface ProgressStepsProps {
   currentStatus?: string;
@@ -23,14 +24,31 @@ export const ProgressSteps = ({
   currentStatus = "pending",
   orderDetails,
 }: ProgressStepsProps) => {
+  // State to track final status after normalization
+  const [normalizedStatus, setNormalizedStatus] = useState(currentStatus);
+  
   // Log the current status to debug
   console.log("ProgressSteps received status:", currentStatus);
+
+  // Normalize status on mount and when it changes
+  useEffect(() => {
+    // Use a consistent status format for our component
+    let statusToUse = currentStatus?.toLowerCase() || "pending";
+    
+    // Handle API status codes (uppercase)
+    if (currentStatus === "DONE") statusToUse = "completed";
+    if (currentStatus === "EXPIRED") statusToUse = "expired";
+    if (currentStatus === "EMERGENCY") statusToUse = "failed";
+    
+    console.log(`Normalized status: ${currentStatus} -> ${statusToUse}`);
+    setNormalizedStatus(statusToUse);
+  }, [currentStatus]);
 
   // Map FF.io API status to step index
   const getActiveStepIndex = (status: string): number => {
     if (!status) return 0;
     
-    // Lowercase the status for case-insensitive comparison
+    // Normalize status to lowercase for consistency
     const lowerStatus = status.toLowerCase();
     console.log("Processing status in getActiveStepIndex:", status, "Lowercased:", lowerStatus);
 
@@ -108,23 +126,26 @@ export const ProgressSteps = ({
     return "";
   };
 
-  const activeStep = getActiveStepIndex(currentStatus);
-  const statusType = getStatusType(currentStatus);
-  console.log("Active step:", activeStep, "Status type:", statusType);
-  
-  const isCompleted =
-    statusType === "completed" ||
-    currentStatus === "DONE" ||
-    currentStatus?.toLowerCase() === "completed" ||
+  // Check if we're in a completed state either from API or app status
+  const isCompleted = 
+    normalizedStatus === "completed" || 
+    currentStatus === "DONE" || 
     currentStatus?.toLowerCase() === "done";
-  
-  console.log("Is completed:", isCompleted);
+    
+  console.log("Is completed:", isCompleted, {
+    normalizedStatus,
+    currentStatus,
+    currentStatusLower: currentStatus?.toLowerCase()
+  });
 
   // For expired status, modify the first step icon and text
   const isExpired =
-    statusType === "expired" ||
-    currentStatus === "EXPIRED" ||
-    currentStatus?.toLowerCase() === "expired";
+    normalizedStatus === "expired" ||
+    currentStatus === "EXPIRED";
+
+  const activeStep = getActiveStepIndex(currentStatus);
+  const statusType = getStatusType(currentStatus);
+  console.log("Active step:", activeStep, "Status type:", statusType);
 
   // Render stepper component (for non-completed states)
   const renderStepper = () => {
@@ -225,7 +246,9 @@ export const ProgressSteps = ({
   if (isCompleted) {
     return (
       <div className=" p-0 rounded-xl mb-9 overflow-hidden">
-        <ProgressSteps></ProgressSteps>
+        <div className="glass-card p-6 md:p-8 rounded-xl mb-4">
+          {renderStepper()}
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 boarder-0">
           {/* Order Details Card (Left) */}

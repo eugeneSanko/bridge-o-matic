@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
@@ -57,27 +58,32 @@ const BridgeAwaitingDeposit = () => {
     
     if (simulateSuccess) {
       // Clone the original and override the status
-      setOrderDetails({
+      const simulatedDetails = {
         ...originalOrderDetails,
         currentStatus: "completed",
         rawApiResponse: {
           ...originalOrderDetails.rawApiResponse,
           status: "DONE"
         }
+      };
+      setOrderDetails(simulatedDetails);
+      
+      console.log("Simulating DONE state:", {
+        originalStatus: originalOrderDetails.currentStatus,
+        originalApiStatus: originalOrderDetails.rawApiResponse?.status,
+        finalStatus: "completed",
+        finalApiStatus: "DONE",
+        simulatedDetails
       });
     } else {
       // Use the original orderDetails
       setOrderDetails(originalOrderDetails);
+      
+      console.log("Using original state:", {
+        originalStatus: originalOrderDetails.currentStatus,
+        originalApiStatus: originalOrderDetails.rawApiResponse?.status
+      });
     }
-    
-    // Log current status information for debugging
-    console.log("Order details updated:", {
-      originalStatus: originalOrderDetails.currentStatus,
-      originalApiStatus: originalOrderDetails.rawApiResponse?.status,
-      finalStatus: simulateSuccess ? "completed" : originalOrderDetails.currentStatus,
-      finalApiStatus: simulateSuccess ? "DONE" : originalOrderDetails.rawApiResponse?.status
-    });
-    
   }, [originalOrderDetails, simulateSuccess]);
   
   const { deepLink, logs, addLog } = useDeepLink();
@@ -308,7 +314,7 @@ const BridgeAwaitingDeposit = () => {
       
       {/* Pass a key to force re-render when status changes */}
       <BridgeTransaction 
-        key={`bridge-transaction-${orderDetails?.currentStatus}-${orderDetails?.rawApiResponse?.status}`}
+        key={`bridge-transaction-${orderDetails?.currentStatus || "unknown"}-${simulateSuccess ? "simulated" : "real"}-${Date.now()}`}
         orderDetails={orderDetails} 
         onCopyAddress={handleCopyAddress} 
       />

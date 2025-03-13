@@ -20,15 +20,22 @@ export const BridgeTransaction = ({
 }: BridgeTransactionProps) => {
   // Extract the original API status if available from the raw response
   const apiStatus = orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
+  
+  // Add more detailed logging for status tracking
   console.log("API status in BridgeTransaction:", apiStatus);
-
+  console.log("Current status in orderDetails:", orderDetails.currentStatus);
+  console.log("Raw API response status:", orderDetails.rawApiResponse?.status);
+  
+  // Track if status is "DONE" or "completed" (normalized to uppercase for comparison)
+  const [isOrderComplete, setIsOrderComplete] = useState(false);
+  
   // Extract the time left from the raw API response (in seconds)
   const timeLeft = orderDetails.rawApiResponse?.time?.left || null;
 
   // Check if order is expired based on various indicators
   const [isExpired, setIsExpired] = useState(false);
 
-  // Check for expired status
+  // Check for expired status whenever relevant properties change
   useEffect(() => {
     // Check multiple conditions for expiration
     const isApiExpired = apiStatus === "EXPIRED";
@@ -54,6 +61,27 @@ export const BridgeTransaction = ({
     }
   }, [apiStatus, orderDetails.currentStatus, timeLeft]);
 
+  // Update the completion status based on the order status
+  useEffect(() => {
+    // Normalize the status strings for comparison
+    const normalizedApiStatus = apiStatus?.toUpperCase();
+    const normalizedCurrentStatus = orderDetails.currentStatus?.toLowerCase();
+    
+    // Check if the order is complete - multiple ways to detect this
+    const isDone = 
+      normalizedApiStatus === "DONE" || 
+      normalizedCurrentStatus === "completed" ||
+      normalizedCurrentStatus === "done";
+    
+    console.log("Checking if order is complete:", {
+      normalizedApiStatus,
+      normalizedCurrentStatus,
+      isDone
+    });
+    
+    setIsOrderComplete(isDone);
+  }, [apiStatus, orderDetails.currentStatus]);
+
   // Log the raw API response for debugging if available
   React.useEffect(() => {
     if (orderDetails.rawApiResponse) {
@@ -68,9 +96,6 @@ export const BridgeTransaction = ({
   // Use the expired status to update the displayed status
   const displayStatus = isExpired ? "EXPIRED" : apiStatus;
   console.log("Final display status:", displayStatus);
-
-  // Check if the order is complete - use the raw API status for the most accurate check
-  const isOrderComplete = displayStatus === "DONE" || displayStatus === "completed";
   console.log("Is order complete:", isOrderComplete);
 
   return (
