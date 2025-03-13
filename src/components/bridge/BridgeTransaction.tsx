@@ -1,9 +1,8 @@
-
 import React, { useEffect, useState } from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
 import { AddressDetails } from "./AddressDetails";
-// import { QRCodeSection } from "./QRCodeSection"; // Commented out QR code component
+import { QRCodeSection } from "./QRCodeSection";
 import { ProgressSteps } from "./ProgressSteps";
 import { InformationSection } from "./InformationSection";
 import { NotificationSection } from "./NotificationSection";
@@ -18,31 +17,23 @@ export const BridgeTransaction = ({
   orderDetails,
   onCopyAddress,
 }: BridgeTransactionProps) => {
-  // Extract the original API status if available from the raw response
   const apiStatus = orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
   
-  // Add more detailed logging for status tracking
   console.log("API status in BridgeTransaction:", apiStatus);
   console.log("Current status in orderDetails:", orderDetails.currentStatus);
   console.log("Raw API response status:", orderDetails.rawApiResponse?.status);
   
-  // Track if status is "DONE" or "completed" (normalized to uppercase for comparison)
   const [isOrderComplete, setIsOrderComplete] = useState(false);
   
-  // Extract the time left from the raw API response (in seconds)
   const timeLeft = orderDetails.rawApiResponse?.time?.left || null;
 
-  // Check if order is expired based on various indicators
   const [isExpired, setIsExpired] = useState(false);
 
-  // Check for expired status whenever relevant properties change
   useEffect(() => {
-    // Check multiple conditions for expiration
     const isApiExpired = apiStatus === "EXPIRED";
     const isStatusExpired = orderDetails.currentStatus === "expired";
     const isTimerExpired = timeLeft !== null && timeLeft <= 0;
 
-    // Log expiration checks for debugging
     console.log("Expiration checks:", {
       apiStatus,
       currentStatus: orderDetails.currentStatus,
@@ -52,7 +43,6 @@ export const BridgeTransaction = ({
       isTimerExpired,
     });
 
-    // Set as expired if any condition is true
     if (isApiExpired || isStatusExpired || isTimerExpired) {
       console.log("Order is expired");
       setIsExpired(true);
@@ -61,13 +51,10 @@ export const BridgeTransaction = ({
     }
   }, [apiStatus, orderDetails.currentStatus, timeLeft]);
 
-  // Update the completion status based on the order status
   useEffect(() => {
-    // Normalize the status strings for comparison
     const normalizedApiStatus = apiStatus?.toUpperCase();
     const normalizedCurrentStatus = orderDetails.currentStatus?.toLowerCase();
     
-    // Check if the order is complete - multiple ways to detect this
     const isDone = 
       normalizedApiStatus === "DONE" || 
       normalizedCurrentStatus === "completed" ||
@@ -82,7 +69,6 @@ export const BridgeTransaction = ({
     setIsOrderComplete(isDone);
   }, [apiStatus, orderDetails.currentStatus]);
 
-  // Log the raw API response for debugging if available
   React.useEffect(() => {
     if (orderDetails.rawApiResponse) {
       console.log("Raw API response:", orderDetails.rawApiResponse);
@@ -93,7 +79,6 @@ export const BridgeTransaction = ({
     }
   }, [orderDetails.rawApiResponse]);
 
-  // Use the expired status to update the displayed status
   const displayStatus = isExpired ? "EXPIRED" : apiStatus;
   console.log("Final display status:", displayStatus);
   console.log("Is order complete:", isOrderComplete);
@@ -113,13 +98,11 @@ export const BridgeTransaction = ({
           toCurrencyName={orderDetails.toCurrencyName}
         />
 
-        {/* Always display ProgressSteps regardless of status */}
         <ProgressSteps
           currentStatus={displayStatus}
           orderDetails={orderDetails}
         />
 
-        {/* Only show these sections if order is not complete */}
         {!isOrderComplete && (
           <>
             <div className="grid grid-cols-12 gap-6 mb-12">
@@ -143,14 +126,12 @@ export const BridgeTransaction = ({
                 fromCurrency={orderDetails.fromCurrency}
                 fromCurrencyName={orderDetails.fromCurrencyName}
               />
-              {/* QR Code section commented out
               <QRCodeSection
                 depositAddress={orderDetails.depositAddress}
                 depositAmount={orderDetails.depositAmount}
                 fromCurrency={orderDetails.fromCurrency}
                 tag={orderDetails.tag}
               />
-              */}
             </div>
 
             <div className="grid grid-cols-12 gap-6">
