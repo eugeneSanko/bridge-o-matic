@@ -280,8 +280,8 @@ export function useBridgeService() {
           toAddress: destination,
         };
 
-        console.log("Using API Key:", API_CONFIG.API_KEY);
-        console.log("Using API Secret Length:", API_CONFIG.API_SECRET.length);
+        console.log("Using API Key:", API_CONFIG.FF_API_KEY);
+        console.log("Using API Secret Length:", API_CONFIG.FF_API_SECRET.length);
 
         console.log("Creating bridge order with parameters:", body);
 
