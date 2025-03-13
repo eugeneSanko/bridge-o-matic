@@ -4,6 +4,7 @@ import { OrderDetails } from "@/hooks/useBridgeOrder";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { Database } from "@/integrations/supabase/types";
 
 interface CompletedTransactionSaverProps {
   orderDetails: OrderDetails | null;
@@ -118,12 +119,17 @@ export const useCompletedTransactionSaver = ({
       
       // Send completion notification to backend
       try {
-        // The typescript error is happening because data is a type that can be null
-        // And we're also unsure about its structure, so let's create a safe way to get the ID
-        // We need to access the ID without making typescript angry
-        const transactionId = data && Array.isArray(data) && data.length > 0 && data[0].id 
-          ? data[0].id 
-          : 'unknown';
+        // Create a type-safe way to extract the transaction ID
+        // We need to handle the case where data might be null or not have the expected structure
+        let transactionId = 'unknown';
+        
+        if (data && Array.isArray(data)) {
+          // If it's a valid array with at least one element that has an id property
+          const firstRecord = data[0] as { id?: string } | undefined;
+          if (firstRecord && 'id' in firstRecord) {
+            transactionId = firstRecord.id || 'unknown';
+          }
+        }
         
         const notifyResponse = await supabase.functions.invoke('bridge-notify-complete', {
           body: { 
