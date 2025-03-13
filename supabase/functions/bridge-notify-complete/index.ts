@@ -22,8 +22,8 @@ serve(async (req) => {
     console.log("Processing bridge completion notification request");
     const requestData = await req.json();
     
-    // Extract transaction ID from the request
-    const { transactionId } = requestData;
+    // Extract transaction ID and metadata from the request
+    const { transactionId, metadata } = requestData;
     
     if (!transactionId) {
       return new Response(
@@ -40,6 +40,10 @@ serve(async (req) => {
         }
       );
     }
+
+    console.log(`Processing notification for transaction: ${transactionId}`, {
+      metadata: metadata || 'None provided'
+    });
 
     // Get Supabase URL and key from environment variables
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
@@ -91,18 +95,61 @@ serve(async (req) => {
       );
     }
     
-    // This would be where we'd send an email notification
-    // For now, we'll just log it
-    console.log("Transaction completed:", transaction);
+    // Log the completed transaction details 
+    console.log("Transaction completed:", {
+      id: transaction.id, 
+      ff_order_id: transaction.ff_order_id,
+      from: transaction.from_currency,
+      to: transaction.to_currency,
+      amount: transaction.amount,
+      created_at: transaction.created_at,
+      metadata: transaction.client_metadata
+    });
     
-    // Mock email sending
-    console.log(`Would send completion email for ${transaction.from_currency} to ${transaction.to_currency} transaction`);
+    // Here you would typically send a notification (email, webhook, etc.)
+    // For now, we'll just log it
+    
+    // Pseudocode for email notification (implement once email service is connected)
+    // if (Deno.env.get("ENABLE_EMAIL_NOTIFICATIONS") === "true") {
+    //   const emailResult = await sendEmail({
+    //     to: "admin@example.com",
+    //     subject: `Bridge Transaction Completed: ${transaction.ff_order_id}`,
+    //     body: `A bridge transaction has been completed:\n\n` +
+    //           `From: ${transaction.from_currency}\n` +
+    //           `To: ${transaction.to_currency}\n` +
+    //           `Amount: ${transaction.amount}\n` +
+    //           `Time: ${transaction.created_at}`
+    //   });
+    //   console.log("Email notification result:", emailResult);
+    // }
+    
+    // Collect some additional analytics about the transaction
+    const analyticsData = {
+      transaction_type: "bridge",
+      from_currency: transaction.from_currency,
+      to_currency: transaction.to_currency,
+      amount: transaction.amount,
+      timestamp: new Date().toISOString(),
+      client_info: transaction.client_metadata?.device || {},
+      is_simulated: transaction.client_metadata?.simulation || false
+    };
+    
+    console.log("Transaction analytics:", analyticsData);
+    
+    // Simulate saving analytics (would typically go to a separate analytics table or service)
+    console.log("Would save analytics data for later analysis");
     
     return new Response(
       JSON.stringify({
         code: 0,
-        msg: "Notification processed",
-        transaction: transaction,
+        msg: "Notification processed successfully",
+        transaction: {
+          id: transaction.id,
+          ff_order_id: transaction.ff_order_id,
+          status: transaction.status,
+          from_currency: transaction.from_currency,
+          to_currency: transaction.to_currency
+        },
       }),
       {
         status: 200,

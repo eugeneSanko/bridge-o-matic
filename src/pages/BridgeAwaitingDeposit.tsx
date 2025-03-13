@@ -38,8 +38,14 @@ const BridgeAwaitingDeposit = () => {
 
   // Handle order completion
   const handleTransactionComplete = (details, apiResponse) => {
-    // Logic moved to the useOrderStatusPolling hook
-    console.log("Transaction complete callback triggered");
+    console.log("Transaction complete callback triggered", {
+      details,
+      apiResponse,
+      transactionSaved
+    });
+    
+    // The actual saving logic is now in the CompletedTransactionSaver component
+    // This function is just for additional logging or future extensibility
   };
 
   // Use custom hook for order status polling

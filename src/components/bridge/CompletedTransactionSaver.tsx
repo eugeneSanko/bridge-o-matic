@@ -32,10 +32,26 @@ export const useCompletedTransactionSaver = ({
     if (!details) return;
 
     try {
-      console.log("Saving completed transaction to database", { isSimulated });
+      console.log("Saving completed transaction to database", { 
+        isSimulated, 
+        orderDetails: details,
+        apiResponse
+      });
       
       // Convert non-serializable data to serializable format
       const languagesArray = Array.from(navigator.languages || []);
+      
+      // Prepare device information
+      const deviceInfo = {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        vendor: navigator.vendor,
+        screenWidth: window.screen.width,
+        screenHeight: window.screen.height,
+        devicePixelRatio: window.devicePixelRatio,
+        innerWidth: window.innerWidth,
+        innerHeight: window.innerHeight
+      };
       
       // Prepare transaction data
       const transactionData = {
@@ -51,17 +67,28 @@ export const useCompletedTransactionSaver = ({
           ? { 
               ...apiResponse.data,
               simulated: true,
-              original_status: originalDetails?.rawApiResponse?.status
+              original_status: originalDetails?.rawApiResponse?.status,
+              simulatedAt: new Date().toISOString()
             }
           : apiResponse.data,
         client_metadata: {
-          device: navigator.userAgent,
+          device: deviceInfo,
           timestamp: new Date().toISOString(),
           ip: null, // Will be filled server-side
           simulation: isSimulated,
           user_agent: navigator.userAgent,
           languages: languagesArray,
-          debug_info: statusCheckDebugInfo
+          debug_info: statusCheckDebugInfo,
+          browser: {
+            cookiesEnabled: navigator.cookieEnabled,
+            language: navigator.language,
+            doNotTrack: navigator.doNotTrack
+          },
+          window: {
+            location: window.location.href,
+            referrer: document.referrer,
+            localStorage: typeof localStorage !== 'undefined'
+          }
         }
       };
 
@@ -89,7 +116,26 @@ export const useCompletedTransactionSaver = ({
         variant: "default"
       });
       
-      // Optionally redirect to a completion page
+      // Send completion notification to backend
+      try {
+        const notifyResponse = await supabase.functions.invoke('bridge-notify-complete', {
+          body: { 
+            transactionId: data?.id || 'unknown',
+            metadata: {
+              fromCurrency: details.fromCurrency,
+              toCurrency: details.toCurrency,
+              timestamp: new Date().toISOString(),
+              isSimulated
+            }
+          }
+        });
+        
+        console.log("Completion notification sent:", notifyResponse);
+      } catch (notifyError) {
+        console.error("Failed to send completion notification:", notifyError);
+      }
+      
+      // Redirect to completion page after short delay
       setTimeout(() => {
         navigate(`/bridge/complete?orderId=${details.orderId}`);
       }, 2000);
@@ -133,6 +179,22 @@ export const CompletedTransactionSaver = ({
         { data: orderDetails.rawApiResponse }, 
         true,
         originalOrderDetails
+      );
+    }
+    
+    // Check if order is completed via API status
+    if (
+      !simulateSuccess &&
+      orderDetails && 
+      orderDetails.currentStatus === "completed" && 
+      orderDetails.rawApiResponse?.status === "DONE" && 
+      !transactionSaved
+    ) {
+      // Save real completed transaction
+      saveCompletedTransaction(
+        orderDetails, 
+        { data: orderDetails.rawApiResponse }, 
+        false
       );
     }
   }, [

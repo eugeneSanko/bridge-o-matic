@@ -104,7 +104,7 @@ export const useOrderStatusPolling = ({
         const status = data.data.status;
         console.log(`Order status from API: ${status}`);
         
-        if (status === 'DONE') {
+        if (status === 'DONE' && originalOrderDetails) {
           console.log("Order is complete, showing notification");
           toast({
             title: "Transaction Complete",
@@ -112,19 +112,19 @@ export const useOrderStatusPolling = ({
             variant: "default"
           });
           
-          if (originalOrderDetails) {
-            setOrderDetails({
-              ...originalOrderDetails,
-              currentStatus: "completed",
-              rawApiResponse: {
-                ...originalOrderDetails.rawApiResponse,
-                status: "DONE"
-              }
-            });
-            
-            // Call the completion handler
-            onTransactionComplete(originalOrderDetails, data);
-          }
+          // Update order details with completed status
+          const updatedDetails = {
+            ...originalOrderDetails,
+            currentStatus: "completed",
+            rawApiResponse: {
+              ...data.data
+            }
+          };
+          
+          setOrderDetails(updatedDetails);
+          
+          // Call the completion handler with the full API response
+          onTransactionComplete(updatedDetails, data);
         }
       } else {
         console.error("API returned an error:", data);
