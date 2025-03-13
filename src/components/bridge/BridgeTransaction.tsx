@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
@@ -17,7 +18,8 @@ export const BridgeTransaction = ({
   orderDetails,
   onCopyAddress,
 }: BridgeTransactionProps) => {
-  // Extract the original API status if available from the raw response
+  // Extract the original API status directly from the raw response or currentStatus
+  // This ensures we pass the original case (uppercase) status to ProgressSteps
   const apiStatus =
     orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
 
@@ -26,6 +28,15 @@ export const BridgeTransaction = ({
 
   // Check if order is expired based only on API status
   const [isExpired, setIsExpired] = useState(false);
+
+  // Debug status passed to the component
+  useEffect(() => {
+    console.log("BridgeTransaction received status:", {
+      rawStatus: orderDetails.rawApiResponse?.status,
+      currentStatus: orderDetails.currentStatus,
+      apiStatus,
+    });
+  }, [orderDetails, apiStatus]);
 
   // Check for expired status - simplified to only check API response
   useEffect(() => {
@@ -52,6 +63,11 @@ export const BridgeTransaction = ({
   // Keep the original API status if it's not expired - this is important for DONE status
   const displayStatus = isExpired ? "EXPIRED" : apiStatus;
 
+  // Debug the displayStatus being passed to ProgressSteps
+  useEffect(() => {
+    console.log("Status passed to ProgressSteps:", displayStatus);
+  }, [displayStatus]);
+
   // Check if the order is complete - explicitly check for both DONE and completed
   const isOrderComplete =
     displayStatus === "DONE" || displayStatus?.toLowerCase() === "completed";
@@ -74,7 +90,7 @@ export const BridgeTransaction = ({
           toCurrencyCoin={orderDetails.rawApiResponse?.to?.coin || orderDetails.toCurrency}
         />
 
-        {/* Always display ProgressSteps regardless of status */}
+        {/* Always display ProgressSteps with the original status case */}
         <ProgressSteps
           currentStatus={displayStatus}
           orderDetails={orderDetails}

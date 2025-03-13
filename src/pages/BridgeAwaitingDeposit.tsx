@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
@@ -14,7 +15,8 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { CompletedTransaction } from "@/types/bridge";
 
-const REFRESHABLE_STATUSES = ["NEW", "PENDING", "EXCHANGE", "WITHDRAW"];
+// Include all valid statuses that should continue polling
+const REFRESHABLE_STATUSES = ["NEW", "PENDING", "EXCHANGE", "WITHDRAW", "EMERGENCY"];
 
 const BridgeAwaitingDeposit = () => {
   const navigate = useNavigate();
@@ -26,6 +28,7 @@ const BridgeAwaitingDeposit = () => {
   const [transactionSaved, setTransactionSaved] = useState(false);
   const [statusCheckError, setStatusCheckError] = useState(null);
   const [statusCheckDebugInfo, setStatusCheckDebugInfo] = useState(null);
+  const [pollCount, setPollCount] = useState(0); // Added to force re-renders on poll
 
   const {
     orderDetails: originalOrderDetails,
@@ -38,13 +41,22 @@ const BridgeAwaitingDeposit = () => {
   const { deepLink, addLog } = useDeepLink();
   const intervalRef = useRef(null);
 
+  // Debug state changes
+  useEffect(() => {
+    console.log("Original Order Details updated:", originalOrderDetails);
+  }, [originalOrderDetails]);
+
+  useEffect(() => {
+    console.log("Order Details state updated:", orderDetails);
+  }, [orderDetails]);
+
   useEffect(() => {
     if (!originalOrderDetails) return;
 
     if (simulateSuccess) {
       setOrderDetails({
         ...originalOrderDetails,
-        currentStatus: "completed",
+        currentStatus: "DONE", // Keep original API status case
         rawApiResponse: {
           ...originalOrderDetails.rawApiResponse,
           status: "DONE",
@@ -63,6 +75,8 @@ const BridgeAwaitingDeposit = () => {
     }
 
     try {
+      console.log(`[${new Date().toISOString()}] Checking order status for ${orderId}`);
+      
       const { data, error } = await supabase.functions.invoke("bridge-status", {
         body: { id: orderId, token },
       });
@@ -80,12 +94,17 @@ const BridgeAwaitingDeposit = () => {
 
       if (data.code === 0 && data.data) {
         const status = data.data.status;
+        console.log(`Order ${orderId} status update: ${status}`);
 
+        // Important: Preserve the original case of the API status
         setOrderDetails((prevDetails) => ({
           ...prevDetails!,
-          currentStatus: status.toLowerCase(),
+          currentStatus: status, // Keep the original API status case (uppercase)
           rawApiResponse: data.data,
         }));
+
+        // Increment poll count to force component updates
+        setPollCount(prev => prev + 1);
 
         if (status === "DONE" && !transactionSaved) {
           toast({
@@ -100,6 +119,7 @@ const BridgeAwaitingDeposit = () => {
         }
 
         if (!REFRESHABLE_STATUSES.includes(status)) {
+          console.log(`Status ${status} is not refreshable, stopping polling`);
           clearInterval(intervalRef.current);
         }
       } else {
@@ -121,24 +141,40 @@ const BridgeAwaitingDeposit = () => {
     }
   }, [orderId]);
 
+  // Check status immediately on mount
+  useEffect(() => {
+    if (orderId && token) {
+      console.log("Initial status check on component mount");
+      checkOrderStatus();
+    }
+  }, [orderId, token]);
+
   // Auto-refresh for specific statuses every 15 seconds
   useEffect(() => {
     if (
       !orderDetails ||
-      !REFRESHABLE_STATUSES.includes(orderDetails.rawApiResponse?.status)
+      !orderDetails.rawApiResponse?.status ||
+      !REFRESHABLE_STATUSES.includes(orderDetails.rawApiResponse.status)
     ) {
       clearInterval(intervalRef.current);
       return;
     }
 
+    // Clear existing interval before setting a new one
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
+    console.log(`Setting up polling interval for status ${orderDetails.rawApiResponse.status}`);
     intervalRef.current = setInterval(() => {
+      console.log("Polling interval triggered");
       checkOrderStatus();
-    }, 10000);
+    }, 15000); // Changed to 15 seconds as per plan
 
     return () => {
       clearInterval(intervalRef.current);
     };
-  }, [orderDetails?.rawApiResponse?.status]);
+  }, [orderDetails?.rawApiResponse?.status, orderId, token]);
 
   return (
     <>
@@ -156,6 +192,12 @@ const BridgeAwaitingDeposit = () => {
       <Button onClick={checkOrderStatus} className="my-4">
         Refresh Status
       </Button>
+
+      {/* Debug status display */}
+      <div className="mb-4 p-2 bg-black/50 text-xs rounded">
+        <p>Current API Status: {orderDetails?.rawApiResponse?.status || "N/A"}</p>
+        <p>Poll Count: {pollCount}</p>
+      </div>
 
       {loading && <LoadingState />}
       {error && <ErrorState error={error} />}
