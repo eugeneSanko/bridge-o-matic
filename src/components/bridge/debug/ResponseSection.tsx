@@ -7,6 +7,7 @@ interface ResponseSectionProps {
     status: string;
     body: string;
     headers?: Record<string, string>;
+    statusText?: string;
   };
 }
 
@@ -19,7 +20,7 @@ export const ResponseSection = ({ responseDetails }: ResponseSectionProps) => {
       copyData={responseDetails.body || ""}
       copyLabel="Response body"
     >
-      <div>Status: {responseDetails.status}</div>
+      <div>Status: {responseDetails.status} {responseDetails.statusText || ""}</div>
       
       {/* Headers section */}
       {responseDetails.headers && (

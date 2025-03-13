@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
@@ -70,6 +69,15 @@ const BridgeAwaitingDeposit = () => {
       // Use the original orderDetails
       setOrderDetails(originalOrderDetails);
     }
+    
+    // Log current status information for debugging
+    console.log("Order details updated:", {
+      originalStatus: originalOrderDetails.currentStatus,
+      originalApiStatus: originalOrderDetails.rawApiResponse?.status,
+      finalStatus: simulateSuccess ? "completed" : originalOrderDetails.currentStatus,
+      finalApiStatus: simulateSuccess ? "DONE" : originalOrderDetails.rawApiResponse?.status
+    });
+    
   }, [originalOrderDetails, simulateSuccess]);
   
   const { deepLink, logs, addLog } = useDeepLink();
@@ -156,6 +164,18 @@ const BridgeAwaitingDeposit = () => {
             description: `Your transaction has been completed successfully.`,
             variant: "default"
           });
+          
+          // Force a refresh of the order details
+          if (originalOrderDetails) {
+            setOrderDetails({
+              ...originalOrderDetails,
+              currentStatus: "completed",
+              rawApiResponse: {
+                ...originalOrderDetails.rawApiResponse,
+                status: "DONE"
+              }
+            });
+          }
         }
       } else {
         console.error("API returned an error:", data);
@@ -165,7 +185,7 @@ const BridgeAwaitingDeposit = () => {
       console.error("Error checking order status:", error);
       setStatusCheckError(`Error: ${error.message}`);
     }
-  }, [orderId, token, pollingInterval, lastPollTimestamp]);
+  }, [orderId, token, pollingInterval, lastPollTimestamp, originalOrderDetails]);
 
   // Run a manual status check on component mount
   useEffect(() => {
@@ -286,7 +306,9 @@ const BridgeAwaitingDeposit = () => {
         </Label>
       </div>
       
+      {/* Pass a key to force re-render when status changes */}
       <BridgeTransaction 
+        key={`bridge-transaction-${orderDetails?.currentStatus}-${orderDetails?.rawApiResponse?.status}`}
         orderDetails={orderDetails} 
         onCopyAddress={handleCopyAddress} 
       />

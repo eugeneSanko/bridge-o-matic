@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
@@ -18,8 +19,8 @@ export const BridgeTransaction = ({
   onCopyAddress,
 }: BridgeTransactionProps) => {
   // Extract the original API status if available from the raw response
-  const apiStatus =
-    orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
+  const apiStatus = orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
+  console.log("API status in BridgeTransaction:", apiStatus);
 
   // Extract the time left from the raw API response (in seconds)
   const timeLeft = orderDetails.rawApiResponse?.time?.left || null;
@@ -66,10 +67,11 @@ export const BridgeTransaction = ({
 
   // Use the expired status to update the displayed status
   const displayStatus = isExpired ? "EXPIRED" : apiStatus;
+  console.log("Final display status:", displayStatus);
 
-  // Check if the order is complete
-  const isOrderComplete =
-    displayStatus === "DONE" || displayStatus === "completed";
+  // Check if the order is complete - use the raw API status for the most accurate check
+  const isOrderComplete = displayStatus === "DONE" || displayStatus === "completed";
+  console.log("Is order complete:", isOrderComplete);
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">

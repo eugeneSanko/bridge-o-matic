@@ -107,6 +107,8 @@ export function useBridgeOrder(
             
             // Map API status to our app status format
             const apiStatus = apiResponse.data.status;
+            console.log("Raw API status:", apiStatus);
+            
             const statusMap: Record<string, string> = {
               'NEW': 'pending',
               'PENDING': 'processing',
@@ -118,6 +120,7 @@ export function useBridgeOrder(
             };
             
             const currentStatus = statusMap[apiStatus] || apiStatus.toLowerCase();
+            console.log("Mapped status:", currentStatus);
             
             // Ensure orderType is correctly typed
             const orderType: "fixed" | "float" = 
@@ -141,7 +144,7 @@ export function useBridgeOrder(
             const fromCurrencyName = apiResponse.data.from?.name || bridgeData?.fromCurrencyName;
             const toCurrencyName = apiResponse.data.to?.name || bridgeData?.toCurrencyName;
             
-            // Set order details from API data
+            // Set order details from API data, keeping the raw API status in the response
             setOrderDetails({
               depositAddress: bridgeData?.depositAddress || apiResponse.data.from.address,
               depositAmount: bridgeData?.amount || apiResponse.data.from.amount,
