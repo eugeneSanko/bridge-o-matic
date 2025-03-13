@@ -1,6 +1,7 @@
 
 import { ArrowRight } from "lucide-react";
 import { AddressPlaceholder } from "./AddressPlaceholder";
+import { cleanSymbol } from "@/utils/symbolUtils";
 
 interface TransactionSummaryProps {
   fromCurrency: string;
@@ -34,32 +35,35 @@ export const TransactionSummary = ({
   };
 
   const getCurrencyImageUrl = (currency: string) => {
-    const lowerCurrency = currency.toLowerCase();
+    // Clean the currency to remove any network information
+    const cleanCurrency = cleanSymbol(currency).toLowerCase();
 
-    if (lowerCurrency === "btc")
+    if (cleanCurrency === "btc")
       return "https://ff.io/assets/images/coins/svg/btc.svg";
-    if (lowerCurrency === "eth")
+    if (cleanCurrency === "eth")
       return "https://ff.io/assets/images/coins/svg/eth_dark.svg";
-    if (lowerCurrency === "sol")
+    if (cleanCurrency === "sol")
       return "https://ff.io/assets/images/coins/svg/sol.svg";
-    if (lowerCurrency === "usdt")
+    if (cleanCurrency === "usdt")
       return "https://ff.io/assets/images/coins/svg/usdt.svg";
-    if (lowerCurrency === "usdc")
+    if (cleanCurrency === "usdc")
       return "https://ff.io/assets/images/coins/svg/usdceth.svg";
-    if (lowerCurrency === "usdttrc")
+    if (cleanCurrency === "usdttrc")
       return "https://ff.io/assets/images/coins/svg/usdttrc.svg";
 
-    return `https://ff.io/assets/images/coins/svg/${lowerCurrency}.svg`;
+    return `https://ff.io/assets/images/coins/svg/${cleanCurrency}.svg`;
   };
 
   const getCurrencyColor = (currency: string) => {
-    const lowerCurrency = currency.toLowerCase();
-    if (lowerCurrency === "btc") return "bg-[#F7931A]";
-    if (lowerCurrency === "eth") return "bg-[#627EEA]";
-    if (lowerCurrency === "sol") return "bg-[#9945FF]";
-    if (lowerCurrency === "usdt") return "bg-[#26A17B]";
-    if (lowerCurrency === "usdc") return "bg-[#2775CA]";
-    if (lowerCurrency === "usdttrc") return "bg-[#53AE94]";
+    // Clean the currency to remove any network information
+    const cleanCurrency = cleanSymbol(currency).toLowerCase();
+    
+    if (cleanCurrency === "btc") return "bg-[#F7931A]";
+    if (cleanCurrency === "eth") return "bg-[#627EEA]";
+    if (cleanCurrency === "sol") return "bg-[#9945FF]";
+    if (cleanCurrency === "usdt") return "bg-[#26A17B]";
+    if (cleanCurrency === "usdc") return "bg-[#2775CA]";
+    if (cleanCurrency === "usdttrc") return "bg-[#53AE94]";
     return "bg-[#0FA0CE]";
   };
 
@@ -69,33 +73,42 @@ export const TransactionSummary = ({
     return `${address.slice(0, 8)}...${address.slice(-8)}`;
   };
 
+  // Get the clean symbol for display
+  const getCleanedCurrency = (currency: string) => {
+    return cleanSymbol(currency).toUpperCase();
+  };
+
   // Format the display for from/to currencies to show both code and name
   const formatFromCurrencyDisplay = () => {
+    const cleanCurrency = getCleanedCurrency(fromCurrency);
+    
     if (fromCurrencyName) {
       return (
         <>
-          {fromCurrency.toUpperCase()}
+          {cleanCurrency}
           <sup className="text-sm text-muted-foreground ml-1">
             {fromCurrencyName}
           </sup>
         </>
       );
     }
-    return fromCurrency.toUpperCase();
+    return cleanCurrency;
   };
 
   const formatToCurrencyDisplay = () => {
+    const cleanCurrency = getCleanedCurrency(toCurrency);
+    
     if (toCurrencyName) {
       return (
         <>
-          {toCurrency.toUpperCase()}
+          {cleanCurrency}
           <sup className="text-sm text-muted-foreground ml-1">
             {toCurrencyName}
           </sup>
         </>
       );
     }
-    return toCurrency.toUpperCase();
+    return cleanCurrency;
   };
 
   return (
@@ -116,12 +129,12 @@ export const TransactionSummary = ({
             >
               <img
                 src={getCurrencyImageUrl(fromCurrency)}
-                alt={fromCurrency}
+                alt={getCleanedCurrency(fromCurrency)}
                 className="w-full h-full object-contain p-2"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = "none";
                   (e.target as HTMLImageElement).parentElement!.innerText =
-                    getCurrencyIcon(fromCurrency);
+                    getCurrencyIcon(getCleanedCurrency(fromCurrency));
                 }}
               />
             </div>
@@ -153,12 +166,12 @@ export const TransactionSummary = ({
             >
               <img
                 src={getCurrencyImageUrl(toCurrency)}
-                alt={toCurrency}
+                alt={getCleanedCurrency(toCurrency)}
                 className="w-full h-full object-contain p-2"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = "none";
                   (e.target as HTMLImageElement).parentElement!.innerText =
-                    getCurrencyIcon(toCurrency);
+                    getCurrencyIcon(getCleanedCurrency(toCurrency));
                 }}
               />
             </div>
