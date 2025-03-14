@@ -23,6 +23,31 @@ export const useCompletedTransactionSaver = ({
 }: Pick<CompletedTransactionSaverProps, 'token' | 'statusCheckDebugInfo' | 'setTransactionSaved'>) => {
   const navigate = useNavigate();
 
+  // Function to check if a transaction exists in the database
+  const checkTransactionExists = useCallback(async (orderId: string) => {
+    if (!orderId) return false;
+    
+    console.log("Checking if transaction exists in database:", orderId);
+    
+    try {
+      const { data: existingTransactions, error } = await supabase
+        .from('completed_bridge_transactions')
+        .select('id')
+        .eq('ff_order_id', orderId)
+        .limit(1);
+      
+      if (error) {
+        console.error("Error checking for existing transaction:", error);
+        return false;
+      }
+      
+      return existingTransactions && existingTransactions.length > 0;
+    } catch (err) {
+      console.error("Exception checking transaction existence:", err);
+      return false;
+    }
+  }, []);
+
   // Function to save completed transaction to Supabase
   const saveCompletedTransaction = useCallback(async (
     details: OrderDetails, 
@@ -55,7 +80,7 @@ export const useCompletedTransactionSaver = ({
       }
       
       // If transaction already exists, mark as saved and return
-      if (existingTransactions && existingTransactions.length > 0) {
+      if (existingTransactions && Array.isArray(existingTransactions) && existingTransactions.length > 0) {
         console.log("Transaction already exists in database, skipping save:", orderId);
         setTransactionSaved(true);
         return;
@@ -183,7 +208,38 @@ export const useCompletedTransactionSaver = ({
     }
   }, [token, statusCheckDebugInfo, setTransactionSaved]);
 
-  return { saveCompletedTransaction };
+  // Function to handle expired status
+  const handleExpiredStatus = useCallback(async (orderDetails: OrderDetails) => {
+    if (!orderDetails) return;
+    
+    const orderId = orderDetails.ffOrderId || orderDetails.orderId;
+    if (!orderId) return;
+    
+    // Check if this order exists in completed_bridge_transactions
+    const exists = await checkTransactionExists(orderId);
+    
+    if (exists) {
+      console.log(`Order ${orderId} found in completed_bridge_transactions, updating status to completed`);
+      // If it exists in the completed transactions, update the status to completed
+      const updatedDetails = {
+        ...orderDetails,
+        currentStatus: "completed",
+        rawApiResponse: {
+          ...orderDetails.rawApiResponse,
+          status: "DONE"
+        }
+      };
+      
+      // Return the updated order details
+      return updatedDetails;
+    }
+    
+    // If not found, leave as expired
+    console.log(`Order ${orderId} not found in completed_bridge_transactions, keeping status as expired`);
+    return null;
+  }, [checkTransactionExists]);
+
+  return { saveCompletedTransaction, handleExpiredStatus, checkTransactionExists };
 };
 
 export const CompletedTransactionSaver = ({
@@ -195,7 +251,7 @@ export const CompletedTransactionSaver = ({
   setTransactionSaved,
   statusCheckDebugInfo
 }: CompletedTransactionSaverProps) => {
-  const { saveCompletedTransaction } = useCompletedTransactionSaver({
+  const { saveCompletedTransaction, handleExpiredStatus } = useCompletedTransactionSaver({
     token,
     statusCheckDebugInfo,
     setTransactionSaved
@@ -235,12 +291,31 @@ export const CompletedTransactionSaver = ({
         false
       );
     }
+    
+    // Handle expired status
+    if (
+      orderDetails && 
+      orderDetails.rawApiResponse?.status === "EXPIRED"
+    ) {
+      handleExpiredStatus(orderDetails).then(updatedDetails => {
+        if (updatedDetails) {
+          console.log("Converting EXPIRED status to DONE as transaction was found in database");
+          // If we got updated details back, the transaction was found in database
+          saveCompletedTransaction(
+            updatedDetails,
+            { data: updatedDetails.rawApiResponse },
+            false
+          );
+        }
+      });
+    }
   }, [
     simulateSuccess, 
     orderDetails, 
     originalOrderDetails, 
     transactionSaved, 
-    saveCompletedTransaction
+    saveCompletedTransaction,
+    handleExpiredStatus
   ]);
 
   return null; // This is a logic-only component, no UI
