@@ -40,6 +40,28 @@ export const useCompletedTransactionSaver = ({
     }
 
     try {
+      // Check if transaction is already in database
+      const orderId = details.ffOrderId || details.orderId;
+      console.log("Checking if transaction already exists:", orderId);
+      
+      const { data: existingTransactions, error: queryError } = await supabase
+        .from('completed_bridge_transactions')
+        .select('id')
+        .eq('ff_order_id', orderId)
+        .limit(1);
+        
+      if (queryError) {
+        console.error("Error checking for existing transaction:", queryError);
+      }
+      
+      // If transaction already exists, mark as saved and return
+      if (existingTransactions && existingTransactions.length > 0) {
+        console.log("Transaction already exists in database, skipping save:", orderId);
+        setTransactionSaved(true);
+        return;
+      }
+      
+      console.log("Transaction not found in database, saving:", orderId);
       console.log("Saving completed transaction to database", { 
         isSimulated, 
         orderDetails: details,
@@ -130,8 +152,7 @@ export const useCompletedTransactionSaver = ({
         // We need to handle the case where data might be null or not have the expected structure
         let transactionId = 'unknown';
         
-        if (data && Array.isArray(data)) {
-          // If it's a valid array with at least one element that has an id property
+        if (data && Array.isArray(data) && data.length > 0) {
           const firstRecord = data[0] as { id?: string } | undefined;
           if (firstRecord && 'id' in firstRecord) {
             transactionId = firstRecord.id || 'unknown';
