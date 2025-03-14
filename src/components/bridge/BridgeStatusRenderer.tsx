@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/bridge/EmptyState";
 import { BridgeTransaction } from "@/components/bridge/BridgeTransaction";
 import { DebugInfoDisplay } from "@/components/bridge/DebugInfoDisplay";
 import { CompletedTransactionSaver } from "@/components/bridge/CompletedTransactionSaver";
+import { useState, useEffect } from "react";
 
 interface BridgeStatusRendererProps {
   loading: boolean;
@@ -23,7 +24,7 @@ interface BridgeStatusRendererProps {
 export const BridgeStatusRenderer = ({
   loading,
   error,
-  orderDetails,
+  orderDetails: initialOrderDetails,
   handleCopyAddress,
   statusCheckDebugInfo,
   simulateSuccess,
@@ -32,6 +33,14 @@ export const BridgeStatusRenderer = ({
   transactionSaved,
   setTransactionSaved
 }: BridgeStatusRendererProps) => {
+  // Add state to handle updated orderDetails after expired status check
+  const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(initialOrderDetails);
+  
+  // Update local orderDetails when initial orderDetails changes
+  useEffect(() => {
+    setOrderDetails(initialOrderDetails);
+  }, [initialOrderDetails]);
+  
   if (loading) {
     return <LoadingState />;
   }
@@ -62,6 +71,12 @@ export const BridgeStatusRenderer = ({
     );
   }
 
+  // Function to update order details (used by CompletedTransactionSaver)
+  const handleOrderDetailsUpdate = (updatedDetails: OrderDetails) => {
+    console.log("Updating order details:", updatedDetails);
+    setOrderDetails(updatedDetails);
+  };
+
   return (
     <>
       <BridgeTransaction 
@@ -83,6 +98,7 @@ export const BridgeStatusRenderer = ({
         transactionSaved={transactionSaved}
         setTransactionSaved={setTransactionSaved}
         statusCheckDebugInfo={statusCheckDebugInfo}
+        onOrderDetailsUpdate={handleOrderDetailsUpdate}
       />
     </>
   );

@@ -14,13 +14,15 @@ interface CompletedTransactionSaverProps {
   transactionSaved: boolean;
   setTransactionSaved: (saved: boolean) => void;
   statusCheckDebugInfo: any | null;
+  onOrderDetailsUpdate?: (updatedDetails: OrderDetails) => void;
 }
 
 export const useCompletedTransactionSaver = ({
   token,
   statusCheckDebugInfo,
-  setTransactionSaved
-}: Pick<CompletedTransactionSaverProps, 'token' | 'statusCheckDebugInfo' | 'setTransactionSaved'>) => {
+  setTransactionSaved,
+  onOrderDetailsUpdate
+}: Pick<CompletedTransactionSaverProps, 'token' | 'statusCheckDebugInfo' | 'setTransactionSaved' | 'onOrderDetailsUpdate'>) => {
   const navigate = useNavigate();
 
   // Function to check if a transaction exists in the database
@@ -211,17 +213,21 @@ export const useCompletedTransactionSaver = ({
 
   // Function to handle expired status
   const handleExpiredStatus = useCallback(async (orderDetails: OrderDetails) => {
-    if (!orderDetails) return;
+    if (!orderDetails) return null;
     
     const orderId = orderDetails.ffOrderId || orderDetails.orderId;
-    if (!orderId) return;
+    if (!orderId) return null;
+    
+    console.log("Handling EXPIRED status for order:", orderId);
     
     // Check if this order exists in completed_bridge_transactions
     const exists = await checkTransactionExists(orderId);
     
     if (exists) {
       console.log(`Order ${orderId} found in completed_bridge_transactions, updating status to completed`);
+      
       // If it exists in the completed transactions, update the status to completed
+      // but DO NOT save it again - simply return the updated details
       const updatedDetails = {
         ...orderDetails,
         currentStatus: "completed",
@@ -231,6 +237,15 @@ export const useCompletedTransactionSaver = ({
         }
       };
       
+      // Mark the transaction as saved since it already exists in the database
+      setTransactionSaved(true);
+      
+      // Update the order details in the parent component if callback exists
+      if (onOrderDetailsUpdate) {
+        console.log("Calling onOrderDetailsUpdate with updated details");
+        onOrderDetailsUpdate(updatedDetails);
+      }
+      
       // Return the updated order details
       return updatedDetails;
     }
@@ -238,7 +253,7 @@ export const useCompletedTransactionSaver = ({
     // If not found, leave as expired
     console.log(`Order ${orderId} not found in completed_bridge_transactions, keeping status as expired`);
     return null;
-  }, [checkTransactionExists]);
+  }, [checkTransactionExists, setTransactionSaved, onOrderDetailsUpdate]);
 
   return { saveCompletedTransaction, handleExpiredStatus, checkTransactionExists };
 };
@@ -250,12 +265,14 @@ export const CompletedTransactionSaver = ({
   token,
   transactionSaved,
   setTransactionSaved,
-  statusCheckDebugInfo
+  statusCheckDebugInfo,
+  onOrderDetailsUpdate
 }: CompletedTransactionSaverProps) => {
   const { saveCompletedTransaction, handleExpiredStatus } = useCompletedTransactionSaver({
     token,
     statusCheckDebugInfo,
-    setTransactionSaved
+    setTransactionSaved,
+    onOrderDetailsUpdate
   });
 
   // Effect to monitor completion status and save to database
@@ -298,15 +315,14 @@ export const CompletedTransactionSaver = ({
       orderDetails && 
       orderDetails.rawApiResponse?.status === "EXPIRED"
     ) {
+      console.log("Found EXPIRED status, checking database for completed transaction");
+      
       handleExpiredStatus(orderDetails).then(updatedDetails => {
         if (updatedDetails) {
           console.log("Converting EXPIRED status to DONE as transaction was found in database");
           // If we got updated details back, the transaction was found in database
-          saveCompletedTransaction(
-            updatedDetails,
-            { data: updatedDetails.rawApiResponse },
-            false
-          );
+          // We don't need to save it again since it's already in the database
+          // Just mark it as saved and let BridgeTransaction.tsx show it correctly
         }
       });
     }

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
@@ -30,7 +31,10 @@ export const BridgeTransaction = ({
   const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
-    const isApiExpired = apiStatus === "EXPIRED";
+    // The currentStatus should take precedence over the API status
+    // This allows our application to override the EXPIRED status when we know
+    // the transaction is actually completed
+    const isApiExpired = apiStatus === "EXPIRED" && orderDetails.currentStatus !== "completed";
     const isStatusExpired = orderDetails.currentStatus === "expired";
     const isTimerExpired = timeLeft !== null && timeLeft <= 0;
 
@@ -43,7 +47,11 @@ export const BridgeTransaction = ({
       isTimerExpired,
     });
 
-    if (isApiExpired || isStatusExpired || isTimerExpired) {
+    // Override expired status if currentStatus is "completed"
+    if (orderDetails.currentStatus === "completed") {
+      console.log("Current status is 'completed', ignoring EXPIRED API status");
+      setIsExpired(false);
+    } else if (isApiExpired || isStatusExpired || isTimerExpired) {
       console.log("Order is expired");
       setIsExpired(true);
     } else {
@@ -79,7 +87,11 @@ export const BridgeTransaction = ({
     }
   }, [orderDetails.rawApiResponse]);
 
-  const displayStatus = isExpired ? "EXPIRED" : apiStatus;
+  // Give priority to the currentStatus if it's set to completed
+  const displayStatus = orderDetails.currentStatus === "completed" 
+    ? "DONE"
+    : (isExpired ? "EXPIRED" : apiStatus);
+    
   console.log("Final display status:", displayStatus);
   console.log("Is order complete:", isOrderComplete);
 
