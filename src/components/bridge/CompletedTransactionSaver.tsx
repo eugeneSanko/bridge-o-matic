@@ -177,6 +177,7 @@ export const useCompletedTransactionSaver = ({
         // We need to handle the case where data might be null or not have the expected structure
         let transactionId = 'unknown';
         
+        // Fix for TypeScript error - properly handle the data array type
         if (data && Array.isArray(data) && data.length > 0) {
           const firstRecord = data[0] as { id?: string } | undefined;
           if (firstRecord && 'id' in firstRecord) {
