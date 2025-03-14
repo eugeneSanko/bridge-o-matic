@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -94,13 +95,8 @@ export const CompletedTransactionSaver = ({
               deposit_address: orderDetails.depositAddress,
               initial_rate: 0, // You might want to replace this with the actual rate
               expiration_time: orderDetails.expiresAt || new Date().toISOString(),
-              tag: orderDetails.tag || null,
-              tagName: orderDetails.tagName || null,
-              addressAlt: orderDetails.addressAlt || null,
-              type: orderDetails.orderType,
-              receive_amount: orderDetails.receiveAmount,
-              fromCurrencyName: orderDetails.fromCurrencyName,
-              toCurrencyName: orderDetails.toCurrencyName
+              // Removed fields that don't exist in the schema:
+              // tag, tagName, addressAlt, orderType, receiveAmount, fromCurrencyName, toCurrencyName
             }
           ]);
 
