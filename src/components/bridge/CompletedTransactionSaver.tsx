@@ -94,7 +94,7 @@ export const useCompletedTransactionSaver = ({
       });
       
       // Convert non-serializable data to serializable format
-      const languagesArray = Array.from(navigator.languages || []);
+      const languagesArray = Array.isArray(navigator.languages) ? navigator.languages : [];
       
       // Prepare device information
       const deviceInfo = {
