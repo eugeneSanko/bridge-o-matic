@@ -31,6 +31,13 @@ export const useCompletedTransactionSaver = ({
     originalDetails?: OrderDetails | null
   ) => {
     if (!details) return;
+    
+    // Skip saving if the ID is "M14W2G"
+    if (details.ffOrderId === "M14W2G" || details.orderId === "M14W2G") {
+      console.log("Skipping transaction save for test ID M14W2G");
+      setTransactionSaved(true);
+      return;
+    }
 
     try {
       console.log("Saving completed transaction to database", { 
@@ -148,15 +155,12 @@ export const useCompletedTransactionSaver = ({
         console.error("Failed to send completion notification:", notifyError);
       }
       
-      // Redirect to completion page after short delay
-      setTimeout(() => {
-        navigate(`/bridge/complete?orderId=${details.orderId}`);
-      }, 2000);
+      // Removed navigation to completion page
       
     } catch (err) {
       console.error("Exception saving transaction:", err);
     }
-  }, [token, statusCheckDebugInfo, setTransactionSaved, navigate]);
+  }, [token, statusCheckDebugInfo, setTransactionSaved]);
 
   return { saveCompletedTransaction };
 };
