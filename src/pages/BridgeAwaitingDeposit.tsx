@@ -50,7 +50,7 @@ const BridgeAwaitingDeposit = () => {
   };
 
   // Use custom hook for order status polling
-  const { statusCheckError } = useOrderStatusPolling({
+  const { statusCheckError, checkOrderStatus } = useOrderStatusPolling({
     orderId,
     token,
     originalOrderDetails,
@@ -89,6 +89,7 @@ const BridgeAwaitingDeposit = () => {
         token={token}
         transactionSaved={transactionSaved}
         setTransactionSaved={setTransactionSaved}
+        checkOrderStatus={() => checkOrderStatus && checkOrderStatus(true)}
       />
     </>
   );

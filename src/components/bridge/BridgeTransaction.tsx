@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
@@ -11,11 +12,17 @@ import { OrderDetails as OrderDetailsType } from "@/hooks/useBridgeOrder";
 interface BridgeTransactionProps {
   orderDetails: OrderDetailsType;
   onCopyAddress: (text: string) => void;
+  onRetryCurrentPrice?: () => void;
+  onEmergencyExchange?: () => void;
+  onEmergencyRefund?: () => void;
 }
 
 export const BridgeTransaction = ({
   orderDetails,
   onCopyAddress,
+  onRetryCurrentPrice,
+  onEmergencyExchange,
+  onEmergencyRefund,
 }: BridgeTransactionProps) => {
   const apiStatus =
     orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
@@ -29,6 +36,7 @@ export const BridgeTransaction = ({
   const timeLeft = orderDetails.rawApiResponse?.time?.left || null;
 
   const [isExpired, setIsExpired] = useState(false);
+  const [isEmergency, setIsEmergency] = useState(false);
 
   useEffect(() => {
     // The currentStatus should take precedence over the API status
@@ -58,6 +66,16 @@ export const BridgeTransaction = ({
     } else {
       setIsExpired(false);
     }
+    
+    // Check for emergency status
+    const isApiEmergency = 
+      apiStatus === "EMERGENCY" || 
+      apiStatus === "FAILED";
+    const isStatusEmergency = 
+      orderDetails.currentStatus === "emergency" || 
+      orderDetails.currentStatus === "failed";
+      
+    setIsEmergency(isApiEmergency || isStatusEmergency);
   }, [apiStatus, orderDetails.currentStatus, timeLeft]);
 
   useEffect(() => {
@@ -94,10 +112,17 @@ export const BridgeTransaction = ({
       ? "DONE"
       : isExpired
       ? "EXPIRED"
+      : isEmergency
+      ? "EMERGENCY"
       : apiStatus;
 
   console.log("Final display status:", displayStatus);
   console.log("Is order complete:", isOrderComplete);
+  console.log("Is expired:", isExpired);
+  console.log("Is emergency:", isEmergency);
+
+  // Determine whether to show QR code section
+  const shouldShowQRCode = !isOrderComplete && !isExpired && !isEmergency;
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
@@ -132,6 +157,9 @@ export const BridgeTransaction = ({
                 tag={orderDetails.tag}
                 tagName={orderDetails.tagName}
                 timeLeft={timeLeft}
+                onRetryCurrentPrice={onRetryCurrentPrice}
+                onEmergencyExchange={onEmergencyExchange}
+                onEmergencyRefund={onEmergencyRefund}
               />
               <AddressDetails
                 depositAddress={orderDetails.depositAddress}
@@ -142,12 +170,14 @@ export const BridgeTransaction = ({
                 fromCurrency={orderDetails.fromCurrency}
                 fromCurrencyName={orderDetails.fromCurrencyName}
               />
-              <QRCodeSection
-                depositAddress={orderDetails.depositAddress}
-                depositAmount={orderDetails.depositAmount}
-                fromCurrency={orderDetails.fromCurrency}
-                tag={orderDetails.tag}
-              />
+              {shouldShowQRCode && (
+                <QRCodeSection
+                  depositAddress={orderDetails.depositAddress}
+                  depositAmount={orderDetails.depositAmount}
+                  fromCurrency={orderDetails.fromCurrency}
+                  tag={orderDetails.tag}
+                />
+              )}
             </div>
 
             <div className="grid grid-cols-12 gap-6">

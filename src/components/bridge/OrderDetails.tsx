@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from "react";
-import { Copy, Clock, Calendar, Tag, AlertCircle, TimerOff } from "lucide-react";
+import { Copy, Clock, Calendar, Tag, AlertCircle, TimerOff, RefreshCw, ArrowRight, LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface OrderDetailsProps {
   orderId: string;
@@ -13,6 +14,9 @@ interface OrderDetailsProps {
   expiresAt?: string | null;
   currentStatus?: string;
   timeLeft?: number | null;
+  onRetryCurrentPrice?: () => void;
+  onEmergencyExchange?: () => void;
+  onEmergencyRefund?: () => void;
 }
 
 export const OrderDetails = ({ 
@@ -24,8 +28,12 @@ export const OrderDetails = ({
   tagName,
   expiresAt,
   currentStatus = "NEW",
-  timeLeft
+  timeLeft,
+  onRetryCurrentPrice,
+  onEmergencyExchange,
+  onEmergencyRefund
 }: OrderDetailsProps) => {
+  const navigate = useNavigate();
   const [localTimeRemaining, setLocalTimeRemaining] = useState(timeRemaining || "20:00");
   const [timerColor, setTimerColor] = useState("#9b87f5"); // Start with purple
   const [isExpired, setIsExpired] = useState(false);
@@ -104,29 +112,86 @@ export const OrderDetails = ({
     return date.toISOString().replace('T', ' ').substring(0, 16) + ' UTC';
   };
 
+  const handleNewExchange = () => {
+    navigate('/bridge');
+  };
+
   const renderStatusSection = () => {
-    // Check for failed or expired status in API format or app format
-    const hasFailedOrExpired = isExpired || 
-      currentStatus === "FAILED" || 
-      currentStatus === "EXPIRED" ||
-      currentStatus === "failed" || 
-      currentStatus === "expired" ||
-      currentStatus === "EMERGENCY";
+    // Check for expired status
+    const isStatusExpired = 
+      isExpired || 
+      currentStatus === "EXPIRED" || 
+      currentStatus === "expired";
     
-    if (hasFailedOrExpired) {
+    // Check for emergency status
+    const isEmergency = 
+      currentStatus === "FAILED" || 
+      currentStatus === "EMERGENCY" ||
+      currentStatus === "failed" || 
+      currentStatus === "emergency";
+    
+    if (isStatusExpired) {
       return (
         <div className="mt-4 p-3 bg-red-500/10 rounded-lg border border-red-500/20">
-          <div className="flex items-center gap-2 text-red-500">
-            <AlertCircle className="h-5 w-5" />
-            <span className="font-medium">
-              {isExpired || currentStatus === "EXPIRED" || currentStatus === "expired" 
-                ? "Deposit window expired" 
-                : "Awaiting deposit failed"}
-            </span>
+          <div className="flex items-center gap-2 text-red-500 mb-2">
+            <TimerOff className="h-5 w-5" />
+            <span className="font-medium">Deposit window expired</span>
           </div>
-          <p className="text-sm text-gray-400 mt-1">
-            Please contact support with your order ID
+          <div className="flex gap-2 mt-3">
+            <Button 
+              variant="default" 
+              size="sm" 
+              className="w-full"
+              onClick={handleNewExchange}
+            >
+              <ArrowRight className="h-4 w-4 mr-1" />
+              New Exchange
+            </Button>
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className="w-full"
+              onClick={onRetryCurrentPrice}
+              disabled={!onRetryCurrentPrice}
+            >
+              <RefreshCw className="h-4 w-4 mr-1" />
+              Retry Current Price
+            </Button>
+          </div>
+        </div>
+      );
+    }
+    
+    if (isEmergency) {
+      return (
+        <div className="mt-4 p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+          <div className="flex items-center gap-2 text-red-500 mb-2">
+            <AlertCircle className="h-5 w-5" />
+            <span className="font-medium">Exchange emergency</span>
+          </div>
+          <p className="text-sm text-gray-400 mb-2">
+            Your exchange encountered an issue. Choose an option:
           </p>
+          <div className="flex gap-2 mt-3">
+            <Button 
+              variant="default" 
+              size="sm" 
+              className="w-full"
+              onClick={onEmergencyExchange}
+              disabled={!onEmergencyExchange}
+            >
+              Exchange
+            </Button>
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              className="w-full"
+              onClick={onEmergencyRefund}
+              disabled={!onEmergencyRefund}
+            >
+              Refund
+            </Button>
+          </div>
         </div>
       );
     }
