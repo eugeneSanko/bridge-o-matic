@@ -8,7 +8,12 @@ import React, {
 } from "react";
 import { toast } from "@/hooks/use-toast";
 import { useBridgeService } from "@/hooks/useBridgeService";
-import { BridgeContextType, TimerConfig, Currency, PriceResponse } from "@/types/bridge";
+import {
+  BridgeContextType,
+  TimerConfig,
+  Currency,
+  PriceResponse,
+} from "@/types/bridge";
 
 /**
  * Configuration for timers used in the bridge process
@@ -29,7 +34,7 @@ const BridgeContext = createContext<BridgeContextType | undefined>(undefined);
 export function BridgeProvider({ children }: { children: React.ReactNode }) {
   const [fromCurrency, setFromCurrency] = useState<string>("");
   const [toCurrency, setToCurrency] = useState<string>("");
-  const [amount, setAmount] = useState<string>("50"); // Set default amount to 50
+  const [amount, setAmount] = useState<string>("11"); // Set default amount to 50
   const [estimatedReceiveAmount, setEstimatedReceiveAmount] =
     useState<string>("");
   const [destinationAddress, setDestinationAddress] = useState<string>("");
@@ -40,14 +45,16 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
   );
   const [isLoadingCurrencies, setIsLoadingCurrencies] = useState<boolean>(true);
   const [timeRemaining, setTimeRemaining] = useState<string | null>(null);
-  const [lastPriceData, setLastPriceData] = useState<PriceResponse | null>(null);
+  const [lastPriceData, setLastPriceData] = useState<PriceResponse | null>(
+    null
+  );
   const [amountError, setAmountError] = useState<string | null>(null);
 
   // Use refs for timers to prevent issues with cleanup and closures
   const timeRemainingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const quoteExpiryTimeRef = useRef<number | null>(null);
   const statusCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Last time a price calculation was made
   const lastPriceCheckTimeRef = useRef<number>(0);
 
@@ -76,10 +83,10 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
    * Helper function to format numbers with commas for thousands separators
    */
   const formatNumberWithCommas = (value: string | number): string => {
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       value = parseFloat(value);
     }
-    return value.toLocaleString('en-US', { maximumFractionDigits: 8 });
+    return value.toLocaleString("en-US", { maximumFractionDigits: 8 });
   };
 
   /**
@@ -92,11 +99,15 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       if (Array.isArray(currencies) && currencies.length > 0) {
         setAvailableCurrencies(currencies);
         console.log(`Loaded ${currencies.length} currencies`);
-        
+
         // Set default from currency (USDT) and to currency (BTC) after loading
-        const usdtCurrency = currencies.find(c => c.code?.includes("USDT") && c.send === 1);
-        const btcCurrency = currencies.find(c => c.code === "BTC" && c.recv === 1);
-        
+        const usdtCurrency = currencies.find(
+          (c) => c.code?.includes("USDT") && c.send === 1
+        );
+        const btcCurrency = currencies.find(
+          (c) => c.code === "BTC" && c.recv === 1
+        );
+
         if (usdtCurrency && btcCurrency) {
           setFromCurrency(usdtCurrency.code || "");
           setToCurrency(btcCurrency.code || "");
@@ -129,11 +140,15 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
         if (Array.isArray(currencies) && currencies.length > 0) {
           setAvailableCurrencies(currencies);
           console.log(`Loaded ${currencies.length} currencies`);
-          
+
           // Set default from currency (USDT) and to currency (BTC) after loading
-          const usdtCurrency = currencies.find(c => c.code?.includes("USDT") && c.send === 1);
-          const btcCurrency = currencies.find(c => c.code === "BTC" && c.recv === 1);
-          
+          const usdtCurrency = currencies.find(
+            (c) => c.code?.includes("USDT") && c.send === 1
+          );
+          const btcCurrency = currencies.find(
+            (c) => c.code === "BTC" && c.recv === 1
+          );
+
           if (usdtCurrency && btcCurrency) {
             setFromCurrency(usdtCurrency.code || "");
             setToCurrency(btcCurrency.code || "");
@@ -282,13 +297,12 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       // Format the estimated receive amount with commas if needed (keep original raw value for calculations)
       setEstimatedReceiveAmount(data.data.to.amount);
       setLastPriceData(data);
-      
+
       // Validate amount after getting price data
       validateAmount();
-      
+
       // Update the last check time
       lastPriceCheckTimeRef.current = Date.now();
-      
     } catch (error) {
       console.error("Error calculating amount:", error);
       setEstimatedReceiveAmount("0");
@@ -334,9 +348,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
         // Stop checking if order is in a terminal state
         if (
           data &&
-          ["completed", "failed", "expired", "refunded"].includes(
-            data.status
-          )
+          ["completed", "failed", "expired", "refunded"].includes(data.status)
         ) {
           if (statusCheckTimerRef.current) {
             clearInterval(statusCheckTimerRef.current);
@@ -403,7 +415,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
         amount,
         destinationAddress,
         orderType,
-        lastPriceData.data.rate || ''
+        lastPriceData.data.rate || ""
       );
 
       // If successful, store the transaction data
@@ -411,7 +423,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
         // Extract the order ID and token from the result
         const orderId = result.data.id;
         const orderToken = result.data.token;
-        
+
         // Store the transaction data for use in awaiting deposit page
         const transactionData = {
           id: orderId,
@@ -427,11 +439,15 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
           tag: result.data.from?.tag || null,
           tagName: result.data.from?.tagName || null,
           addressAlt: result.data.from?.addressAlt || null,
-          expiresAt: result.data.time?.expiration ? 
-            new Date(result.data.time.expiration * 1000).toISOString() : null
+          expiresAt: result.data.time?.expiration
+            ? new Date(result.data.time.expiration * 1000).toISOString()
+            : null,
         };
-        
-        localStorage.setItem('bridge_transaction_data', JSON.stringify(transactionData));
+
+        localStorage.setItem(
+          "bridge_transaction_data",
+          JSON.stringify(transactionData)
+        );
         console.log("Stored bridge transaction data:", transactionData);
 
         // Start monitoring the order status
@@ -439,32 +455,40 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
 
         toast({
           title: "Transaction Created",
-          description: "Your bridge transaction has been initiated successfully!",
+          description:
+            "Your bridge transaction has been initiated successfully!",
         });
 
         return result;
       }
 
       // If the result has an error code and a message, pass it along
-      if (result && result.code !== undefined && result.code !== 0 && result.msg) {
-        console.error(`Order creation failed: ${result.msg} (code: ${result.code})`);
+      if (
+        result &&
+        result.code !== undefined &&
+        result.code !== 0 &&
+        result.msg
+      ) {
+        console.error(
+          `Order creation failed: ${result.msg} (code: ${result.code})`
+        );
         return result;
       }
 
       console.error("Order creation failed: No valid response");
       return {
-        orderId: '',
+        orderId: "",
         code: 500,
         msg: "Failed to create order",
-        debugInfo: result?.debugInfo
+        debugInfo: result?.debugInfo,
       };
     } catch (error: any) {
       // Check if this is a specific API error with debugInfo
-      if (error && typeof error === 'object' && error.code) {
+      if (error && typeof error === "object" && error.code) {
         console.error("API error:", error);
         return error; // Return the error object directly so the UI can handle it
       }
-      
+
       toast({
         title: "Transaction Failed",
         description: error.message || "Failed to create bridge transaction",
@@ -472,10 +496,10 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
       });
       console.error("Bridge transaction error:", error);
       return {
-        orderId: '',
+        orderId: "",
         code: 500,
         msg: error.message || "Failed to create bridge transaction",
-        debugInfo: { error }
+        debugInfo: { error },
       };
     }
   };
