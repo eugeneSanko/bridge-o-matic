@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -170,30 +169,30 @@ export const useOrderStatusPolling = ({
   );
 
   // Set up initial status check and polling
-  useEffect(() => {
-    if (orderId && token && !manualStatusCheckAttempted) {
-      checkOrderStatus(true);
-    }
-  }, [orderId, token, manualStatusCheckAttempted, checkOrderStatus]);
+  // useEffect(() => {
+  //   if (orderId && token && !manualStatusCheckAttempted) {
+  //     checkOrderStatus(true);
+  //   }
+  // }, [orderId, token, manualStatusCheckAttempted, checkOrderStatus]);
 
-  useEffect(() => {
-    if (!orderId || !token || pollingInterval === null) return;
+  // useEffect(() => {
+  //   if (!orderId || !token || pollingInterval === null) return;
 
-    console.log(`Setting up polling with ${pollingInterval}ms interval`);
+  //   console.log(`Setting up polling with ${pollingInterval}ms interval`);
 
-    const intervalId = setInterval(() => {
-      checkOrderStatus();
-    }, pollingInterval);
+  //   const intervalId = setInterval(() => {
+  //     checkOrderStatus();
+  //   }, pollingInterval);
 
-    return () => {
-      console.log('Clearing polling interval');
-      clearInterval(intervalId);
-    };
-  }, [orderId, token, pollingInterval, checkOrderStatus]);
+  //   return () => {
+  //     console.log('Clearing polling interval');
+  //     clearInterval(intervalId);
+  //   };
+  // }, [orderId, token, pollingInterval, checkOrderStatus]);
 
   return {
     statusCheckDebugInfo: statusCheckDebugInfoInternal,
     statusCheckError,
     checkOrderStatus,
   };
-}
+};

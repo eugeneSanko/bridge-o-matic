@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -59,10 +60,9 @@ export const CompletedTransactionSaver = ({
 
         // Check if the transaction already exists in the database
         const { data: existingTransaction, error: selectError } = await supabase
-          .from('completed_bridge_transactions')
+          .from('bridge_transactions')
           .select('*')
-          .eq('ff_order_id', orderDetails.orderId)
-          .limit(1);
+          .eq('ff_order_id', orderDetails.orderId);
 
         if (selectError) {
           console.error("Error checking for existing transaction:", selectError);
@@ -82,7 +82,7 @@ export const CompletedTransactionSaver = ({
 
         // Insert the transaction data into the database
         const { data, error } = await supabase
-          .from('completed_bridge_transactions')
+          .from('bridge_transactions')
           .insert([
             {
               ff_order_id: orderDetails.orderId,
@@ -93,15 +93,12 @@ export const CompletedTransactionSaver = ({
               destination_address: orderDetails.destinationAddress,
               status: orderDetails.currentStatus,
               deposit_address: orderDetails.depositAddress,
-              raw_api_response: orderDetails.rawApiResponse || null,
-              client_metadata: {
-                device: navigator.userAgent,
-                simulation: simulateSuccess,
-                time: new Date().toISOString()
-              }
+              initial_rate: 0, // You might want to replace this with the actual rate
+              expiration_time: orderDetails.expiresAt || new Date().toISOString(),
+              // Removed fields that don't exist in the schema:
+              // tag, tagName, addressAlt, orderType, receiveAmount, fromCurrencyName, toCurrencyName
             }
-          ])
-          .select();
+          ]);
 
         if (error) {
           console.error("Error saving transaction:", error);
@@ -113,26 +110,6 @@ export const CompletedTransactionSaver = ({
         } else {
           console.log("Transaction saved successfully:", data);
           setTransactionSaved(true);
-          
-          // Optionally, notify backend about the completed transaction
-          try {
-            // Fix the TypeScript error by adding a null check
-            if (data && data.length > 0) {
-              await supabase.functions.invoke('bridge-notify-complete', {
-                body: {
-                  transactionId: data[0].id,
-                  metadata: {
-                    source: 'CompletedTransactionSaver',
-                    completionTime: new Date().toISOString()
-                  }
-                }
-              });
-            }
-          } catch (notifyError) {
-            console.error("Error notifying about completion:", notifyError);
-            // Non-critical error, we don't need to show a toast
-          }
-          
           toast({
             title: "Transaction Saved",
             description: "Transaction details saved successfully",
@@ -163,6 +140,7 @@ export const CompletedTransactionSaver = ({
     }
   }, [orderDetails]);
 
+  // This fixes the TypeScript error by properly checking if results.data is an array with length
   const handleExpiredStatus = async () => {
     console.log("Handling expired status");
     
@@ -174,35 +152,10 @@ export const CompletedTransactionSaver = ({
     try {
       console.log("Checking if transaction exists in database");
       
-      // First check in completed_bridge_transactions
-      const { data: completedResults, error: completedError } = await supabase
-        .from('completed_bridge_transactions')
-        .select('ff_order_id')
-        .eq('ff_order_id', orderDetails.orderId)
-        .limit(1);
-      
-      if (completedError) {
-        console.error("Error checking for completed transaction:", completedError);
-      } else if (completedResults && Array.isArray(completedResults) && completedResults.length > 0) {
-        console.log("Completed transaction found in database:", completedResults);
-        
-        // If the transaction exists in the completed table, update the order details to mark it as completed
-        if (onOrderDetailsUpdate) {
-          console.log("Updating order details to show completed status");
-          onOrderDetailsUpdate({
-            ...orderDetails,
-            currentStatus: "completed"
-          });
-        }
-        
-        // Return true to indicate the transaction was found and status was updated
-        return true;
-      }
-      
-      // Then check in bridge_transactions
+      // Query the database to see if this transaction was already processed
       const { data: results, error } = await supabase
         .from('bridge_transactions')
-        .select('ff_order_id, status')
+        .select('ff_order_id')
         .eq('ff_order_id', orderDetails.orderId)
         .limit(1);
       
@@ -211,11 +164,11 @@ export const CompletedTransactionSaver = ({
         return false;
       }
       
-      // Check if we found the transaction in the database and if it's marked as completed
-      if (results && Array.isArray(results) && results.length > 0 && results[0].status === 'completed') {
-        console.log("Completed transaction found in bridge_transactions:", results);
+      // Check if we found the transaction in the database
+      if (results && Array.isArray(results) && results.length > 0) {
+        console.log("Transaction found in database:", results);
         
-        // If the transaction exists and is completed, update the order details
+        // If the transaction exists in the database, update the order details to mark it as completed
         if (onOrderDetailsUpdate) {
           console.log("Updating order details to show completed status");
           onOrderDetailsUpdate({
@@ -228,7 +181,7 @@ export const CompletedTransactionSaver = ({
         return true;
       }
       
-      console.log("Transaction not found in database or not marked as completed, will need to save it");
+      console.log("Transaction not found in database, will need to save it");
       return false;
     } catch (e) {
       console.error("Error in handleExpiredStatus:", e);

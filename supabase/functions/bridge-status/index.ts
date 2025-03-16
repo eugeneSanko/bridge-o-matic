@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
@@ -67,13 +66,14 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Fetching order status for ID: ${id}, Token: ${token.substring(0, 5)}...`);
+    console.log(`Fetching order status for ID: ${id}`);
     
     // Prepare request body for FixedFloat API
     const requestBody = { id, token };
     const requestBodyStr = JSON.stringify(requestBody);
     
     console.log("Request body:", requestBodyStr);
+    console.log("API Secret Length:", FF_API_SECRET.length);
     
     // Generate signature
     const signature = await generateSignature(requestBody);

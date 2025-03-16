@@ -19,7 +19,7 @@ const BridgeAwaitingDeposit = () => {
   const [transactionSaved, setTransactionSaved] = useState(false);
   const [statusCheckDebugInfo, setStatusCheckDebugInfo] = useState(null);
   
-  // Load order details from the bridge API - always force API check and pass the token from URL
+  // Load order details from the bridge API
   const { 
     orderDetails: originalOrderDetails, 
     loading, 
@@ -27,9 +27,8 @@ const BridgeAwaitingDeposit = () => {
     handleCopyAddress 
   } = useBridgeOrder(
     orderId, 
-    true,  // Always try to fetch from API
-    true,  // Force API check
-    token  // Pass the token from URL
+    true, // Always try to fetch from API
+    true  // Force API check even if we have local data
   );
   
   const [orderDetails, setOrderDetails] = useState(originalOrderDetails);
