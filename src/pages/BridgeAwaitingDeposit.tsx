@@ -27,6 +27,7 @@ const BridgeAwaitingDeposit = () => {
     handleCopyAddress 
   } = useBridgeOrder(
     orderId, 
+    token,
     true, // Always try to fetch from API
     true  // Force API check even if we have local data
   );

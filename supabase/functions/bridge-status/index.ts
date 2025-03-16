@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
@@ -50,11 +51,15 @@ serve(async (req) => {
     // Extract id and token from the request
     const { id, token } = requestData;
     
+    console.log(`Received request parameters - id: ${id}, token: ${token}`);
+    
     if (!id || !token) {
+      console.error("Missing required parameters", { id, token });
       return new Response(
         JSON.stringify({
           code: 400,
           msg: "Missing order ID or token",
+          debugInfo: { receivedParams: { id, token } }
         }),
         {
           status: 400,
@@ -66,7 +71,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Fetching order status for ID: ${id}`);
+    console.log(`Fetching order status for ID: ${id} with token: ${token.substring(0, 4)}...`);
     
     // Prepare request body for FixedFloat API
     const requestBody = { id, token };
