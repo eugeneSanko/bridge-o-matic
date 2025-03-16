@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -234,6 +235,7 @@ export function useBridgeOrder(
           const currentStatus = statusMap[apiStatus] || apiStatus.toLowerCase();
           console.log("Mapped status:", currentStatus);
 
+          // Fix the TypeScript error - Ensure orderType is "fixed" | "float"
           const orderType: "fixed" | "float" =
             apiResponse.data.type?.toLowerCase() === "float"
               ? "float"
@@ -259,7 +261,7 @@ export function useBridgeOrder(
           const toCurrencyName =
             apiResponse.data.to?.name || bridgeData?.toCurrencyName;
 
-          const details = {
+          const details: OrderDetails = {
             depositAddress:
               bridgeData?.depositAddress || apiResponse.data.from.address,
             depositAmount: bridgeData?.amount || apiResponse.data.from.amount,
@@ -286,7 +288,7 @@ export function useBridgeOrder(
               bridgeData?.addressAlt ||
               apiResponse.data.from.addressAlt ||
               null,
-            orderType: orderType,
+            orderType: orderType,  // This is now correctly typed as "fixed" | "float"
             receiveAmount:
               bridgeData?.receiveAmount || apiResponse.data.to.amount,
             fromCurrencyName: fromCurrencyName,
@@ -320,10 +322,11 @@ export function useBridgeOrder(
       }
 
       if (bridgeData) {
+        // Fix the TypeScript error - Ensure orderType is "fixed" | "float"
         const orderType: "fixed" | "float" =
           bridgeData.type?.toLowerCase() === "float" ? "float" : "fixed";
 
-        const details = {
+        const details: OrderDetails = {
           depositAddress: bridgeData.depositAddress,
           depositAmount: bridgeData.amount,
           currentStatus: bridgeData.status,
@@ -338,7 +341,7 @@ export function useBridgeOrder(
           tag: bridgeData.tag || null,
           tagName: bridgeData.tagName || null,
           addressAlt: bridgeData.addressAlt || null,
-          orderType: orderType,
+          orderType: orderType, // This is now correctly typed as "fixed" | "float"
           receiveAmount: bridgeData.receiveAmount,
           fromCurrencyName: bridgeData.fromCurrencyName,
           toCurrencyName: bridgeData.toCurrencyName,
@@ -367,7 +370,11 @@ export function useBridgeOrder(
         toCurrencyName: "Solana",
       };
 
-      const details = {
+      // Fix the TypeScript error - Ensure orderType is "fixed" | "float"
+      const fallbackOrderType: "fixed" | "float" = 
+        fallbackData.type === "float" ? "float" : "fixed";
+
+      const details: OrderDetails = {
         depositAddress: fallbackData.depositAddress,
         depositAmount: fallbackData.amount,
         currentStatus: fallbackData.status.toLowerCase(),
@@ -382,7 +389,7 @@ export function useBridgeOrder(
         tag: null,
         tagName: null,
         addressAlt: null,
-        orderType: fallbackData.type === "float" ? "float" : "fixed",
+        orderType: fallbackOrderType, // This is now correctly typed as "fixed" | "float"
         receiveAmount: fallbackData.receiveAmount,
         fromCurrencyName: fallbackData.fromCurrencyName,
         toCurrencyName: fallbackData.toCurrencyName,
