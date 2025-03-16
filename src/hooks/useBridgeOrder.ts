@@ -54,8 +54,104 @@ export function useBridgeOrder(
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(shouldFetch);
   const [error, setError] = useState<string | null>(null);
-  // Use a ref to store the interval id so it doesn't trigger re-renders
   const pollingIntervalIdRef = useRef<number | null>(null);
+
+  const saveOrderToSupabase = useCallback(async (details: OrderDetails) => {
+    if (!details || !details.orderId) return null;
+
+    try {
+      console.log("Saving order details to Supabase:", details.orderId);
+      
+      const { data: existingOrder, error: checkError } = await supabase
+        .from('bridge_transactions')
+        .select('id')
+        .eq('ff_order_id', details.orderId)
+        .limit(1);
+      
+      if (checkError) {
+        console.error("Error checking existing order:", checkError);
+        return null;
+      }
+      
+      if (existingOrder && existingOrder.length > 0) {
+        const { data, error: updateError } = await supabase
+          .from('bridge_transactions')
+          .update({
+            status: details.currentStatus,
+            updated_at: new Date().toISOString()
+          })
+          .eq('ff_order_id', details.orderId)
+          .select();
+        
+        if (updateError) {
+          console.error("Error updating order in Supabase:", updateError);
+          return null;
+        }
+        
+        console.log("Updated order in Supabase:", data);
+        return data?.[0] || null;
+      } 
+      else {
+        const { data, error: insertError } = await supabase
+          .from('bridge_transactions')
+          .insert([{
+            ff_order_id: details.orderId,
+            ff_order_token: details.ffOrderToken,
+            from_currency: details.fromCurrency,
+            to_currency: details.toCurrency,
+            amount: parseFloat(details.depositAmount),
+            destination_address: details.destinationAddress,
+            status: details.currentStatus,
+            deposit_address: details.depositAddress,
+            expiration_time: details.expiresAt,
+            client_metadata: {
+              device: navigator.userAgent,
+              time: new Date().toISOString()
+            }
+          }])
+          .select();
+        
+        if (insertError) {
+          console.error("Error inserting order to Supabase:", insertError);
+          return null;
+        }
+        
+        console.log("Inserted order to Supabase:", data);
+        return data?.[0] || null;
+      }
+    } catch (err) {
+      console.error("Error saving to Supabase:", err);
+      return null;
+    }
+  }, []);
+
+  const fetchOrderFromSupabase = useCallback(async (orderIdentifier: string) => {
+    try {
+      console.log("Fetching order from Supabase:", orderIdentifier);
+      
+      const { data, error } = await supabase
+        .from('bridge_transactions')
+        .select('*')
+        .or(`ff_order_id.eq.${orderIdentifier},id.eq.${orderIdentifier}`)
+        .limit(1);
+      
+      if (error) {
+        console.error("Error fetching from Supabase:", error);
+        return null;
+      }
+      
+      if (data && data.length > 0) {
+        console.log("Found order in Supabase:", data[0]);
+        return data[0];
+      }
+      
+      console.log("Order not found in Supabase");
+      return null;
+    } catch (err) {
+      console.error("Error querying Supabase:", err);
+      return null;
+    }
+  }, []);
 
   const fetchOrderDetails = useCallback(async () => {
     if (!orderId || !shouldFetch) {
@@ -75,6 +171,29 @@ export function useBridgeOrder(
           console.log("Found stored bridge data:", bridgeData);
         } catch (e) {
           console.error("Error parsing stored bridge data:", e);
+        }
+      }
+
+      if ((!bridgeData || forceApiCheck) && !bridgeData?.orderToken) {
+        console.log("Checking Supabase for order data");
+        const supabaseData = await fetchOrderFromSupabase(orderId);
+        
+        if (supabaseData) {
+          console.log("Using data from Supabase");
+          
+          bridgeData = {
+            id: supabaseData.ff_order_id,
+            orderToken: supabaseData.ff_order_token,
+            fromCurrency: supabaseData.from_currency,
+            toCurrency: supabaseData.to_currency,
+            amount: supabaseData.amount.toString(),
+            destinationAddress: supabaseData.destination_address,
+            status: supabaseData.status,
+            depositAddress: supabaseData.deposit_address,
+            expiresAt: supabaseData.expiration_time,
+          };
+          
+          localStorage.setItem("bridge_transaction_data", JSON.stringify(bridgeData));
         }
       }
 
@@ -140,7 +259,7 @@ export function useBridgeOrder(
           const toCurrencyName =
             apiResponse.data.to?.name || bridgeData?.toCurrencyName;
 
-          setOrderDetails({
+          const details = {
             depositAddress:
               bridgeData?.depositAddress || apiResponse.data.from.address,
             depositAmount: bridgeData?.amount || apiResponse.data.from.amount,
@@ -173,9 +292,12 @@ export function useBridgeOrder(
             fromCurrencyName: fromCurrencyName,
             toCurrencyName: toCurrencyName,
             rawApiResponse: apiResponse.data,
-          });
+          };
+          
+          saveOrderToSupabase(details);
 
-          // Stop further polling if a terminal status is reached
+          setOrderDetails(details);
+
           if (
             apiResponse.data.status === "EXPIRED" ||
             apiResponse.data.status === "EMERGENCY" ||
@@ -201,7 +323,7 @@ export function useBridgeOrder(
         const orderType: "fixed" | "float" =
           bridgeData.type?.toLowerCase() === "float" ? "float" : "fixed";
 
-        setOrderDetails({
+        const details = {
           depositAddress: bridgeData.depositAddress,
           depositAmount: bridgeData.amount,
           currentStatus: bridgeData.status,
@@ -220,13 +342,16 @@ export function useBridgeOrder(
           receiveAmount: bridgeData.receiveAmount,
           fromCurrencyName: bridgeData.fromCurrencyName,
           toCurrencyName: bridgeData.toCurrencyName,
-        });
+        };
+        
+        saveOrderToSupabase(details);
 
+        setOrderDetails(details);
         setLoading(false);
         return;
       }
 
-      console.log("No stored bridge data found, using static data");
+      console.log("No stored bridge data found or in Supabase, using static data");
       const fallbackData = {
         id: orderId,
         fromCurrency: "USDT",
@@ -242,7 +367,7 @@ export function useBridgeOrder(
         toCurrencyName: "Solana",
       };
 
-      setOrderDetails({
+      const details = {
         depositAddress: fallbackData.depositAddress,
         depositAmount: fallbackData.amount,
         currentStatus: fallbackData.status.toLowerCase(),
@@ -261,8 +386,9 @@ export function useBridgeOrder(
         receiveAmount: fallbackData.receiveAmount,
         fromCurrencyName: fallbackData.fromCurrencyName,
         toCurrencyName: fallbackData.toCurrencyName,
-      });
+      };
 
+      setOrderDetails(details);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching order details:", error);
@@ -271,7 +397,7 @@ export function useBridgeOrder(
       );
       setLoading(false);
     }
-  }, [orderId, shouldFetch, forceApiCheck]);
+  }, [orderId, shouldFetch, forceApiCheck, fetchOrderFromSupabase, saveOrderToSupabase]);
 
   const calculateTimeRemaining = (
     input: string | number | null
@@ -300,7 +426,6 @@ export function useBridgeOrder(
       setLoading(false);
     }
     if (shouldFetch && orderId) {
-      // Set up polling every 15 seconds
       pollingIntervalIdRef.current = window.setInterval(
         fetchOrderDetails,
         15000
