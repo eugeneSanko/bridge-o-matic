@@ -152,7 +152,7 @@ export const TransactionSummary = ({
           </div>
         </div>
 
-        <div className="w-16 h-16 md:w-12 md:h-12 rounded-full bg-secondary/20 flex items-center justify-center">
+        <div className="w-16 h-16 md:w-12 md:h-12 rounded-full bg-secondary/20 flex items-center justify-center md:-mb-2">
           <ArrowRight className="w-8 h-8 md:w-10 md:h-10 text-[#9b87f5]" />
         </div>
 
