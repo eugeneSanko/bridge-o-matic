@@ -1,12 +1,10 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { Check } from "lucide-react";
 import { TransactionSummary } from "@/components/bridge/TransactionSummary";
 import { toast } from "@/hooks/use-toast";
 import { invokeFunctionWithRetry } from "@/config/api";
-import { CompletedTransactionView } from "@/components/bridge/CompletedTransactionView";
-import { OrderDetails } from "@/hooks/useBridgeOrder";
-import { Check, CircleCheckBig } from "lucide-react";
 
 interface OrderData {
   id: string;
@@ -33,20 +31,6 @@ const BridgeOrderComplete = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [apiAttempted, setApiAttempted] = useState(false);
-  
-  // State to hold copy actions
-  const [copyClicked, setCopyClicked] = useState(false);
-
-  const handleCopyAddress = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopyClicked(true);
-    toast({
-      title: "Copied!",
-      description: "The text has been copied to your clipboard.",
-      duration: 3000,
-    });
-    setTimeout(() => setCopyClicked(false), 1000);
-  };
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
@@ -127,27 +111,6 @@ const BridgeOrderComplete = () => {
     );
   }
 
-  // Convert OrderData to OrderDetails format expected by CompletedTransactionView
-  const adaptedOrderDetails: OrderDetails = {
-    orderId: orderDetails.ff_order_id,
-    ffOrderToken: orderDetails.ff_order_token,
-    orderType: "fixed", // Default to fixed if not available
-    depositAmount: orderDetails.amount.toString(),
-    receiveAmount: (orderDetails.amount * orderDetails.initial_rate).toFixed(6),
-    fromCurrency: orderDetails.from_currency,
-    toCurrency: orderDetails.to_currency,
-    fromCurrencyName: orderDetails.from_currency_name,
-    toCurrencyName: orderDetails.to_currency_name,
-    depositAddress: orderDetails.deposit_address,
-    destinationAddress: orderDetails.destination_address,
-    timeRemaining: null,
-    expiresAt: orderDetails.expiration_time,
-    currentStatus: orderDetails.status,
-    rawApiResponse: {
-      status: "DONE",
-    },
-  };
-
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
       <div className="max-w-6xl mx-auto">
@@ -159,49 +122,36 @@ const BridgeOrderComplete = () => {
           fromCurrencyName={orderDetails.from_currency_name}
           toCurrencyName={orderDetails.to_currency_name}
           depositAddress={orderDetails.deposit_address}
-          receiveAmount={(orderDetails.amount * orderDetails.initial_rate).toFixed(6)}
-          orderType="fixed"
         />
 
-        <div className="glass-card p-6 md:p-8 rounded-xl mb-4">
-          <div className="grid grid-cols-4 gap-4 md:gap-8 relative">
-            {/* Completed stepper */}
-            {[
-              { label: "Awaiting deposit", completed: true },
-              { label: "Awaiting confirmations", completed: true },
-              { label: "Perform exchange", completed: true },
-              { label: "Done", completed: true, status: "completed" },
-            ].map((step, i) => (
-              <div
-                key={i}
-                className={`text-center relative ${
-                  step.status === "completed" ? "text-green-500" : "text-green-500"
-                }`}
-              >
-                <div className="flex justify-center mb-3 -ml-10">
-                  {i < 3 ? (
-                    <Check className="h-6 w-6 md:h-8 md:w-8" />
-                  ) : (
-                    <CircleCheckBig className="h-6 w-6 md:h-8 md:w-8" />
-                  )}
-                </div>
-                <div className="text-xs md:text-sm font-medium -ml-10">
-                  {step.label}
-                </div>
-                {i < 3 && (
-                  <div className="absolute top-4 left-[60%] w-[80%] h-[2px] bg-green-700" />
-                )}
-              </div>
-            ))}
+        <div className="glass-card p-8 rounded-xl mb-8">
+          <div className="flex items-center justify-center mb-8">
+            <div className="bg-green-500/20 rounded-full p-3">
+              <Check className="h-8 w-8 text-green-500" />
+            </div>
+          </div>
+          
+          <h2 className="text-2xl font-bold text-center mb-2">Transaction Complete</h2>
+          <p className="text-gray-400 text-center mb-8">
+            Your {orderDetails.to_currency} has been sent to your wallet
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="glass-card bg-secondary/20 p-6 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-400 mb-2">Order ID</h3>
+              <p className="font-mono text-sm break-all">{orderDetails.ff_order_id}</p>
+            </div>
+            
+            <div className="glass-card bg-secondary/20 p-6 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-400 mb-2">Created At</h3>
+              <p className="font-mono text-sm">
+                {new Date(orderDetails.created_at).toLocaleString()}
+              </p>
+            </div>
           </div>
         </div>
 
-        <CompletedTransactionView 
-          orderDetails={adaptedOrderDetails} 
-          onCopyClick={handleCopyAddress}
-        />
-
-        <div className="flex justify-center mt-8">
+        <div className="flex justify-center">
           <button 
             className="bg-[#0FA0CE] hover:bg-[#0FA0CE]/90 text-white py-2 px-8 rounded-lg"
             onClick={() => navigate("/bridge")}
