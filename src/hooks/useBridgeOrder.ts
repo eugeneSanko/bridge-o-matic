@@ -163,239 +163,109 @@ export function useBridgeOrder(
     try {
       console.log("Fetching order details for", orderId);
 
-      const storedDataStr = localStorage.getItem("bridge_transaction_data");
-      let bridgeData = null;
-
-      if (storedDataStr) {
-        try {
-          bridgeData = JSON.parse(storedDataStr);
-          console.log("Found stored bridge data:", bridgeData);
-        } catch (e) {
-          console.error("Error parsing stored bridge data:", e);
-        }
+      // First check Supabase for order token if we don't have it
+      let orderToken = null;
+      const supabaseData = await fetchOrderFromSupabase(orderId);
+      
+      if (supabaseData) {
+        console.log("Found order data in Supabase");
+        orderToken = supabaseData.ff_order_token;
       }
 
-      if ((!bridgeData || forceApiCheck) && !bridgeData?.orderToken) {
-        console.log("Checking Supabase for order data");
-        const supabaseData = await fetchOrderFromSupabase(orderId);
-        
-        if (supabaseData) {
-          console.log("Using data from Supabase");
-          
-          bridgeData = {
-            id: supabaseData.ff_order_id,
-            orderToken: supabaseData.ff_order_token,
-            fromCurrency: supabaseData.from_currency,
-            toCurrency: supabaseData.to_currency,
-            amount: supabaseData.amount.toString(),
-            destinationAddress: supabaseData.destination_address,
-            status: supabaseData.status,
-            depositAddress: supabaseData.deposit_address,
-            expiresAt: supabaseData.expiration_time,
-          };
-          
-          localStorage.setItem("bridge_transaction_data", JSON.stringify(bridgeData));
-        }
+      // Always fetch from the API to get the most up-to-date status
+      console.log("Fetching real-time order status from API");
+      const apiRequestBody = {
+        id: orderId,
+        token: orderToken || orderId,
+      };
+
+      console.log("API request parameters:", apiRequestBody);
+
+      const { data: apiResponse, error: apiError } =
+        await supabase.functions.invoke("bridge-status", {
+          body: apiRequestBody,
+        });
+
+      if (apiError) {
+        console.error("API error when fetching order status:", apiError);
+        throw new Error(`API error: ${apiError.message}`);
       }
 
-      if ((bridgeData && bridgeData.orderToken) || forceApiCheck) {
-        console.log("Fetching real-time order status from API");
-        const apiRequestBody = {
-          id: bridgeData?.id || orderId,
-          token: bridgeData?.orderToken || orderId,
+      if (apiResponse && apiResponse.code === 0 && apiResponse.data) {
+        console.log("API returned order status:", apiResponse);
+        const apiStatus = apiResponse.data.status;
+        console.log("Raw API status:", apiStatus);
+
+        const statusMap: Record<string, string> = {
+          NEW: "pending",
+          PENDING: "processing",
+          EXCHANGE: "exchanging",
+          WITHDRAW: "sending",
+          DONE: "completed",
+          EXPIRED: "expired",
+          EMERGENCY: "failed",
         };
 
-        console.log("API request parameters:", apiRequestBody);
+        const currentStatus = statusMap[apiStatus] || apiStatus.toLowerCase();
+        console.log("Mapped status:", currentStatus);
 
-        const { data: apiResponse, error: apiError } =
-          await supabase.functions.invoke("bridge-status", {
-            body: apiRequestBody,
-          });
-
-        if (apiError) {
-          console.error("API error when fetching order status:", apiError);
-          throw new Error(`API error: ${apiError.message}`);
-        }
-
-        if (apiResponse && apiResponse.code === 0 && apiResponse.data) {
-          console.log("API returned order status:", apiResponse);
-          const apiStatus = apiResponse.data.status;
-          console.log("Raw API status:", apiStatus);
-
-          const statusMap: Record<string, string> = {
-            NEW: "pending",
-            PENDING: "processing",
-            EXCHANGE: "exchanging",
-            WITHDRAW: "sending",
-            DONE: "completed",
-            EXPIRED: "expired",
-            EMERGENCY: "failed",
-          };
-
-          const currentStatus = statusMap[apiStatus] || apiStatus.toLowerCase();
-          console.log("Mapped status:", currentStatus);
-
-          // Fix the TypeScript error - Ensure orderType is "fixed" | "float"
-          const orderType: "fixed" | "float" =
-            apiResponse.data.type?.toLowerCase() === "float"
-              ? "float"
-              : "fixed";
-
-          if (bridgeData) {
-            bridgeData.status = currentStatus;
-            if (apiResponse.data.time && apiResponse.data.time.expiration) {
-              const expirationTimestamp =
-                apiResponse.data.time.expiration * 1000;
-              bridgeData.expiresAt = new Date(
-                expirationTimestamp
-              ).toISOString();
-            }
-            localStorage.setItem(
-              "bridge_transaction_data",
-              JSON.stringify(bridgeData)
-            );
-          }
-
-          const fromCurrencyName =
-            apiResponse.data.from?.name || bridgeData?.fromCurrencyName;
-          const toCurrencyName =
-            apiResponse.data.to?.name || bridgeData?.toCurrencyName;
-
-          const details: OrderDetails = {
-            depositAddress:
-              bridgeData?.depositAddress || apiResponse.data.from.address,
-            depositAmount: bridgeData?.amount || apiResponse.data.from.amount,
-            currentStatus: currentStatus,
-            fromCurrency:
-              bridgeData?.fromCurrency || apiResponse.data.from.code,
-            toCurrency: bridgeData?.toCurrency || apiResponse.data.to.code,
-            orderId: apiResponse.data.id,
-            ffOrderId: apiResponse.data.id,
-            ffOrderToken:
-              apiResponse.data.token || bridgeData?.orderToken || orderId,
-            destinationAddress:
-              bridgeData?.destinationAddress || apiResponse.data.to.address,
-            expiresAt: apiResponse.data.time?.expiration
-              ? new Date(apiResponse.data.time.expiration * 1000).toISOString()
-              : bridgeData?.expiresAt,
-            timeRemaining: apiResponse.data.time?.left
-              ? calculateTimeRemaining(apiResponse.data.time.left)
-              : calculateTimeRemaining(bridgeData?.expiresAt),
-            tag: bridgeData?.tag || apiResponse.data.from.tag || null,
-            tagName:
-              bridgeData?.tagName || apiResponse.data.from.tagName || null,
-            addressAlt:
-              bridgeData?.addressAlt ||
-              apiResponse.data.from.addressAlt ||
-              null,
-            orderType: orderType,  // This is now correctly typed as "fixed" | "float"
-            receiveAmount:
-              bridgeData?.receiveAmount || apiResponse.data.to.amount,
-            fromCurrencyName: fromCurrencyName,
-            toCurrencyName: toCurrencyName,
-            rawApiResponse: apiResponse.data,
-          };
-          
-          saveOrderToSupabase(details);
-
-          setOrderDetails(details);
-
-          if (
-            apiResponse.data.status === "EXPIRED" ||
-            apiResponse.data.status === "EMERGENCY" ||
-            apiResponse.data.status === "DONE"
-          ) {
-            console.log(
-              "Terminal status received. Stopping polling in 1500ms."
-            );
-            setTimeout(() => {
-              if (pollingIntervalIdRef.current) {
-                clearInterval(pollingIntervalIdRef.current);
-                pollingIntervalIdRef.current = null;
-              }
-            }, 1500);
-          }
-
-          setLoading(false);
-          return;
-        }
-      }
-
-      if (bridgeData) {
-        // Fix the TypeScript error - Ensure orderType is "fixed" | "float"
+        // Ensure orderType is "fixed" | "float"
         const orderType: "fixed" | "float" =
-          bridgeData.type?.toLowerCase() === "float" ? "float" : "fixed";
+          apiResponse.data.type?.toLowerCase() === "float"
+            ? "float"
+            : "fixed";
 
         const details: OrderDetails = {
-          depositAddress: bridgeData.depositAddress,
-          depositAmount: bridgeData.amount,
-          currentStatus: bridgeData.status,
-          fromCurrency: bridgeData.fromCurrency,
-          toCurrency: bridgeData.toCurrency,
-          orderId: bridgeData.id,
-          ffOrderId: bridgeData.id,
-          ffOrderToken: bridgeData.orderToken || orderId,
-          destinationAddress: bridgeData.destinationAddress,
-          expiresAt: bridgeData.expiresAt,
-          timeRemaining: calculateTimeRemaining(bridgeData.expiresAt),
-          tag: bridgeData.tag || null,
-          tagName: bridgeData.tagName || null,
-          addressAlt: bridgeData.addressAlt || null,
-          orderType: orderType, // This is now correctly typed as "fixed" | "float"
-          receiveAmount: bridgeData.receiveAmount,
-          fromCurrencyName: bridgeData.fromCurrencyName,
-          toCurrencyName: bridgeData.toCurrencyName,
+          depositAddress: apiResponse.data.from.address,
+          depositAmount: apiResponse.data.from.amount,
+          currentStatus: currentStatus,
+          fromCurrency: apiResponse.data.from.code,
+          toCurrency: apiResponse.data.to.code,
+          orderId: apiResponse.data.id,
+          ffOrderId: apiResponse.data.id,
+          ffOrderToken: apiResponse.data.token || orderToken || orderId,
+          destinationAddress: apiResponse.data.to.address,
+          expiresAt: apiResponse.data.time?.expiration
+            ? new Date(apiResponse.data.time.expiration * 1000).toISOString()
+            : null,
+          timeRemaining: apiResponse.data.time?.left
+            ? calculateTimeRemaining(apiResponse.data.time.left)
+            : null,
+          tag: apiResponse.data.from.tag || null,
+          tagName: apiResponse.data.from.tagName || null,
+          addressAlt: apiResponse.data.from.addressAlt || null,
+          orderType: orderType,
+          receiveAmount: apiResponse.data.to.amount,
+          fromCurrencyName: apiResponse.data.from.name,
+          toCurrencyName: apiResponse.data.to.name,
+          rawApiResponse: apiResponse.data,
         };
         
         saveOrderToSupabase(details);
-
         setOrderDetails(details);
+
+        if (
+          apiResponse.data.status === "EXPIRED" ||
+          apiResponse.data.status === "EMERGENCY" ||
+          apiResponse.data.status === "DONE"
+        ) {
+          console.log(
+            "Terminal status received. Stopping polling in 1500ms."
+          );
+          setTimeout(() => {
+            if (pollingIntervalIdRef.current) {
+              clearInterval(pollingIntervalIdRef.current);
+              pollingIntervalIdRef.current = null;
+            }
+          }, 1500);
+        }
+
         setLoading(false);
         return;
       }
 
-      console.log("No stored bridge data found or in Supabase, using static data");
-      const fallbackData = {
-        id: orderId,
-        fromCurrency: "USDT",
-        toCurrency: "SOL",
-        amount: "50",
-        destinationAddress: "8VrK4yyjXyfPwzTTbf8rhrBcEPDNDvGggHueCSAhqrtY",
-        status: "NEW",
-        depositAddress: "0x48f6bf4b24bc374943d7a45c0811908ccd1c2eea",
-        type: "float",
-        receiveAmount: "0.39840800",
-        expiresAt: new Date(Date.now() + 20 * 60000).toISOString(),
-        fromCurrencyName: "Tether USD",
-        toCurrencyName: "Solana",
-      };
-
-      // Fix the TypeScript error - Ensure orderType is "fixed" | "float"
-      const fallbackOrderType: "fixed" | "float" = 
-        fallbackData.type === "float" ? "float" : "fixed";
-
-      const details: OrderDetails = {
-        depositAddress: fallbackData.depositAddress,
-        depositAmount: fallbackData.amount,
-        currentStatus: fallbackData.status.toLowerCase(),
-        fromCurrency: fallbackData.fromCurrency,
-        toCurrency: fallbackData.toCurrency,
-        orderId: fallbackData.id,
-        ffOrderId: fallbackData.id,
-        ffOrderToken: orderId,
-        destinationAddress: fallbackData.destinationAddress,
-        expiresAt: fallbackData.expiresAt,
-        timeRemaining: calculateTimeRemaining(fallbackData.expiresAt),
-        tag: null,
-        tagName: null,
-        addressAlt: null,
-        orderType: fallbackOrderType, // This is now correctly typed as "fixed" | "float"
-        receiveAmount: fallbackData.receiveAmount,
-        fromCurrencyName: fallbackData.fromCurrencyName,
-        toCurrencyName: fallbackData.toCurrencyName,
-      };
-
-      setOrderDetails(details);
+      // If API call fails or doesn't return data, display an error
+      setError("Could not fetch order details from the API");
       setLoading(false);
     } catch (error) {
       console.error("Error fetching order details:", error);

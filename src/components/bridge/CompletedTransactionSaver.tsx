@@ -101,7 +101,8 @@ export const CompletedTransactionSaver = ({
                 time: new Date().toISOString()
               }
             }
-          ]);
+          ])
+          .select();
 
         if (error) {
           console.error("Error saving transaction:", error);
@@ -116,11 +117,12 @@ export const CompletedTransactionSaver = ({
           
           // Optionally, notify backend about the completed transaction
           try {
-            // Fix the TypeScript error - Check if data is not null and has elements
-            if (data && data.length > 0) {
+            // Fix the TypeScript error by explicitly typing 'data'
+            const savedData = data as { id: string }[];
+            if (savedData && savedData.length > 0) {
               await supabase.functions.invoke('bridge-notify-complete', {
                 body: {
-                  transactionId: data[0].id,
+                  transactionId: savedData[0].id,
                   metadata: {
                     source: 'CompletedTransactionSaver',
                     completionTime: new Date().toISOString()
