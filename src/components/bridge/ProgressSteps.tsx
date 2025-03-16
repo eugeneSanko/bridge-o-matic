@@ -1,3 +1,4 @@
+
 import {
   Loader,
   LoaderPinwheel,
@@ -139,6 +140,12 @@ export const ProgressSteps = ({
     return "";
   };
 
+  // Format timestamp for display
+  const formatTimestamp = (timestamp: number | undefined): string => {
+    if (!timestamp) return "N/A";
+    return new Date(timestamp * 1000).toLocaleString();
+  };
+
   // Check if we're in a completed state either from API or app status
   const isCompleted =
     normalizedStatus === "completed" ||
@@ -214,7 +221,7 @@ export const ProgressSteps = ({
                   : step.completed
                   ? "text-green-500"
                   : "text-gray-500"
-              } ${animate ? "animate-pulse" : ""}`} // <--- Added animation here
+              } ${animate ? "animate-pulse" : ""}`}
             >
               <div className="flex justify-center mb-3 -ml-10">
                 <Icon
@@ -259,6 +266,11 @@ export const ProgressSteps = ({
 
   // If completed, show the completed transaction view
   if (isCompleted) {
+    // Extract transaction data from API response
+    const apiResponse = orderDetails?.rawApiResponse || {};
+    const fromTx = apiResponse?.from?.tx || {};
+    const toTx = apiResponse?.to?.tx || {};
+
     return (
       <div className=" p-0 rounded-xl mb-9 overflow-hidden">
         <div className="glass-card p-6 md:p-8 rounded-xl mb-4">
@@ -271,7 +283,7 @@ export const ProgressSteps = ({
             <div className="border-b border-white/10 pb-3">
               <div className="text-gray-400 text-sm">Order ID</div>
               <div className="text-[#f0b90b] font-mono font-semibold text-xl flex items-center gap-2">
-                {orderDetails?.orderId || "GDBHQ4"}
+                {apiResponse?.id || orderDetails?.orderId || "N/A"}
                 <Button variant="ghost" size="icon" className="h-6 w-6">
                   <Copy className="h-4 w-4 text-gray-400" />
                 </Button>
@@ -288,7 +300,7 @@ export const ProgressSteps = ({
             <div className="border-b border-white/10 pb-3">
               <div className="text-gray-400 text-sm">Order type</div>
               <div className="text-white text-lg">
-                {orderDetails?.orderType === "fixed"
+                {apiResponse?.type === "fixed"
                   ? "Fixed rate"
                   : "Float rate"}
               </div>
@@ -297,27 +309,26 @@ export const ProgressSteps = ({
             <div className="border-b border-white/10 pb-3">
               <div className="text-gray-400 text-sm">Creation Time</div>
               <div className="text-white text-lg">
-                {new Date().toLocaleString()}
+                {formatTimestamp(apiResponse?.time?.reg)}
               </div>
             </div>
 
             <div className="border-b border-white/10 pb-3">
               <div className="text-gray-400 text-sm">Received Time</div>
               <div className="text-white text-lg">
-                {new Date(Date.now() - 5 * 60000).toLocaleString()}
+                {formatTimestamp(fromTx?.timeReg)}
               </div>
             </div>
 
             <div>
               <div className="text-gray-400 text-sm">Completed Time</div>
               <div className="text-white text-lg">
-                {new Date().toLocaleString()}
+                {formatTimestamp(apiResponse?.time?.finish)}
               </div>
             </div>
           </Card>
 
           {/* Confirmation Card (Right) */}
-
           <Card className="glass-card p-6 flex flex-col items-center justify-center relative overflow-hidden md:col-span-2">
             {/* Robot image on the left */}
             <div className="hidden md:block absolute left-0 -bottom-14 opa-50">
@@ -330,10 +341,9 @@ export const ProgressSteps = ({
 
             {/* Content */}
             <div className="relative z-10 text-center space-y-8 md:pl-48">
-              {" "}
               {/* Add padding-left to avoid text overlapping with the image */}
               <h2 className="text-3xl font-bold text-white flex items-center justify-center gap-2 md:justify-items-start">
-                Your {orderDetails?.toCurrency || "Ethereum"} was sent
+                Your {apiResponse?.to?.coin || orderDetails?.toCurrency || "Ethereum"} was sent
                 <Check className="h-6 w-6 text-green-500" />
               </h2>
               <p className="text-gray-300 max-w-md mx-auto md:text-left">
@@ -375,8 +385,8 @@ export const ProgressSteps = ({
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">TxID</span>
-                <div className="font-mono text-sm text-white flex items-center gap-2">
-                  9b942cf8b8e3aa944be74lc462c0c243c7a...
+                <div className="font-mono text-sm text-white flex items-center gap-2 truncate max-w-[250px]">
+                  {fromTx?.id || "N/A"}
                   <Button variant="ghost" size="icon" className="h-6 w-6">
                     <Copy className="h-4 w-4 text-gray-400" />
                   </Button>
@@ -384,12 +394,10 @@ export const ProgressSteps = ({
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="text-gray-400">View View Receipt</span>
+                <span className="text-gray-400">View Receipt</span>
                 <a
                   className="flex gap-2"
-                  href={`https://ff.io/order/${
-                    orderDetails?.orderId || "GDBHQ4"
-                  }`}
+                  href={`https://ff.io/order/${apiResponse?.id || orderDetails?.orderId || "N/A"}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -399,31 +407,31 @@ export const ProgressSteps = ({
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Received Time</span>
-                <span className="text-white">19 hours ago</span>
+                <span className="text-white">{formatTimestamp(fromTx?.timeReg)}</span>
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Block Time</span>
-                <span className="text-white">19 hours ago</span>
+                <span className="text-white">{formatTimestamp(fromTx?.timeBlock)}</span>
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Confirmations</span>
-                <span className="text-white">40</span>
+                <span className="text-white">{fromTx?.confirmations || "N/A"}</span>
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Amount</span>
                 <span className="text-white">
-                  {orderDetails?.depositAmount || "200"}{" "}
-                  {orderDetails?.fromCurrency || "ADA"}
+                  {apiResponse?.from?.amount || orderDetails?.depositAmount || "N/A"}{" "}
+                  {apiResponse?.from?.code || orderDetails?.fromCurrency || "N/A"}
                 </span>
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Fee</span>
                 <span className="text-white">
-                  0.168845 {orderDetails?.fromCurrency || "ADA"}
+                  {fromTx?.fee || "0"} {fromTx?.ccyfee || apiResponse?.from?.code || "N/A"}
                 </span>
               </div>
             </div>
@@ -438,8 +446,8 @@ export const ProgressSteps = ({
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">TxID</span>
-                <div className="font-mono text-sm text-white flex items-center gap-2">
-                  0x7ba710acc700ca056cfabb22e8dda54fa...
+                <div className="font-mono text-sm text-white flex items-center gap-2 truncate max-w-[250px]">
+                  {toTx?.id || "N/A"}
                   <Button variant="ghost" size="icon" className="h-6 w-6">
                     <Copy className="h-4 w-4 text-gray-400" />
                   </Button>
@@ -450,9 +458,7 @@ export const ProgressSteps = ({
                 <span className="text-gray-400">View Receipt</span>
                 <a
                   className="flex gap-2"
-                  href={`https://ff.io/order/${
-                    orderDetails?.orderId || "GDBHQ4"
-                  }`}
+                  href={`https://ff.io/order/${apiResponse?.id || orderDetails?.orderId || "N/A"}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -462,31 +468,31 @@ export const ProgressSteps = ({
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Sending time</span>
-                <span className="text-white">19 hours ago</span>
+                <span className="text-white">{formatTimestamp(toTx?.timeReg)}</span>
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Block Time</span>
-                <span className="text-white">19 hours ago</span>
+                <span className="text-white">{formatTimestamp(toTx?.timeBlock)}</span>
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Confirmations</span>
-                <span className="text-white">30</span>
+                <span className="text-white">{toTx?.confirmations || "N/A"}</span>
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Amount</span>
                 <span className="text-white">
-                  {orderDetails?.receiveAmount || "0.0541047"}{" "}
-                  {orderDetails?.toCurrency || "ETH"}
+                  {apiResponse?.to?.amount || orderDetails?.receiveAmount || "N/A"}{" "}
+                  {apiResponse?.to?.code || orderDetails?.toCurrency || "N/A"}
                 </span>
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Fee</span>
                 <span className="text-white">
-                  0 {orderDetails?.toCurrency || "ETH"}
+                  {toTx?.fee || "0"} {toTx?.ccyfee || apiResponse?.to?.code || "N/A"}
                 </span>
               </div>
             </div>

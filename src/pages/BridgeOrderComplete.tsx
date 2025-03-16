@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Check, CircleCheckBig } from "lucide-react";
+import { Check, CircleCheckBig, Copy, ExternalLink } from "lucide-react";
 import { TransactionSummary } from "@/components/bridge/TransactionSummary";
 import { toast } from "@/hooks/use-toast";
 import { invokeFunctionWithRetry } from "@/config/api";
@@ -172,6 +172,13 @@ const BridgeOrderComplete = () => {
     return new Date(timestamp * 1000).toLocaleString();
   };
 
+  // Function to truncate transaction IDs for display
+  const truncateTxId = (txId: string | undefined) => {
+    if (!txId) return "N/A";
+    if (txId.length <= 20) return txId;
+    return `${txId.slice(0, 18)}...`;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24 flex items-center justify-center">
@@ -199,6 +206,10 @@ const BridgeOrderComplete = () => {
       </div>
     );
   }
+
+  // Extract transaction data for display
+  const fromTx = apiOrderData?.from?.tx;
+  const toTx = apiOrderData?.to?.tx;
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
@@ -228,7 +239,7 @@ const BridgeOrderComplete = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="glass-card bg-secondary/20 p-6 rounded-lg">
               <h3 className="text-sm font-medium text-gray-400 mb-2">Order ID</h3>
-              <p className="font-mono text-sm break-all">{orderDetails.ff_order_id}</p>
+              <p className="font-mono text-sm break-all">{apiOrderData?.id || orderDetails.ff_order_id}</p>
             </div>
             
             <div className="glass-card bg-secondary/20 p-6 rounded-lg">
@@ -318,7 +329,7 @@ const BridgeOrderComplete = () => {
               <div className="border-b border-white/10 pb-3">
                 <div className="text-gray-400 text-sm">Received Time</div>
                 <div className="text-white text-lg">
-                  {apiOrderData?.from.tx ? formatTimestamp(apiOrderData.from.tx.timeReg) : "N/A"}
+                  {fromTx ? formatTimestamp(fromTx.timeReg) : "N/A"}
                 </div>
               </div>
 
@@ -385,7 +396,18 @@ const BridgeOrderComplete = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">TxID</span>
                   <div className="font-mono text-sm text-white flex items-center gap-2 truncate max-w-[200px]">
-                    {apiOrderData?.from.tx?.id || "N/A"}
+                    {truncateTxId(fromTx?.id)}
+                    {fromTx?.id && (
+                      <button onClick={() => {
+                        navigator.clipboard.writeText(fromTx.id);
+                        toast({
+                          title: "Copied",
+                          description: "Transaction ID copied to clipboard"
+                        });
+                      }}>
+                        <Copy className="h-4 w-4 text-gray-400" />
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -397,27 +419,27 @@ const BridgeOrderComplete = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    External Link
+                    <ExternalLink className="h-4 w-4" />
                   </a>
                 </div>
 
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Received Time</span>
                   <span className="text-white">
-                    {apiOrderData?.from.tx?.timeReg ? formatTimestamp(apiOrderData.from.tx.timeReg) : "N/A"}
+                    {fromTx?.timeReg ? formatTimestamp(fromTx.timeReg) : "N/A"}
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Block Time</span>
                   <span className="text-white">
-                    {apiOrderData?.from.tx?.timeBlock ? formatTimestamp(apiOrderData.from.tx.timeBlock) : "N/A"}
+                    {fromTx?.timeBlock ? formatTimestamp(fromTx.timeBlock) : "N/A"}
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Confirmations</span>
-                  <span className="text-white">{apiOrderData?.from.tx?.confirmations || "N/A"}</span>
+                  <span className="text-white">{fromTx?.confirmations || "N/A"}</span>
                 </div>
 
                 <div className="flex justify-between items-center">
@@ -430,7 +452,7 @@ const BridgeOrderComplete = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Fee</span>
                   <span className="text-white">
-                    {apiOrderData?.from.tx?.fee || "N/A"} {apiOrderData?.from.tx?.ccyfee || "N/A"}
+                    {fromTx?.fee || "N/A"} {fromTx?.ccyfee || apiOrderData?.from.code || "N/A"}
                   </span>
                 </div>
               </div>
@@ -446,7 +468,18 @@ const BridgeOrderComplete = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">TxID</span>
                   <div className="font-mono text-sm text-white flex items-center gap-2 truncate max-w-[200px]">
-                    {apiOrderData?.to.tx?.id || "N/A"}
+                    {truncateTxId(toTx?.id)}
+                    {toTx?.id && (
+                      <button onClick={() => {
+                        navigator.clipboard.writeText(toTx.id);
+                        toast({
+                          title: "Copied",
+                          description: "Transaction ID copied to clipboard"
+                        });
+                      }}>
+                        <Copy className="h-4 w-4 text-gray-400" />
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -458,27 +491,27 @@ const BridgeOrderComplete = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    External Link
+                    <ExternalLink className="h-4 w-4" />
                   </a>
                 </div>
 
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Sending time</span>
                   <span className="text-white">
-                    {apiOrderData?.to.tx?.timeReg ? formatTimestamp(apiOrderData.to.tx.timeReg) : "N/A"}
+                    {toTx?.timeReg ? formatTimestamp(toTx.timeReg) : "N/A"}
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Block Time</span>
                   <span className="text-white">
-                    {apiOrderData?.to.tx?.timeBlock ? formatTimestamp(apiOrderData.to.tx.timeBlock) : "N/A"}
+                    {toTx?.timeBlock ? formatTimestamp(toTx.timeBlock) : "N/A"}
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Confirmations</span>
-                  <span className="text-white">{apiOrderData?.to.tx?.confirmations || "N/A"}</span>
+                  <span className="text-white">{toTx?.confirmations || "N/A"}</span>
                 </div>
 
                 <div className="flex justify-between items-center">
@@ -491,7 +524,7 @@ const BridgeOrderComplete = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Fee</span>
                   <span className="text-white">
-                    {apiOrderData?.to.tx?.fee || "0"} {apiOrderData?.to.tx?.ccyfee || orderDetails.to_currency}
+                    {toTx?.fee || "0"} {toTx?.ccyfee || apiOrderData?.to.code || orderDetails.to_currency}
                   </span>
                 </div>
               </div>
