@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -117,12 +116,11 @@ export const CompletedTransactionSaver = ({
           
           // Optionally, notify backend about the completed transaction
           try {
-            // Fix the TypeScript error by explicitly typing 'data'
-            const savedData = data as { id: string }[];
-            if (savedData && savedData.length > 0) {
+            // Fix the TypeScript error by adding a null check
+            if (data && data.length > 0) {
               await supabase.functions.invoke('bridge-notify-complete', {
                 body: {
-                  transactionId: savedData[0].id,
+                  transactionId: data[0].id,
                   metadata: {
                     source: 'CompletedTransactionSaver',
                     completionTime: new Date().toISOString()
@@ -165,7 +163,6 @@ export const CompletedTransactionSaver = ({
     }
   }, [orderDetails]);
 
-  // This fixes the TypeScript error by properly checking if results.data is an array with length
   const handleExpiredStatus = async () => {
     console.log("Handling expired status");
     

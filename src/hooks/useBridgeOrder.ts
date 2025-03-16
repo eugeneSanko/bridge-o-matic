@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -50,7 +49,8 @@ export interface OrderDetails {
 export function useBridgeOrder(
   orderId: string | null,
   shouldFetch: boolean = true,
-  forceApiCheck: boolean = false
+  forceApiCheck: boolean = false,
+  token: string = ""
 ) {
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(shouldFetch);
@@ -164,12 +164,16 @@ export function useBridgeOrder(
       console.log("Fetching order details for", orderId);
 
       // First check Supabase for order token if we don't have it
-      let orderToken = null;
-      const supabaseData = await fetchOrderFromSupabase(orderId);
+      let orderToken = token;
       
-      if (supabaseData) {
-        console.log("Found order data in Supabase");
-        orderToken = supabaseData.ff_order_token;
+      if (!orderToken) {
+        console.log("No token provided, checking Supabase");
+        const supabaseData = await fetchOrderFromSupabase(orderId);
+        
+        if (supabaseData) {
+          console.log("Found order data in Supabase");
+          orderToken = supabaseData.ff_order_token;
+        }
       }
 
       // Always fetch from the API to get the most up-to-date status
@@ -274,7 +278,7 @@ export function useBridgeOrder(
       );
       setLoading(false);
     }
-  }, [orderId, shouldFetch, forceApiCheck, fetchOrderFromSupabase, saveOrderToSupabase]);
+  }, [orderId, shouldFetch, forceApiCheck, token, fetchOrderFromSupabase, saveOrderToSupabase]);
 
   const calculateTimeRemaining = (
     input: string | number | null
