@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
@@ -17,15 +18,14 @@ export const BridgeTransaction = ({
   orderDetails,
   onCopyAddress,
 }: BridgeTransactionProps) => {
-  const apiStatus =
-    orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
-
+  const apiStatus = orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
+  
   console.log("API status in BridgeTransaction:", apiStatus);
   console.log("Current status in orderDetails:", orderDetails.currentStatus);
   console.log("Raw API response status:", orderDetails.rawApiResponse?.status);
-
+  
   const [isOrderComplete, setIsOrderComplete] = useState(false);
-
+  
   const timeLeft = orderDetails.rawApiResponse?.time?.left || null;
 
   const [isExpired, setIsExpired] = useState(false);
@@ -34,8 +34,7 @@ export const BridgeTransaction = ({
     // The currentStatus should take precedence over the API status
     // This allows our application to override the EXPIRED status when we know
     // the transaction is actually completed
-    const isApiExpired =
-      apiStatus === "EXPIRED" && orderDetails.currentStatus !== "completed";
+    const isApiExpired = apiStatus === "EXPIRED" && orderDetails.currentStatus !== "completed";
     const isStatusExpired = orderDetails.currentStatus === "expired";
     const isTimerExpired = timeLeft !== null && timeLeft <= 0;
 
@@ -63,18 +62,18 @@ export const BridgeTransaction = ({
   useEffect(() => {
     const normalizedApiStatus = apiStatus?.toUpperCase();
     const normalizedCurrentStatus = orderDetails.currentStatus?.toLowerCase();
-
-    const isDone =
-      normalizedApiStatus === "DONE" ||
+    
+    const isDone = 
+      normalizedApiStatus === "DONE" || 
       normalizedCurrentStatus === "completed" ||
       normalizedCurrentStatus === "done";
-
+    
     console.log("Checking if order is complete:", {
       normalizedApiStatus,
       normalizedCurrentStatus,
-      isDone,
+      isDone
     });
-
+    
     setIsOrderComplete(isDone);
   }, [apiStatus, orderDetails.currentStatus]);
 
@@ -89,13 +88,10 @@ export const BridgeTransaction = ({
   }, [orderDetails.rawApiResponse]);
 
   // Give priority to the currentStatus if it's set to completed
-  const displayStatus =
-    orderDetails.currentStatus === "completed"
-      ? "DONE"
-      : isExpired
-      ? "EXPIRED"
-      : apiStatus;
-
+  const displayStatus = orderDetails.currentStatus === "completed" 
+    ? "DONE"
+    : (isExpired ? "EXPIRED" : apiStatus);
+    
   console.log("Final display status:", displayStatus);
   console.log("Is order complete:", isOrderComplete);
 

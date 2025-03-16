@@ -1,3 +1,4 @@
+
 import { ArrowRight } from "lucide-react";
 import { AddressPlaceholder } from "./AddressPlaceholder";
 import { cleanSymbol } from "@/utils/symbolUtils";
@@ -56,7 +57,7 @@ export const TransactionSummary = ({
   const getCurrencyColor = (currency: string) => {
     // Clean the currency to remove any network information
     const cleanCurrency = cleanSymbol(currency).toLowerCase();
-
+    
     if (cleanCurrency === "btc") return "bg-[#F7931A]";
     if (cleanCurrency === "eth") return "bg-[#627EEA]";
     if (cleanCurrency === "sol") return "bg-[#9945FF]";
@@ -80,7 +81,7 @@ export const TransactionSummary = ({
   // Format the display for from/to currencies to show both code and name
   const formatFromCurrencyDisplay = () => {
     const cleanCurrency = getCleanedCurrency(fromCurrency);
-
+    
     if (fromCurrencyName) {
       return (
         <>
@@ -96,7 +97,7 @@ export const TransactionSummary = ({
 
   const formatToCurrencyDisplay = () => {
     const cleanCurrency = getCleanedCurrency(toCurrency);
-
+    
     if (toCurrencyName) {
       return (
         <>
@@ -138,9 +139,8 @@ export const TransactionSummary = ({
               />
             </div>
             <div>
-              <div className="text-2xl md:text-3xl font-bold mb-2 md:text-right md:flex md:flex-row-reverse">
-                <div className="md:flex md:flex-row-reverse pl-1">{amount}</div>
-                {formatFromCurrencyDisplay()}
+              <div className="text-2xl md:text-3xl font-bold mb-2 md:text-right">
+                {amount} {formatFromCurrencyDisplay()}
               </div>
               <div className="text-sm text-gray-400 font-mono">
                 Send funds:{" "}
