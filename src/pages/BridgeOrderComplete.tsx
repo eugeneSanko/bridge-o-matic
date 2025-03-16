@@ -6,6 +6,7 @@ import { toast } from "@/hooks/use-toast";
 import { invokeFunctionWithRetry } from "@/config/api";
 import { CompletedTransactionView } from "@/components/bridge/CompletedTransactionView";
 import { OrderDetails } from "@/hooks/useBridgeOrder";
+import { Check, CircleCheckBig } from "lucide-react";
 
 interface OrderData {
   id: string;
@@ -129,7 +130,7 @@ const BridgeOrderComplete = () => {
   // Convert OrderData to OrderDetails format expected by CompletedTransactionView
   const adaptedOrderDetails: OrderDetails = {
     orderId: orderDetails.ff_order_id,
-    orderToken: orderDetails.ff_order_token,
+    ffOrderToken: orderDetails.ff_order_token,
     orderType: "fixed", // Default to fixed if not available
     depositAmount: orderDetails.amount.toString(),
     receiveAmount: (orderDetails.amount * orderDetails.initial_rate).toFixed(6),
