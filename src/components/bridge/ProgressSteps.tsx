@@ -1,20 +1,19 @@
 
 import {
   Loader,
-  LoaderPinwheel,
   Clock,
   ArrowLeftRight,
   CircleCheckBig,
-  Copy,
-  ExternalLink,
   Check,
   Star,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Card } from "../ui/card";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { TransactionInfoItem } from "./TransactionInfoItem";
 
 interface ProgressStepsProps {
   currentStatus?: string;
@@ -375,7 +374,7 @@ export const ProgressSteps = ({
         </div>
 
         {/* Transaction Details (Bottom) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4  ">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
           {/* Accepted Transaction (Left) */}
           <Card className=" p-6 border-0 glass-card">
             <h3 className="text-xl font-semibold text-white mb-4">
@@ -383,57 +382,44 @@ export const ProgressSteps = ({
             </h3>
 
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">TxID</span>
-                <div className="font-mono text-sm text-white flex items-center gap-2 truncate max-w-[250px]">
-                  {fromTx?.id || "N/A"}
-                  <Button variant="ghost" size="icon" className="h-6 w-6">
-                    <Copy className="h-4 w-4 text-gray-400" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">View Receipt</span>
-                <a
-                  className="flex gap-2"
-                  href={`https://ff.io/order/${apiResponse?.id || orderDetails?.orderId || "N/A"}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <ExternalLink className="h-4 w-4 text-blue-400" />
-                </a>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Received Time</span>
-                <span className="text-white">{formatTimestamp(fromTx?.timeReg)}</span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Block Time</span>
-                <span className="text-white">{formatTimestamp(fromTx?.timeBlock)}</span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Confirmations</span>
-                <span className="text-white">{fromTx?.confirmations || "N/A"}</span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Amount</span>
-                <span className="text-white">
-                  {apiResponse?.from?.amount || orderDetails?.depositAmount || "N/A"}{" "}
-                  {apiResponse?.from?.code || orderDetails?.fromCurrency || "N/A"}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Fee</span>
-                <span className="text-white">
-                  {fromTx?.fee || "0"} {fromTx?.ccyfee || apiResponse?.from?.code || "N/A"}
-                </span>
-              </div>
+              <TransactionInfoItem 
+                label="TxID" 
+                value={fromTx?.id} 
+                isTxId={true}
+                copyable={true}
+              />
+              
+              <TransactionInfoItem 
+                label="View Receipt" 
+                value="View on Explorer"
+                isLink={true}
+                linkUrl={`https://ff.io/order/${apiResponse?.id || orderDetails?.orderId || "N/A"}`}
+              />
+              
+              <TransactionInfoItem 
+                label="Received Time" 
+                value={formatTimestamp(fromTx?.timeReg)} 
+              />
+              
+              <TransactionInfoItem 
+                label="Block Time" 
+                value={formatTimestamp(fromTx?.timeBlock)}
+              />
+              
+              <TransactionInfoItem 
+                label="Confirmations" 
+                value={fromTx?.confirmations}
+              />
+              
+              <TransactionInfoItem 
+                label="Amount" 
+                value={`${apiResponse?.from?.amount || orderDetails?.depositAmount || "N/A"} ${apiResponse?.from?.code || orderDetails?.fromCurrency || "N/A"}`}
+              />
+              
+              <TransactionInfoItem 
+                label="Fee" 
+                value={`${fromTx?.fee || "0"} ${fromTx?.ccyfee || apiResponse?.from?.code || "N/A"}`}
+              />
             </div>
           </Card>
 
@@ -444,57 +430,44 @@ export const ProgressSteps = ({
             </h3>
 
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">TxID</span>
-                <div className="font-mono text-sm text-white flex items-center gap-2 truncate max-w-[250px]">
-                  {toTx?.id || "N/A"}
-                  <Button variant="ghost" size="icon" className="h-6 w-6">
-                    <Copy className="h-4 w-4 text-gray-400" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">View Receipt</span>
-                <a
-                  className="flex gap-2"
-                  href={`https://ff.io/order/${apiResponse?.id || orderDetails?.orderId || "N/A"}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <ExternalLink className="h-4 w-4 text-blue-400" />
-                </a>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Sending time</span>
-                <span className="text-white">{formatTimestamp(toTx?.timeReg)}</span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Block Time</span>
-                <span className="text-white">{formatTimestamp(toTx?.timeBlock)}</span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Confirmations</span>
-                <span className="text-white">{toTx?.confirmations || "N/A"}</span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Amount</span>
-                <span className="text-white">
-                  {apiResponse?.to?.amount || orderDetails?.receiveAmount || "N/A"}{" "}
-                  {apiResponse?.to?.code || orderDetails?.toCurrency || "N/A"}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Fee</span>
-                <span className="text-white">
-                  {toTx?.fee || "0"} {toTx?.ccyfee || apiResponse?.to?.code || "N/A"}
-                </span>
-              </div>
+              <TransactionInfoItem 
+                label="TxID" 
+                value={toTx?.id} 
+                isTxId={true}
+                copyable={true}
+              />
+              
+              <TransactionInfoItem 
+                label="View Receipt" 
+                value="View on Explorer"
+                isLink={true}
+                linkUrl={`https://ff.io/order/${apiResponse?.id || orderDetails?.orderId || "N/A"}`}
+              />
+              
+              <TransactionInfoItem 
+                label="Sending time" 
+                value={formatTimestamp(toTx?.timeReg)}
+              />
+              
+              <TransactionInfoItem 
+                label="Block Time" 
+                value={formatTimestamp(toTx?.timeBlock)}
+              />
+              
+              <TransactionInfoItem 
+                label="Confirmations" 
+                value={toTx?.confirmations}
+              />
+              
+              <TransactionInfoItem 
+                label="Amount" 
+                value={`${apiResponse?.to?.amount || orderDetails?.receiveAmount || "N/A"} ${apiResponse?.to?.code || orderDetails?.toCurrency || "N/A"}`}
+              />
+              
+              <TransactionInfoItem 
+                label="Fee" 
+                value={`${toTx?.fee || "0"} ${toTx?.ccyfee || apiResponse?.to?.code || "N/A"}`}
+              />
             </div>
           </Card>
         </div>
