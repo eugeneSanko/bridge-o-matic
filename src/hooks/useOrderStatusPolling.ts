@@ -12,8 +12,8 @@ const POLLING_INTERVALS = {
   EXCHANGE: 20000, // Exchange in progress: 20 seconds
   WITHDRAW: 20000, // Sending funds: 20 seconds
   DONE: 30000, // Completed: continue polling but less frequently
-  EXPIRED: null, // Expired: no polling needed
-  EMERGENCY: null, // Emergency: no polling needed
+  EXPIRED: 15000, // Changed from null to 15000 to enable polling
+  EMERGENCY: 15000, // Changed from null to 15000 to enable polling
 };
 
 interface UseOrderStatusPollingProps {
@@ -37,10 +37,11 @@ export const useOrderStatusPolling = ({
     useState<any>(null);
   const [statusCheckError, setStatusCheckError] = useState<string | null>(null);
   const [pollingInterval, setPollingInterval] = useState<number | null>(null);
-
+  
   const [lastPollTimestamp, setLastPollTimestamp] = useState(0);
   const [manualStatusCheckAttempted, setManualStatusCheckAttempted] =
     useState(false);
+  const [emergencyActionTaken, setEmergencyActionTaken] = useState(false);
 
   // Function to update debug info in both places
   const updateDebugInfo = (info: any) => {
@@ -55,6 +56,14 @@ export const useOrderStatusPolling = ({
     if (!originalOrderDetails || !originalOrderDetails.rawApiResponse) return;
 
     const apiStatus = originalOrderDetails.rawApiResponse.status;
+    
+    // If emergency action has been taken, always use polling regardless of status
+    if (emergencyActionTaken && (apiStatus === 'EMERGENCY' || apiStatus === 'EXPIRED')) {
+      console.log(`Emergency action was taken. Enabling polling for ${apiStatus} status`);
+      setPollingInterval(POLLING_INTERVALS.DEFAULT);
+      return;
+    }
+    
     const newInterval =
       POLLING_INTERVALS[apiStatus] ?? POLLING_INTERVALS.DEFAULT;
 
@@ -64,7 +73,7 @@ export const useOrderStatusPolling = ({
       } for status ${apiStatus}`
     );
     setPollingInterval(newInterval);
-  }, [originalOrderDetails?.rawApiResponse?.status]);
+  }, [originalOrderDetails?.rawApiResponse?.status, emergencyActionTaken]);
 
   // Function to check order status manually or via polling
   const checkOrderStatus = useCallback(
@@ -75,7 +84,8 @@ export const useOrderStatusPolling = ({
         return;
       }
 
-      if (pollingInterval === null && !force) {
+      // Always check if force is true or if emergencyActionTaken is true
+      if (pollingInterval === null && !force && !emergencyActionTaken) {
         console.log("Polling disabled for current status, skipping check");
         return;
       }
@@ -100,6 +110,13 @@ export const useOrderStatusPolling = ({
         );
         setManualStatusCheckAttempted(true);
 
+        // When an emergency action is taken, mark it
+        if (force && (originalOrderDetails?.rawApiResponse?.status === 'EMERGENCY' || 
+                      originalOrderDetails?.rawApiResponse?.status === 'EXPIRED')) {
+          console.log("Setting emergencyActionTaken flag to true");
+          setEmergencyActionTaken(true);
+        }
+
         const { data, error } = await supabase.functions.invoke(
           "bridge-status",
           {
@@ -120,7 +137,7 @@ export const useOrderStatusPolling = ({
           updateDebugInfo(data.debugInfo);
         }
 
-        if (data.code === 0 && data.data) {
+        if (data.code === a && data.data) {
           const status = data.data.status;
           console.log(`Order status from API: ${status}`);
 
@@ -166,6 +183,7 @@ export const useOrderStatusPolling = ({
       setOrderDetails,
       onTransactionComplete,
       updateDebugInfo,
+      emergencyActionTaken,
     ]
   );
 
