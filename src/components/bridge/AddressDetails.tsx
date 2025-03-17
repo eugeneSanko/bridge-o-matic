@@ -1,3 +1,4 @@
+
 import { Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddressPlaceholder } from "./AddressPlaceholder";
@@ -127,6 +128,9 @@ export const AddressDetails = ({
               </p>
               <p className="mt-2">
                 Market fluctuations may affect the final amount you receive.
+              </p>
+              <p className="mt-2 text-amber-400 font-medium">
+                Attention: if the market rate changes by more than 1.2% before the appearance of the transaction in blockchain network, you will be asked to make refund or continue exchanging at market rate.
               </p>
             </>
           )}

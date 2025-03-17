@@ -161,18 +161,46 @@ export const BridgeStatusRenderer = ({
   const handleEmergencyExchange = () => {
     console.log("Emergency exchange requested");
     handleEmergencyAction("EXCHANGE");
+    
+    // Show deposit confirmation notification
+    toast({
+      title: "Transaction Status",
+      description: "Waiting for the appearance of the transaction on the blockchain network. Funds have not yet arrived at the address indicated in the order. We will exchange funds after the receipt of the transaction and the receipt of the required number of confirmations of the blockchain network.",
+      duration: 10000, // Show for 10 seconds since it's a longer message
+    });
   };
 
   const handleEmergencyRefund = () => {
     console.log("Emergency refund requested");
     handleEmergencyAction("REFUND");
+    
+    // Show deposit confirmation notification
+    toast({
+      title: "Transaction Status",
+      description: "Waiting for the appearance of the transaction on the blockchain network. Funds have not yet arrived at the address indicated in the order. We will exchange funds after the receipt of the transaction and the receipt of the required number of confirmations of the blockchain network.",
+      duration: 10000, // Show for 10 seconds since it's a longer message
+    });
+  };
+
+  const handleAddressCopy = (address: string) => {
+    // Original copy address handler
+    handleCopyAddress(address);
+    
+    // Show deposit confirmation notification after a short delay
+    setTimeout(() => {
+      toast({
+        title: "Transaction Status",
+        description: "Waiting for the appearance of the transaction on the blockchain network. Funds have not yet arrived at the address indicated in the order. We will exchange funds after the receipt of the transaction and the receipt of the required number of confirmations of the blockchain network.",
+        duration: 10000, // Show for 10 seconds since it's a longer message
+      });
+    }, 500);
   };
 
   return (
     <>
       <BridgeTransaction 
         orderDetails={orderDetails} 
-        onCopyAddress={handleCopyAddress} 
+        onCopyAddress={handleAddressCopy} 
         onRetryCurrentPrice={handleRetryCurrentPrice}
         onEmergencyExchange={handleEmergencyExchange}
         onEmergencyRefund={handleEmergencyRefund}
