@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
 import { useOrderStatusPolling } from "@/hooks/useOrderStatusPolling";
