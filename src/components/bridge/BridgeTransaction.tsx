@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
@@ -66,15 +65,13 @@ export const BridgeTransaction = ({
     } else {
       setIsExpired(false);
     }
-    
+
     // Check for emergency status
-    const isApiEmergency = 
-      apiStatus === "EMERGENCY" || 
-      apiStatus === "FAILED";
-    const isStatusEmergency = 
-      orderDetails.currentStatus === "emergency" || 
+    const isApiEmergency = apiStatus === "EMERGENCY" || apiStatus === "FAILED";
+    const isStatusEmergency =
+      orderDetails.currentStatus === "emergency" ||
       orderDetails.currentStatus === "failed";
-      
+
     setIsEmergency(isApiEmergency || isStatusEmergency);
   }, [apiStatus, orderDetails.currentStatus, timeLeft]);
 
@@ -115,14 +112,6 @@ export const BridgeTransaction = ({
       : isEmergency
       ? "EMERGENCY"
       : apiStatus;
-
-  console.log("Final display status:", displayStatus);
-  console.log("Is order complete:", isOrderComplete);
-  console.log("Is expired:", isExpired);
-  console.log("Is emergency:", isEmergency);
-
-  // Determine whether to show QR code section
-  const shouldShowQRCode = !isOrderComplete && !isExpired && !isEmergency;
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
@@ -170,14 +159,13 @@ export const BridgeTransaction = ({
                 fromCurrency={orderDetails.fromCurrency}
                 fromCurrencyName={orderDetails.fromCurrencyName}
               />
-              {shouldShowQRCode && (
-                <QRCodeSection
-                  depositAddress={orderDetails.depositAddress}
-                  depositAmount={orderDetails.depositAmount}
-                  fromCurrency={orderDetails.fromCurrency}
-                  tag={orderDetails.tag}
-                />
-              )}
+
+              <QRCodeSection
+                depositAddress={orderDetails.depositAddress}
+                depositAmount={orderDetails.depositAmount}
+                fromCurrency={orderDetails.fromCurrency}
+                tag={orderDetails.tag}
+              />
             </div>
 
             <div className="grid grid-cols-12 gap-6">
