@@ -8,7 +8,18 @@ interface QrCodeRequest {
   choice: string;
 }
 
+// CORS headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   try {
     // Get request body
     const requestBody: QrCodeRequest = await req.json();
@@ -22,7 +33,12 @@ serve(async (req) => {
           msg: "Invalid request parameters",
           error: "Missing required parameters: id or token",
         }),
-        { headers: { "Content-Type": "application/json" } }
+        { 
+          headers: { 
+            ...corsHeaders,
+            "Content-Type": "application/json" 
+          } 
+        }
       );
     }
 
@@ -43,7 +59,12 @@ serve(async (req) => {
           msg: "Configuration error",
           error: "API credentials not configured",
         }),
-        { headers: { "Content-Type": "application/json" } }
+        { 
+          headers: { 
+            ...corsHeaders,
+            "Content-Type": "application/json" 
+          } 
+        }
       );
     }
     
@@ -90,7 +111,12 @@ serve(async (req) => {
           msg: "Error from Fixed Float API",
           error: errorText,
         }),
-        { headers: { "Content-Type": "application/json" } }
+        { 
+          headers: { 
+            ...corsHeaders,
+            "Content-Type": "application/json" 
+          } 
+        }
       );
     }
     
@@ -98,9 +124,12 @@ serve(async (req) => {
     const ffData = await ffResponse.json();
     console.log("Fixed Float API response:", ffData);
     
-    // Return response
+    // Return response with CORS headers
     return new Response(JSON.stringify(ffData), {
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        ...corsHeaders,
+        "Content-Type": "application/json" 
+      },
     });
   } catch (error) {
     console.error("Error processing request:", error);
@@ -111,7 +140,12 @@ serve(async (req) => {
         msg: "Error processing request",
         error: error.message,
       }),
-      { headers: { "Content-Type": "application/json" } }
+      { 
+        headers: { 
+          ...corsHeaders,
+          "Content-Type": "application/json" 
+        } 
+      }
     );
   }
 });
