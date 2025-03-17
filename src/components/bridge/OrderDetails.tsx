@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Copy,
@@ -17,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface OrderDetailsProps {
   orderId: string;
@@ -31,6 +31,8 @@ interface OrderDetailsProps {
   onRetryCurrentPrice?: () => void;
   onEmergencyExchange?: () => void;
   onEmergencyRefund?: () => void;
+  fromCurrency?: string;
+  fromCurrencyName?: string;
 }
 
 export const OrderDetails = ({
@@ -46,6 +48,8 @@ export const OrderDetails = ({
   onRetryCurrentPrice,
   onEmergencyExchange,
   onEmergencyRefund,
+  fromCurrency = "",
+  fromCurrencyName = "",
 }: OrderDetailsProps) => {
   const navigate = useNavigate();
   const [localTimeRemaining, setLocalTimeRemaining] = useState(
@@ -62,6 +66,7 @@ export const OrderDetails = ({
   const [choiceMade, setChoiceMade] = useState(false);
   const [selectedAction, setSelectedAction] = useState<"EXCHANGE" | "REFUND" | null>(null);
   const [apiResponseOk, setApiResponseOk] = useState(false);
+  const [refundAddress, setRefundAddress] = useState("");
 
   // Initialize the timer based on timeLeft from API
   useEffect(() => {
@@ -163,10 +168,12 @@ export const OrderDetails = ({
       setSelectedAction("EXCHANGE");
       setShowWaitingMessage(true);
     } else if (emergencyAction === "REFUND" && onEmergencyRefund) {
-      onEmergencyRefund();
-      setChoiceMade(true);
-      setSelectedAction("REFUND");
-      setShowWaitingMessage(true);
+      if (onEmergencyRefund) {
+        onEmergencyRefund(refundAddress);
+        setChoiceMade(true);
+        setSelectedAction("REFUND");
+        setShowWaitingMessage(true);
+      }
     }
   };
 
@@ -235,7 +242,7 @@ export const OrderDetails = ({
                 <AlertDescription className="text-green-200 mt-1">
                   {selectedAction === "EXCHANGE"
                     ? "Your transaction will be processed at the current market rate. We'll notify you when it's complete."
-                    : "Your refund request has been submitted. Funds will be returned to your wallet minus network fees."}
+                    : `Your refund request has been submitted to address ${refundAddress}. Funds will be returned minus network fees.`}
                 </AlertDescription>
               </Alert>
             ) : (
@@ -271,11 +278,32 @@ export const OrderDetails = ({
                     </div>
                   </RadioGroup>
 
+                  {emergencyAction === "REFUND" && (
+                    <div className="mt-3">
+                      <label className="block text-sm text-gray-300 mb-2">
+                        {fromCurrencyName || "Original"} Refund Address
+                        <span className="ml-1 text-xs text-gray-400">
+                          (Enter your {fromCurrency || "sending token"} address)
+                        </span>
+                      </label>
+                      <Input
+                        value={refundAddress}
+                        onChange={(e) => setRefundAddress(e.target.value)}
+                        placeholder={`Enter your ${fromCurrency || "sending token"} address for refund`}
+                        className="mb-2"
+                      />
+                      <div className="text-xs text-gray-400 mb-3">
+                        This must be an address that can receive {fromCurrencyName || "the original token"} you sent
+                      </div>
+                    </div>
+                  )}
+
                   <Button
                     variant="default"
                     size="sm"
                     className="w-full mt-3"
                     onClick={handleEmergencyAction}
+                    disabled={emergencyAction === "REFUND" && !refundAddress.trim()}
                   >
                     Confirm
                   </Button>
@@ -316,7 +344,7 @@ export const OrderDetails = ({
                 <AlertDescription className="text-green-200 mt-1">
                   {selectedAction === "EXCHANGE"
                     ? "Your transaction will be processed at the current market rate. We'll notify you when it's complete."
-                    : "Your refund request has been submitted. Funds will be returned to your wallet minus network fees."}
+                    : `Your refund request has been submitted to address ${refundAddress}. Funds will be returned minus network fees.`}
                 </AlertDescription>
               </Alert>
             ) : (
@@ -347,11 +375,32 @@ export const OrderDetails = ({
                     </div>
                   </RadioGroup>
 
+                  {emergencyAction === "REFUND" && (
+                    <div className="mt-3">
+                      <label className="block text-sm text-gray-300 mb-2">
+                        {fromCurrencyName || "Original"} Refund Address
+                        <span className="ml-1 text-xs text-gray-400">
+                          (Enter your {fromCurrency || "sending token"} address)
+                        </span>
+                      </label>
+                      <Input
+                        value={refundAddress}
+                        onChange={(e) => setRefundAddress(e.target.value)}
+                        placeholder={`Enter your ${fromCurrency || "sending token"} address for refund`}
+                        className="mb-2"
+                      />
+                      <div className="text-xs text-gray-400 mb-3">
+                        This must be an address that can receive {fromCurrencyName || "the original token"} you sent
+                      </div>
+                    </div>
+                  )}
+
                   <Button
                     variant="default"
                     size="sm"
                     className="w-full mt-3"
                     onClick={handleEmergencyAction}
+                    disabled={emergencyAction === "REFUND" && !refundAddress.trim()}
                   >
                     Confirm
                   </Button>

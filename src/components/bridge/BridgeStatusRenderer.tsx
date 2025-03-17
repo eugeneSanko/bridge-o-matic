@@ -1,3 +1,4 @@
+
 import { OrderDetails } from "@/hooks/useBridgeOrder";
 import { LoadingState } from "@/components/bridge/LoadingState";
 import { ErrorState } from "@/components/bridge/ErrorState";
@@ -81,7 +82,7 @@ export const BridgeStatusRenderer = ({
   };
 
   // Handlers for emergency actions
-  const handleEmergencyAction = async (choice: "EXCHANGE" | "REFUND") => {
+  const handleEmergencyAction = async (choice: "EXCHANGE" | "REFUND", refundAddress?: string) => {
     if (!orderDetails || !orderDetails.ffOrderId || !token) {
       toast({
         title: "Error",
@@ -97,13 +98,20 @@ export const BridgeStatusRenderer = ({
         description: `Processing ${choice === "EXCHANGE" ? "exchange" : "refund"} request...`,
       });
 
-      // Call the emergency endpoint instead of status endpoint with action parameter
+      const requestBody: any = {
+        id: orderDetails.ffOrderId,
+        token: token,
+        choice: choice,
+      };
+
+      // Add refund address if provided and choice is REFUND
+      if (choice === "REFUND" && refundAddress) {
+        requestBody.address = refundAddress;
+      }
+
+      // Call the emergency endpoint with the updated request body
       const { data, error } = await supabase.functions.invoke("bridge-emergency", {
-        body: {
-          id: orderDetails.ffOrderId,
-          token: token,
-          choice: choice,
-        },
+        body: requestBody,
       });
 
       console.log("Emergency action response:", data);
@@ -169,9 +177,9 @@ export const BridgeStatusRenderer = ({
     });
   };
 
-  const handleEmergencyRefund = () => {
-    console.log("Emergency refund requested");
-    handleEmergencyAction("REFUND");
+  const handleEmergencyRefund = (refundAddress?: string) => {
+    console.log("Emergency refund requested with address:", refundAddress);
+    handleEmergencyAction("REFUND", refundAddress);
     
     // Show deposit confirmation notification
     toast({

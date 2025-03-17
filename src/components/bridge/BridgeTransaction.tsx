@@ -14,7 +14,7 @@ interface BridgeTransactionProps {
   onCopyAddress: (text: string) => void;
   onRetryCurrentPrice?: () => void;
   onEmergencyExchange?: () => void;
-  onEmergencyRefund?: () => void;
+  onEmergencyRefund?: (refundAddress?: string) => void;
 }
 
 export const BridgeTransaction = ({
@@ -150,6 +150,8 @@ export const BridgeTransaction = ({
                 onRetryCurrentPrice={onRetryCurrentPrice}
                 onEmergencyExchange={onEmergencyExchange}
                 onEmergencyRefund={onEmergencyRefund}
+                fromCurrency={orderDetails.fromCurrency}
+                fromCurrencyName={orderDetails.fromCurrencyName}
               />
               <AddressDetails
                 depositAddress={orderDetails.depositAddress}

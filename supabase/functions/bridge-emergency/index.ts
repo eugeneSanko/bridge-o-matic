@@ -48,9 +48,9 @@ serve(async (req) => {
     const requestData = await req.json();
     
     // Extract required parameters from the request
-    const { id, token, choice } = requestData;
+    const { id, token, choice, address, tag } = requestData;
     
-    console.log(`Received emergency request parameters - id: ${id}, token: ${token}, choice: ${choice}`);
+    console.log(`Received emergency request parameters - id: ${id}, token: ${token}, choice: ${choice}, address: ${address || 'not provided'}, tag: ${tag || 'not provided'}`);
     
     if (!id || !token || !choice) {
       console.error("Missing required parameters", { id, token, choice });
@@ -89,15 +89,34 @@ serve(async (req) => {
       );
     }
 
+    // Validate that address is provided if choice is REFUND
+    if (choice === "REFUND" && !address) {
+      console.error("Missing refund address for REFUND choice");
+      return new Response(
+        JSON.stringify({
+          code: 400,
+          msg: "Refund address is required when choice is REFUND",
+          debugInfo: { receivedParams: { choice, address } }
+        }),
+        {
+          status: 400,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
     console.log(`Processing emergency action: ${choice} for order ID: ${id}`);
     
     // Prepare request body for FixedFloat API
-    const requestBody = { id, token, choice };
-    if (requestData.address && choice === "REFUND") {
-      requestBody.address = requestData.address;
+    const requestBody: any = { id, token, choice };
+    if (address && choice === "REFUND") {
+      requestBody.address = address;
     }
-    if (requestData.tag) {
-      requestBody.tag = requestData.tag;
+    if (tag) {
+      requestBody.tag = tag;
     }
     
     const requestBodyStr = JSON.stringify(requestBody);
