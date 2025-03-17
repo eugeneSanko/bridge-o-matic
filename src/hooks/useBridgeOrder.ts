@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -44,6 +43,7 @@ export interface OrderDetails {
   receiveAmount?: string;
   fromCurrencyName?: string;
   toCurrencyName?: string;
+  token?: string;
   rawApiResponse?: any; // Store raw API response for debugging
 }
 
@@ -59,18 +59,14 @@ export function useBridgeOrder(
   const pollingIntervalIdRef = useRef<number | null>(null);
   const [emergencyActionTaken, setEmergencyActionTaken] = useState(false);
 
-  // Add an event listener to detect emergency actions
   useEffect(() => {
-    // Create a custom event listener for emergency actions
     const emergencyActionHandler = () => {
       console.log("Emergency action detected in useBridgeOrder, enabling polling");
       setEmergencyActionTaken(true);
     };
     
-    // Add event listener for custom emergency action event
     window.addEventListener("emergency-action-triggered", emergencyActionHandler);
     
-    // Cleanup
     return () => {
       window.removeEventListener("emergency-action-triggered", emergencyActionHandler);
     };
@@ -156,7 +152,6 @@ export function useBridgeOrder(
           rawApiResponse: apiResponse.data,
         });
 
-        // Only stop polling if we have a terminal status AND no emergency action was taken
         if (
           (apiResponse.data.status === "DONE" || 
           (apiResponse.data.status === "EXPIRED" && !emergencyActionTaken) || 
@@ -314,6 +309,6 @@ export function useBridgeOrder(
     loading,
     error,
     handleCopyAddress,
-    setEmergencyActionTaken, // Export this function so it can be called from other components
+    setEmergencyActionTaken,
   };
 }

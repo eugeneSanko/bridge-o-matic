@@ -38,9 +38,6 @@ export const BridgeTransaction = ({
   const [isEmergency, setIsEmergency] = useState(false);
 
   useEffect(() => {
-    // The currentStatus should take precedence over the API status
-    // This allows our application to override the EXPIRED status when we know
-    // the transaction is actually completed
     const isApiExpired =
       apiStatus === "EXPIRED" && orderDetails.currentStatus !== "completed";
     const isStatusExpired = orderDetails.currentStatus === "expired";
@@ -55,7 +52,6 @@ export const BridgeTransaction = ({
       isTimerExpired,
     });
 
-    // Override expired status if currentStatus is "completed"
     if (orderDetails.currentStatus === "completed") {
       console.log("Current status is 'completed', ignoring EXPIRED API status");
       setIsExpired(false);
@@ -66,7 +62,6 @@ export const BridgeTransaction = ({
       setIsExpired(false);
     }
 
-    // Check for emergency status
     const isApiEmergency = apiStatus === "EMERGENCY" || apiStatus === "FAILED";
     const isStatusEmergency =
       orderDetails.currentStatus === "emergency" ||
@@ -103,7 +98,6 @@ export const BridgeTransaction = ({
     }
   }, [orderDetails.rawApiResponse]);
 
-  // Give priority to the currentStatus if it's set to completed
   const displayStatus =
     orderDetails.currentStatus === "completed"
       ? "DONE"
@@ -168,6 +162,8 @@ export const BridgeTransaction = ({
                 depositAmount={orderDetails.depositAmount}
                 fromCurrency={orderDetails.fromCurrency}
                 tag={orderDetails.tag}
+                orderId={orderDetails.orderId}
+                token={orderDetails.token}
               />
             </div>
 

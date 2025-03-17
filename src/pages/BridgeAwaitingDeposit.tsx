@@ -25,7 +25,7 @@ const BridgeAwaitingDeposit = () => {
     loading, 
     error, 
     handleCopyAddress,
-    setEmergencyActionTaken // Extract this from the returned object
+    setEmergencyActionTaken 
   } = useBridgeOrder(
     orderId, 
     token,
@@ -60,6 +60,17 @@ const BridgeAwaitingDeposit = () => {
     setStatusCheckDebugInfo
   });
 
+  // Update orderDetails when originalOrderDetails changes
+  useEffect(() => {
+    if (originalOrderDetails) {
+      // Ensure token is passed to the component
+      setOrderDetails({
+        ...originalOrderDetails,
+        token: token
+      });
+    }
+  }, [originalOrderDetails, token]);
+
   return (
     <>
       <OrderParameterValidator orderId={orderId} token={token} />
@@ -91,7 +102,7 @@ const BridgeAwaitingDeposit = () => {
         transactionSaved={transactionSaved}
         setTransactionSaved={setTransactionSaved}
         checkOrderStatus={() => checkOrderStatus && checkOrderStatus(true)}
-        setEmergencyActionTaken={setEmergencyActionTaken} // Pass this function
+        setEmergencyActionTaken={setEmergencyActionTaken}
       />
     </>
   );
