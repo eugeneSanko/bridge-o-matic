@@ -69,7 +69,7 @@ export const AddressDetails = ({
     : fromCurrency.toUpperCase();
 
   return (
-    <div className="col-span-4 glass-card p-6 rounded-xl">
+    <div className="col-span-3 glass-card p-6 rounded-xl">
       <div className="space-y-6">
         <div>
           <div className="text-sm text-gray-400 mb-2">
