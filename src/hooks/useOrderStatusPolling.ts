@@ -137,7 +137,7 @@ export const useOrderStatusPolling = ({
           updateDebugInfo(data.debugInfo);
         }
 
-        if (data.code === a && data.data) {
+        if (data.code === 0 && data.data) {
           const status = data.data.status;
           console.log(`Order status from API: ${status}`);
 

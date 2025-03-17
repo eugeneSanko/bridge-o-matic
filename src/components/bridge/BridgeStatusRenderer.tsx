@@ -189,17 +189,8 @@ export const BridgeStatusRenderer = ({
   };
 
   const handleAddressCopy = (address: string) => {
-    // Original copy address handler
+    // Original copy address handler only - removed the toast notification
     handleCopyAddress(address);
-    
-    // Show deposit confirmation notification after a short delay
-    setTimeout(() => {
-      toast({
-        title: "Transaction Status",
-        description: "Waiting for the appearance of the transaction on the blockchain network. Funds have not yet arrived at the address indicated in the order. We will exchange funds after the receipt of the transaction and the receipt of the required number of confirmations of the blockchain network.",
-        duration: 10000, // Show for 10 seconds since it's a longer message
-      });
-    }, 500);
   };
 
   return (
