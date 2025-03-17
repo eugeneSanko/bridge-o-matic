@@ -8,7 +8,6 @@ import { SimulationHandler } from "@/components/bridge/SimulationHandler";
 import { OrderParameterValidator } from "@/components/bridge/OrderParameterValidator";
 import { ApiStatusMonitor } from "@/components/bridge/ApiStatusMonitor";
 import { BridgeStatusRenderer } from "@/components/bridge/BridgeStatusRenderer";
-import { toast } from "sonner";
 
 const BridgeAwaitingDeposit = () => {
   const [searchParams] = useSearchParams();
@@ -59,27 +58,6 @@ const BridgeAwaitingDeposit = () => {
     onTransactionComplete: handleTransactionComplete,
     setStatusCheckDebugInfo
   });
-  
-  // Emergency handlers
-  const handleEmergencyExchange = () => {
-    toast.info("Initiating emergency exchange...", {
-      description: "This feature is currently in development."
-    });
-    
-    console.log("Emergency exchange requested for order:", orderId);
-    
-    // In the future, we would call an API endpoint here to handle the emergency exchange
-  };
-  
-  const handleEmergencyRefund = () => {
-    toast.info("Initiating emergency refund...", {
-      description: "This feature is currently in development."
-    });
-    
-    console.log("Emergency refund requested for order:", orderId);
-    
-    // In the future, we would call an API endpoint here to handle the emergency refund
-  };
 
   return (
     <>
@@ -112,8 +90,6 @@ const BridgeAwaitingDeposit = () => {
         transactionSaved={transactionSaved}
         setTransactionSaved={setTransactionSaved}
         checkOrderStatus={() => checkOrderStatus && checkOrderStatus(true)}
-        onEmergencyExchange={handleEmergencyExchange}
-        onEmergencyRefund={handleEmergencyRefund}
       />
     </>
   );

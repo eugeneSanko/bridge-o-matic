@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from "react";
-import { Copy, Clock, Calendar, Tag, AlertCircle, TimerOff, ArrowRight, LifeBuoy } from "lucide-react";
+import { Copy, Clock, Calendar, Tag, AlertCircle, TimerOff, RefreshCw, ArrowRight, LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -38,6 +39,7 @@ export const OrderDetails = ({
   const [isExpired, setIsExpired] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState<number | null>(null);
   
+  // Initialize the timer based on timeLeft from API
   useEffect(() => {
     if (timeLeft !== undefined && timeLeft !== null) {
       console.log(`Initializing timer with API timeLeft value: ${timeLeft} seconds`);
@@ -45,57 +47,67 @@ export const OrderDetails = ({
     }
   }, [timeLeft]);
   
+  // Countdown effect
   useEffect(() => {
+    // Only start countdown if we have secondsRemaining value
     if (secondsRemaining === null) return;
     
+    // Format and display the time
     const updateTimerDisplay = () => {
       const minutes = Math.floor(secondsRemaining / 60);
       const seconds = Math.floor(secondsRemaining % 60);
       const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
       setLocalTimeRemaining(formattedTime);
       
+      // Update colors based on time remaining
       if (secondsRemaining <= 0) {
-        setTimerColor("#ea384c");
+        setTimerColor("#ea384c"); // Red when expired
         setIsExpired(true);
         return;
       } else if (minutes <= 5) {
-        setTimerColor("#ea384c");
+        setTimerColor("#ea384c"); // Red when less than 5 minutes
       } else if (minutes <= 10) {
-        setTimerColor("#F97316");
+        setTimerColor("#F97316"); // Orange when less than 10 minutes
       } else {
-        setTimerColor("#9b87f5");
+        setTimerColor("#9b87f5"); // Purple otherwise
       }
     };
     
+    // Initial update
     updateTimerDisplay();
     
+    // Set up interval to update every second
     const intervalId = setInterval(() => {
       setSecondsRemaining(prev => {
         const newValue = prev !== null ? prev - 1 : 0;
-        return Math.max(0, newValue);
+        return Math.max(0, newValue); // Don't go below zero
       });
       updateTimerDisplay();
     }, 1000);
     
     return () => clearInterval(intervalId);
   }, [secondsRemaining]);
-  
+
+  // Fallback to expiresAt if no timeLeft provided
   useEffect(() => {
-    if (secondsRemaining !== null) return;
+    if (secondsRemaining !== null) return; // Skip if we already have seconds remaining
     
     if (expiresAt) {
+      // Calculate seconds remaining based on expiresAt
       const endTime = new Date(expiresAt);
       const now = new Date();
       const diffSeconds = Math.max(0, Math.floor((endTime.getTime() - now.getTime()) / 1000));
       setSecondsRemaining(diffSeconds);
     } else if (timeRemaining) {
+      // Parse from timeRemaining (MM:SS format)
       const [minutes, seconds] = timeRemaining.split(':').map(Number);
       setSecondsRemaining((minutes * 60) + seconds);
     } else {
+      // Default to 20 minutes if no time info provided
       setSecondsRemaining(20 * 60);
     }
   }, [expiresAt, timeRemaining, secondsRemaining]);
-  
+
   const formatDate = (date: Date) => {
     return date.toISOString().replace('T', ' ').substring(0, 16) + ' UTC';
   };
@@ -105,11 +117,13 @@ export const OrderDetails = ({
   };
 
   const renderStatusSection = () => {
+    // Check for expired status
     const isStatusExpired = 
       isExpired || 
       currentStatus === "EXPIRED" || 
       currentStatus === "expired";
     
+    // Check for emergency status
     const isEmergency = 
       currentStatus === "FAILED" || 
       currentStatus === "EMERGENCY" ||
@@ -123,7 +137,7 @@ export const OrderDetails = ({
             <TimerOff className="h-5 w-5" />
             <span className="font-medium">Deposit window expired</span>
           </div>
-          <div className="flex mt-3">
+          <div className="flex gap-2 mt-3">
             <Button 
               variant="default" 
               size="sm" 
@@ -132,6 +146,16 @@ export const OrderDetails = ({
             >
               <ArrowRight className="h-4 w-4 mr-1" />
               New Exchange
+            </Button>
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className="w-full"
+              onClick={onRetryCurrentPrice}
+              disabled={!onRetryCurrentPrice}
+            >
+              <RefreshCw className="h-4 w-4 mr-1" />
+              Retry Current Price
             </Button>
           </div>
         </div>
