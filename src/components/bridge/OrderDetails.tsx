@@ -199,14 +199,16 @@ export const OrderDetails = ({
                 <ArrowRight className="h-4 w-4 mr-1" />
                 Create New Exchange
               </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="w-full glass-card"
-                onClick={handleSentFunds}
-              >
-                <AlertCircle className="h-4 w-4 mr-1" />I sent funds already
-              </Button>
+              {!showWaitingMessage && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="w-full glass-card"
+                  onClick={handleSentFunds}
+                >
+                  <AlertCircle className="h-4 w-4 mr-1" />I sent funds already
+                </Button>
+              )}
             </div>
           )}
 
