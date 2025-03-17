@@ -190,132 +190,6 @@ export const OrderDetails = ({
       currentStatus === "emergency" ||
       currentStatus === "failed";
 
-    if (isStatusExpired) {
-      return (
-        <div className="mt-4 p-3 bg-red-500/10 rounded-lg border border-red-500/20">
-          <div className="flex items-center gap-2 text-red-500 mb-2">
-            <TimerOff className="h-5 w-5" />
-            <span className="font-medium">Deposit window expired</span>
-          </div>
-
-          {showWaitingMessage ? (
-            <Alert className="mt-3 mb-3 bg-blue-500/10 border-blue-500/20 text-blue-400">
-              <AlertTitle className="text-blue-300 font-medium">Transaction Status</AlertTitle>
-              <AlertDescription className="text-blue-200">
-                Waiting for the appearance of the transaction on the blockchain network. Funds have not yet arrived at the address indicated in the order. We will exchange funds after the receipt of the transaction and the receipt of the required number of confirmations of the blockchain network.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <div className="flex gap-2 mt-3 flex-col">
-              <Button
-                variant="default"
-                size="sm"
-                className="w-full"
-                onClick={handleNewExchange}
-              >
-                <ArrowRight className="h-4 w-4 mr-1" />
-                Create New Exchange
-              </Button>
-              {!showFundsSentAlert && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="w-full glass-card"
-                  onClick={handleSentFunds}
-                >
-                  <AlertCircle className="h-4 w-4 mr-1" />I sent funds already
-                </Button>
-              )}
-            </div>
-          )}
-
-          {showFundsSentAlert && !showWaitingMessage && (
-            choiceMade && apiResponseOk ? (
-              <Alert className="mt-3 mb-3 bg-green-500/10 border-green-500/20">
-                <div className="flex items-center gap-2 text-green-400">
-                  <CheckCircle className="h-5 w-5" />
-                  <AlertTitle className="text-green-300 font-medium">
-                    {selectedAction === "EXCHANGE" 
-                      ? "Exchange request submitted" 
-                      : "Refund request submitted"}
-                  </AlertTitle>
-                </div>
-                <AlertDescription className="text-green-200 mt-1">
-                  {selectedAction === "EXCHANGE"
-                    ? "Your transaction will be processed at the current market rate. We'll notify you when it's complete."
-                    : `Your refund request has been submitted to address ${refundAddress}. Funds will be returned minus network fees.`}
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <Alert variant="destructive" className="mt-3 mb-3">
-                <span className="space-x-1 flex ">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>I sent funds, but my order has expired</AlertTitle>
-                </span>
-
-                <AlertDescription className="text-muted-foreground">
-                  Choose one of the following options:
-                </AlertDescription>
-
-                <div className="mt-4">
-                  <RadioGroup
-                    value={emergencyAction}
-                    onValueChange={(value) =>
-                      setEmergencyAction(value as "EXCHANGE" | "REFUND")
-                    }
-                    className="space-y-2 text-white"
-                  >
-                    <div className="flex items-center space-x-2 ">
-                      <RadioGroupItem value="EXCHANGE" id="exchange" />
-                      <Label htmlFor="exchange">
-                        Continue my exchange (at market rate)
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="REFUND" id="refund" />
-                      <Label htmlFor="refund">
-                        Make a refund minus network fee
-                      </Label>
-                    </div>
-                  </RadioGroup>
-
-                  {emergencyAction === "REFUND" && (
-                    <div className="mt-3">
-                      <label className="block text-sm text-gray-300 mb-2">
-                        {fromCurrencyName || "Original"} Refund Address
-                        <span className="ml-1 text-xs text-gray-400">
-                          (Enter your {fromCurrency || "sending token"} address)
-                        </span>
-                      </label>
-                      <Input
-                        value={refundAddress}
-                        onChange={(e) => setRefundAddress(e.target.value)}
-                        placeholder={`Enter your ${fromCurrency || "sending token"} address for refund`}
-                        className="mb-2"
-                      />
-                      <div className="text-xs text-gray-400 mb-3">
-                        This must be an address that can receive {fromCurrencyName || "the original token"} you sent
-                      </div>
-                    </div>
-                  )}
-
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="w-full mt-3"
-                    onClick={handleEmergencyAction}
-                    disabled={emergencyAction === "REFUND" && !refundAddress.trim()}
-                  >
-                    Confirm
-                  </Button>
-                </div>
-              </Alert>
-            )
-          )}
-        </div>
-      );
-    }
-
     if (isEmergency) {
       return (
         <div className="mt-4 p-3 bg-red-500/10 rounded-lg border border-red-500/20">
@@ -406,6 +280,134 @@ export const OrderDetails = ({
                     Confirm
                   </Button>
                 </div>
+              </>
+            )
+          )}
+        </div>
+      );
+    }
+
+    if (isStatusExpired) {
+      return (
+        <div className="mt-4 p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+          <div className="flex items-center gap-2 text-red-500 mb-2">
+            <TimerOff className="h-5 w-5" />
+            <span className="font-medium">Deposit window expired</span>
+          </div>
+
+          {showWaitingMessage ? (
+            <Alert className="mt-3 mb-3 bg-blue-500/10 border-blue-500/20 text-blue-400">
+              <AlertTitle className="text-blue-300 font-medium">Transaction Status</AlertTitle>
+              <AlertDescription className="text-blue-200">
+                Waiting for the appearance of the transaction on the blockchain network. Funds have not yet arrived at the address indicated in the order. We will exchange funds after the receipt of the transaction and the receipt of the required number of confirmations of the blockchain network.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            choiceMade && apiResponseOk ? (
+              <Alert className="mt-3 mb-3 bg-green-500/10 border-green-500/20">
+                <div className="flex items-center gap-2 text-green-400">
+                  <CheckCircle className="h-5 w-5" />
+                  <AlertTitle className="text-green-300 font-medium">
+                    {selectedAction === "EXCHANGE" 
+                      ? "Exchange request submitted" 
+                      : "Refund request submitted"}
+                  </AlertTitle>
+                </div>
+                <AlertDescription className="text-green-200 mt-1">
+                  {selectedAction === "EXCHANGE"
+                    ? "Your transaction will be processed at the current market rate. We'll notify you when it's complete."
+                    : `Your refund request has been submitted to address ${refundAddress}. Funds will be returned minus network fees.`}
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <>
+                <div className="flex gap-2 mt-3 flex-col">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="w-full"
+                    onClick={handleNewExchange}
+                  >
+                    <ArrowRight className="h-4 w-4 mr-1" />
+                    Create New Exchange
+                  </Button>
+                  {!showFundsSentAlert && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="w-full glass-card"
+                      onClick={handleSentFunds}
+                    >
+                      <AlertCircle className="h-4 w-4 mr-1" />I sent funds already
+                    </Button>
+                  )}
+                </div>
+
+                {showFundsSentAlert && (
+                  <Alert variant="destructive" className="mt-3 mb-3">
+                    <span className="space-x-1 flex ">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>I sent funds, but my order has expired</AlertTitle>
+                    </span>
+
+                    <AlertDescription className="text-muted-foreground">
+                      Choose one of the following options:
+                    </AlertDescription>
+
+                    <div className="mt-4">
+                      <RadioGroup
+                        value={emergencyAction}
+                        onValueChange={(value) =>
+                          setEmergencyAction(value as "EXCHANGE" | "REFUND")
+                        }
+                        className="space-y-2 text-white"
+                      >
+                        <div className="flex items-center space-x-2 ">
+                          <RadioGroupItem value="EXCHANGE" id="exchange" />
+                          <Label htmlFor="exchange">
+                            Continue my exchange (at market rate)
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="REFUND" id="refund" />
+                          <Label htmlFor="refund">
+                            Make a refund minus network fee
+                          </Label>
+                        </div>
+                      </RadioGroup>
+
+                      {emergencyAction === "REFUND" && (
+                        <div className="mt-3">
+                          <label className="block text-sm text-gray-300 mb-2">
+                            {fromCurrencyName || "Original"} Refund Address
+                            <span className="ml-1 text-xs text-gray-400">
+                              (Enter your {fromCurrency || "sending token"} address)
+                            </span>
+                          </label>
+                          <Input
+                            value={refundAddress}
+                            onChange={(e) => setRefundAddress(e.target.value)}
+                            placeholder={`Enter your ${fromCurrency || "sending token"} address for refund`}
+                            className="mb-2"
+                          />
+                          <div className="text-xs text-gray-400 mb-3">
+                            This must be an address that can receive {fromCurrencyName || "the original token"} you sent
+                          </div>
+                        </div>
+                      )}
+
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="w-full mt-3"
+                        onClick={handleEmergencyAction}
+                        disabled={emergencyAction === "REFUND" && !refundAddress.trim()}
+                      >
+                        Confirm
+                      </Button>
+                    </div>
+                  </Alert>
+                )}
               </>
             )
           )}
