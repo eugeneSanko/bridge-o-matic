@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import {
   Copy,
@@ -53,6 +54,7 @@ export const OrderDetails = ({
   const [isExpired, setIsExpired] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState<number | null>(null);
   const [showFundsSentAlert, setShowFundsSentAlert] = useState(false);
+  const [showWaitingMessage, setShowWaitingMessage] = useState(false);
   const [emergencyAction, setEmergencyAction] = useState<"EXCHANGE" | "REFUND">(
     "EXCHANGE"
   );
@@ -141,6 +143,7 @@ export const OrderDetails = ({
 
   const handleSentFunds = () => {
     setShowFundsSentAlert(true);
+    setShowWaitingMessage(true);
   };
 
   const handleEmergencyAction = () => {
@@ -170,6 +173,15 @@ export const OrderDetails = ({
             <TimerOff className="h-5 w-5" />
             <span className="font-medium">Deposit window expired</span>
           </div>
+
+          {showWaitingMessage && (
+            <Alert className="mt-3 mb-3 bg-blue-500/10 border-blue-500/20 text-blue-400">
+              <AlertTitle className="text-blue-300 font-medium">Transaction Status</AlertTitle>
+              <AlertDescription className="text-blue-200">
+                Waiting for the appearance of the transaction on the blockchain network. Funds have not yet arrived at the address indicated in the order. We will exchange funds after the receipt of the transaction and the receipt of the required number of confirmations of the blockchain network.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {showFundsSentAlert ? (
             <Alert variant="destructive" className="mt-3 mb-3">
@@ -246,6 +258,16 @@ export const OrderDetails = ({
             <AlertCircle className="h-5 w-5" />
             <span className="font-medium">Exchange emergency</span>
           </div>
+          
+          {showWaitingMessage && (
+            <Alert className="mt-3 mb-3 bg-blue-500/10 border-blue-500/20 text-blue-400">
+              <AlertTitle className="text-blue-300 font-medium">Transaction Status</AlertTitle>
+              <AlertDescription className="text-blue-200">
+                Waiting for the appearance of the transaction on the blockchain network. Funds have not yet arrived at the address indicated in the order. We will exchange funds after the receipt of the transaction and the receipt of the required number of confirmations of the blockchain network.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <p className="text-sm text-gray-400 mb-2">
             Your exchange encountered an issue. Choose an option:
           </p>
