@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import {
   Copy,
@@ -30,7 +31,7 @@ interface OrderDetailsProps {
   timeLeft?: number | null;
   onRetryCurrentPrice?: () => void;
   onEmergencyExchange?: () => void;
-  onEmergencyRefund?: () => void;
+  onEmergencyRefund?: (refundAddress?: string) => void;
   fromCurrency?: string;
   fromCurrencyName?: string;
 }
