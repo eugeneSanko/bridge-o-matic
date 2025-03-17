@@ -24,7 +24,8 @@ const BridgeAwaitingDeposit = () => {
     orderDetails: originalOrderDetails, 
     loading, 
     error, 
-    handleCopyAddress 
+    handleCopyAddress,
+    setEmergencyActionTaken // Extract this from the returned object
   } = useBridgeOrder(
     orderId, 
     token,
@@ -90,6 +91,7 @@ const BridgeAwaitingDeposit = () => {
         transactionSaved={transactionSaved}
         setTransactionSaved={setTransactionSaved}
         checkOrderStatus={() => checkOrderStatus && checkOrderStatus(true)}
+        setEmergencyActionTaken={setEmergencyActionTaken} // Pass this function
       />
     </>
   );

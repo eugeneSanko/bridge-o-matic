@@ -1,3 +1,4 @@
+
 import { OrderDetails } from "@/hooks/useBridgeOrder";
 import { LoadingState } from "@/components/bridge/LoadingState";
 import { ErrorState } from "@/components/bridge/ErrorState";
@@ -21,6 +22,7 @@ interface BridgeStatusRendererProps {
   transactionSaved: boolean;
   setTransactionSaved: (saved: boolean) => void;
   checkOrderStatus?: () => void;
+  setEmergencyActionTaken?: (taken: boolean) => void; // Add this prop
 }
 
 export const BridgeStatusRenderer = ({
@@ -34,7 +36,8 @@ export const BridgeStatusRenderer = ({
   token,
   transactionSaved,
   setTransactionSaved,
-  checkOrderStatus
+  checkOrderStatus,
+  setEmergencyActionTaken // Add this prop
 }: BridgeStatusRendererProps) => {
   // Add state to handle updated orderDetails after expired status check
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(initialOrderDetails);
@@ -126,6 +129,16 @@ export const BridgeStatusRenderer = ({
       }
 
       if (data && data.code === 0) {
+        // Trigger the custom event to notify that an emergency action was taken
+        const emergencyEvent = new Event("emergency-action-triggered");
+        window.dispatchEvent(emergencyEvent);
+        
+        // Also call the setEmergencyActionTaken function if available
+        if (setEmergencyActionTaken) {
+          console.log("Setting emergency action taken flag");
+          setEmergencyActionTaken(true);
+        }
+        
         toast({
           title: "Success",
           description: choice === "EXCHANGE" 

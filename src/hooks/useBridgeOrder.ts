@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -56,7 +57,25 @@ export function useBridgeOrder(
   const [loading, setLoading] = useState(shouldFetch);
   const [error, setError] = useState<string | null>(null);
   const pollingIntervalIdRef = useRef<number | null>(null);
+  const [emergencyActionTaken, setEmergencyActionTaken] = useState(false);
 
+  // Add an event listener to detect emergency actions
+  useEffect(() => {
+    // Create a custom event listener for emergency actions
+    const emergencyActionHandler = () => {
+      console.log("Emergency action detected in useBridgeOrder, enabling polling");
+      setEmergencyActionTaken(true);
+    };
+    
+    // Add event listener for custom emergency action event
+    window.addEventListener("emergency-action-triggered", emergencyActionHandler);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener("emergency-action-triggered", emergencyActionHandler);
+    };
+  }, []);
+  
   const fetchOrderDetails = useCallback(async () => {
     if (!orderId || !token || !shouldFetch) {
       setLoading(false);
@@ -137,13 +156,14 @@ export function useBridgeOrder(
           rawApiResponse: apiResponse.data,
         });
 
+        // Only stop polling if we have a terminal status AND no emergency action was taken
         if (
-          apiResponse.data.status === "EXPIRED" ||
-          apiResponse.data.status === "EMERGENCY" ||
-          apiResponse.data.status === "DONE"
+          (apiResponse.data.status === "DONE" || 
+          (apiResponse.data.status === "EXPIRED" && !emergencyActionTaken) || 
+          (apiResponse.data.status === "EMERGENCY" && !emergencyActionTaken))
         ) {
           console.log(
-            "Terminal status received. Stopping polling in 1500ms."
+            `Terminal status (${apiResponse.data.status}) received and no emergency action taken. Stopping polling in 1500ms.`
           );
           setTimeout(() => {
             if (pollingIntervalIdRef.current) {
@@ -151,6 +171,8 @@ export function useBridgeOrder(
               pollingIntervalIdRef.current = null;
             }
           }, 1500);
+        } else if (emergencyActionTaken) {
+          console.log(`Status is ${apiResponse.data.status} but emergency action was taken, continuing to poll`);
         }
 
         setLoading(false);
@@ -202,7 +224,7 @@ export function useBridgeOrder(
       );
       setLoading(false);
     }
-  }, [orderId, token, shouldFetch, forceApiCheck]);
+  }, [orderId, token, shouldFetch, forceApiCheck, emergencyActionTaken]);
 
   const calculateTimeRemaining = (
     input: string | number | null
@@ -292,5 +314,6 @@ export function useBridgeOrder(
     loading,
     error,
     handleCopyAddress,
+    setEmergencyActionTaken, // Export this function so it can be called from other components
   };
 }
