@@ -170,8 +170,8 @@ export const OrderDetails = ({
     const isEmergency =
       currentStatus === "FAILED" ||
       currentStatus === "EMERGENCY" ||
-      currentStatus === "failed" ||
-      currentStatus === "emergency";
+      currentStatus === "emergency" ||
+      currentStatus === "failed";
 
     if (isStatusExpired) {
       return (
