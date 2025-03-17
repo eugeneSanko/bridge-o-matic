@@ -113,9 +113,6 @@ export const BridgeTransaction = ({
       : isEmergency
       ? "EMERGENCY"
       : apiStatus;
-      
-  // Hide QR code when expired or in emergency
-  const shouldShowQrCode = !isExpired && !isEmergency;
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
@@ -164,14 +161,12 @@ export const BridgeTransaction = ({
                 fromCurrencyName={orderDetails.fromCurrencyName}
               />
 
-              {shouldShowQrCode && (
-                <QRCodeSection
-                  depositAddress={orderDetails.depositAddress}
-                  depositAmount={orderDetails.depositAmount}
-                  fromCurrency={orderDetails.fromCurrency}
-                  tag={orderDetails.tag}
-                />
-              )}
+              <QRCodeSection
+                depositAddress={orderDetails.depositAddress}
+                depositAmount={orderDetails.depositAmount}
+                fromCurrency={orderDetails.fromCurrency}
+                tag={orderDetails.tag}
+              />
             </div>
 
             <div className="grid grid-cols-12 gap-6">

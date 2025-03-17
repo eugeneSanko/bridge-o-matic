@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Copy,
@@ -14,6 +13,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface OrderDetailsProps {
   orderId: string;
@@ -52,6 +53,7 @@ export const OrderDetails = ({
   const [isExpired, setIsExpired] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState<number | null>(null);
   const [showFundsSentAlert, setShowFundsSentAlert] = useState(false);
+  const [emergencyAction, setEmergencyAction] = useState<"EXCHANGE" | "REFUND">("EXCHANGE");
 
   // Initialize the timer based on timeLeft from API
   useEffect(() => {
@@ -139,6 +141,14 @@ export const OrderDetails = ({
     setShowFundsSentAlert(true);
   };
 
+  const handleEmergencyAction = () => {
+    if (emergencyAction === "EXCHANGE" && onEmergencyExchange) {
+      onEmergencyExchange();
+    } else if (emergencyAction === "REFUND" && onEmergencyRefund) {
+      onEmergencyRefund();
+    }
+  };
+
   const renderStatusSection = () => {
     // Check for expired status
     const isStatusExpired =
@@ -167,24 +177,29 @@ export const OrderDetails = ({
                 Choose one of the following options:
               </AlertDescription>
               
-              <div className="flex gap-2 mt-3 flex-col">
+              <div className="mt-4">
+                <RadioGroup 
+                  value={emergencyAction} 
+                  onValueChange={(value) => setEmergencyAction(value as "EXCHANGE" | "REFUND")}
+                  className="space-y-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="EXCHANGE" id="exchange" />
+                    <Label htmlFor="exchange">Continue my exchange (at market rate)</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="REFUND" id="refund" />
+                    <Label htmlFor="refund">Make a refund minus network fee</Label>
+                  </div>
+                </RadioGroup>
+                
                 <Button
                   variant="default"
                   size="sm"
-                  className="w-full"
-                  onClick={onEmergencyExchange}
-                  disabled={!onEmergencyExchange}
+                  className="w-full mt-3"
+                  onClick={handleEmergencyAction}
                 >
-                  Continue my exchange (at market rate)
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="w-full"
-                  onClick={onEmergencyRefund}
-                  disabled={!onEmergencyRefund}
-                >
-                  Make a refund minus network fee
+                  Confirm
                 </Button>
               </div>
             </Alert>
@@ -224,24 +239,30 @@ export const OrderDetails = ({
           <p className="text-sm text-gray-400 mb-2">
             Your exchange encountered an issue. Choose an option:
           </p>
-          <div className="flex gap-2 mt-3">
+          
+          <div className="mt-3">
+            <RadioGroup 
+              value={emergencyAction} 
+              onValueChange={(value) => setEmergencyAction(value as "EXCHANGE" | "REFUND")}
+              className="space-y-2"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="EXCHANGE" id="emergency-exchange" />
+                <Label htmlFor="emergency-exchange">Continue exchange at market rate</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="REFUND" id="emergency-refund" />
+                <Label htmlFor="emergency-refund">Request refund minus fees</Label>
+              </div>
+            </RadioGroup>
+            
             <Button
               variant="default"
               size="sm"
-              className="w-full"
-              onClick={onEmergencyExchange}
-              disabled={!onEmergencyExchange}
+              className="w-full mt-3"
+              onClick={handleEmergencyAction}
             >
-              Exchange
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              className="w-full"
-              onClick={onEmergencyRefund}
-              disabled={!onEmergencyRefund}
-            >
-              Refund
+              Confirm
             </Button>
           </div>
         </div>
