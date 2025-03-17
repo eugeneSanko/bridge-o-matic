@@ -182,11 +182,11 @@ export const BridgeStatusRenderer = ({
     handleEmergencyAction("EXCHANGE");
     
     // Show deposit confirmation notification
-    toast({
-      title: "Transaction Status",
-      description: "Waiting for the appearance of the transaction on the blockchain network. Funds have not yet arrived at the address indicated in the order. We will exchange funds after the receipt of the transaction and the receipt of the required number of confirmations of the blockchain network.",
-      duration: 10000, // Show for 10 seconds since it's a longer message
-    });
+    // toast({
+    //   title: "Transaction Status",
+    //   description: "Waiting for the appearance of the transaction on the blockchain network. Funds have not yet arrived at the address indicated in the order. We will exchange funds after the receipt of the transaction and the receipt of the required number of confirmations of the blockchain network.",
+    //   duration: 10000, // Show for 10 seconds since it's a longer message
+    // });
   };
 
   const handleEmergencyRefund = (refundAddress?: string) => {
@@ -194,11 +194,11 @@ export const BridgeStatusRenderer = ({
     handleEmergencyAction("REFUND", refundAddress);
     
     // Show deposit confirmation notification
-    toast({
-      title: "Transaction Status",
-      description: "Waiting for the appearance of the transaction on the blockchain network. Funds have not yet arrived at the address indicated in the order. We will exchange funds after the receipt of the transaction and the receipt of the required number of confirmations of the blockchain network.",
-      duration: 10000, // Show for 10 seconds since it's a longer message
-    });
+    // toast({
+    //   title: "Transaction Status",
+    //   description: "Waiting for the appearance of the transaction on the blockchain network. Funds have not yet arrived at the address indicated in the order. We will exchange funds after the receipt of the transaction and the receipt of the required number of confirmations of the blockchain network.",
+    //   duration: 10000, // Show for 10 seconds since it's a longer message
+    // });
   };
 
   const handleAddressCopy = (address: string) => {
