@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -56,7 +55,6 @@ export function useBridgeOrder(
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(shouldFetch);
   const [error, setError] = useState<string | null>(null);
-  // Use a ref to store the interval id so it doesn't trigger re-renders
   const pollingIntervalIdRef = useRef<number | null>(null);
 
   const fetchOrderDetails = useCallback(async () => {
@@ -68,7 +66,6 @@ export function useBridgeOrder(
     try {
       console.log("Fetching order details for", orderId, "with token", token);
 
-      // Always fetch from API - remove localStorage dependency
       console.log("Fetching real-time order status from API");
       const apiRequestBody = {
         id: orderId,
@@ -99,7 +96,8 @@ export function useBridgeOrder(
           WITHDRAW: "sending",
           DONE: "completed",
           EXPIRED: "expired",
-          EMERGENCY: "failed",
+          EMERGENCY: "emergency",
+          FAILED: "failed",
         };
 
         const currentStatus = statusMap[apiStatus] || apiStatus.toLowerCase();
@@ -139,7 +137,6 @@ export function useBridgeOrder(
           rawApiResponse: apiResponse.data,
         });
 
-        // Stop further polling if a terminal status is reached
         if (
           apiResponse.data.status === "EXPIRED" ||
           apiResponse.data.status === "EMERGENCY" ||
@@ -234,7 +231,6 @@ export function useBridgeOrder(
       setLoading(false);
     }
     if (shouldFetch && orderId) {
-      // Set up polling every 15 seconds
       pollingIntervalIdRef.current = window.setInterval(
         fetchOrderDetails,
         15000

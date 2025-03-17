@@ -61,6 +61,7 @@ export const OrderDetails = ({
   );
   const [choiceMade, setChoiceMade] = useState(false);
   const [selectedAction, setSelectedAction] = useState<"EXCHANGE" | "REFUND" | null>(null);
+  const [apiResponseOk, setApiResponseOk] = useState(false);
 
   // Initialize the timer based on timeLeft from API
   useEffect(() => {
@@ -136,6 +137,13 @@ export const OrderDetails = ({
     }
   }, [expiresAt, timeRemaining, secondsRemaining]);
 
+  // Check if API response was successful
+  useEffect(() => {
+    if (choiceMade && selectedAction) {
+      setApiResponseOk(true);
+    }
+  }, [choiceMade, selectedAction]);
+
   const formatDate = (date: Date) => {
     return date.toISOString().replace("T", " ").substring(0, 16) + " UTC";
   };
@@ -146,7 +154,6 @@ export const OrderDetails = ({
 
   const handleSentFunds = () => {
     setShowFundsSentAlert(true);
-    setShowWaitingMessage(true);
   };
 
   const handleEmergencyAction = () => {
@@ -154,10 +161,12 @@ export const OrderDetails = ({
       onEmergencyExchange();
       setChoiceMade(true);
       setSelectedAction("EXCHANGE");
+      setShowWaitingMessage(true);
     } else if (emergencyAction === "REFUND" && onEmergencyRefund) {
       onEmergencyRefund();
       setChoiceMade(true);
       setSelectedAction("REFUND");
+      setShowWaitingMessage(true);
     }
   };
 
@@ -199,7 +208,7 @@ export const OrderDetails = ({
                 <ArrowRight className="h-4 w-4 mr-1" />
                 Create New Exchange
               </Button>
-              {!showWaitingMessage && (
+              {!showFundsSentAlert && (
                 <Button
                   variant="secondary"
                   size="sm"
@@ -213,7 +222,7 @@ export const OrderDetails = ({
           )}
 
           {showFundsSentAlert && !showWaitingMessage && (
-            choiceMade ? (
+            choiceMade && apiResponseOk ? (
               <Alert className="mt-3 mb-3 bg-green-500/10 border-green-500/20">
                 <div className="flex items-center gap-2 text-green-400">
                   <CheckCircle className="h-5 w-5" />
@@ -294,7 +303,7 @@ export const OrderDetails = ({
               </AlertDescription>
             </Alert>
           ) : (
-            choiceMade ? (
+            choiceMade && apiResponseOk ? (
               <Alert className="mt-3 mb-3 bg-green-500/10 border-green-500/20">
                 <div className="flex items-center gap-2 text-green-400">
                   <CheckCircle className="h-5 w-5" />
