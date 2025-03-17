@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import {
   Copy,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface OrderDetailsProps {
   orderId: string;
@@ -49,6 +51,7 @@ export const OrderDetails = ({
   const [timerColor, setTimerColor] = useState("#9b87f5"); // Start with purple
   const [isExpired, setIsExpired] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState<number | null>(null);
+  const [showFundsSentAlert, setShowFundsSentAlert] = useState(false);
 
   // Initialize the timer based on timeLeft from API
   useEffect(() => {
@@ -132,6 +135,10 @@ export const OrderDetails = ({
     navigate("/bridge");
   };
 
+  const handleSentFunds = () => {
+    setShowFundsSentAlert(true);
+  };
+
   const renderStatusSection = () => {
     // Check for expired status
     const isStatusExpired =
@@ -151,27 +158,58 @@ export const OrderDetails = ({
             <TimerOff className="h-5 w-5" />
             <span className="font-medium">Deposit window expired</span>
           </div>
-          <div className="flex gap-2 mt-3 flex-col">
-            <Button
-              variant="default"
-              size="sm"
-              className="w-full"
-              onClick={handleNewExchange}
-            >
-              <ArrowRight className="h-4 w-4 mr-1" />
-              Create New Exchange
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="w-full glass-card"
-              onClick={onRetryCurrentPrice}
-              disabled={!onRetryCurrentPrice}
-            >
-              <RefreshCw className="h-4 w-4 mr-1" />
-              Continue My Exchange
-            </Button>
-          </div>
+          
+          {showFundsSentAlert ? (
+            <Alert variant="destructive" className="mt-3 mb-3">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>I sent funds, but my order has expired</AlertTitle>
+              <AlertDescription>
+                Choose one of the following options:
+              </AlertDescription>
+              
+              <div className="flex gap-2 mt-3 flex-col">
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="w-full"
+                  onClick={onEmergencyExchange}
+                  disabled={!onEmergencyExchange}
+                >
+                  Continue my exchange (at market rate)
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="w-full"
+                  onClick={onEmergencyRefund}
+                  disabled={!onEmergencyRefund}
+                >
+                  Make a refund minus network fee
+                </Button>
+              </div>
+            </Alert>
+          ) : (
+            <div className="flex gap-2 mt-3 flex-col">
+              <Button
+                variant="default"
+                size="sm"
+                className="w-full"
+                onClick={handleNewExchange}
+              >
+                <ArrowRight className="h-4 w-4 mr-1" />
+                Create New Exchange
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full glass-card"
+                onClick={handleSentFunds}
+              >
+                <AlertCircle className="h-4 w-4 mr-1" />
+                I sent funds already
+              </Button>
+            </div>
+          )}
         </div>
       );
     }

@@ -7,6 +7,8 @@ import { BridgeTransaction } from "@/components/bridge/BridgeTransaction";
 import { DebugInfoDisplay } from "@/components/bridge/DebugInfoDisplay";
 import { CompletedTransactionSaver } from "@/components/bridge/CompletedTransactionSaver";
 import { useState, useEffect } from "react";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BridgeStatusRendererProps {
   loading: boolean;
@@ -79,6 +81,75 @@ export const BridgeStatusRenderer = ({
     setOrderDetails(updatedDetails);
   };
 
+  // Handlers for emergency actions
+  const handleEmergencyAction = async (choice: "EXCHANGE" | "REFUND") => {
+    if (!orderDetails || !orderDetails.ffOrderId || !token) {
+      toast({
+        title: "Error",
+        description: "Missing order information for emergency action",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: "Processing",
+        description: `Processing ${choice === "EXCHANGE" ? "exchange" : "refund"} request...`,
+      });
+
+      const { data, error } = await supabase.functions.invoke("bridge-status", {
+        body: {
+          id: orderDetails.ffOrderId,
+          token: token,
+          action: "emergency",
+          choice: choice,
+        },
+      });
+
+      console.log("Emergency action response:", data);
+
+      if (error) {
+        console.error("Error in emergency action:", error);
+        toast({
+          title: "Error",
+          description: `Failed to process ${choice.toLowerCase()}: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data && data.code === 0) {
+        toast({
+          title: "Success",
+          description: choice === "EXCHANGE" 
+            ? "Exchange will continue at current market rate" 
+            : "Refund request has been processed",
+        });
+        
+        // Refresh order status to get updated information
+        if (checkOrderStatus) {
+          setTimeout(() => {
+            checkOrderStatus();
+          }, 2000);
+        }
+      } else {
+        toast({
+          title: "API Error",
+          description: data?.msg || "Unknown error occurred",
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      console.error("Exception in emergency action:", err);
+      toast({
+        title: "Error",
+        description: "Failed to process request. Please try again later.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Handlers for new actions
   const handleRetryCurrentPrice = () => {
     console.log("Retrying at current price");
@@ -89,14 +160,12 @@ export const BridgeStatusRenderer = ({
 
   const handleEmergencyExchange = () => {
     console.log("Emergency exchange requested");
-    // This would normally call an API endpoint to handle emergency exchange
-    alert("Emergency exchange functionality would be implemented here");
+    handleEmergencyAction("EXCHANGE");
   };
 
   const handleEmergencyRefund = () => {
     console.log("Emergency refund requested");
-    // This would normally call an API endpoint to handle emergency refund
-    alert("Emergency refund functionality would be implemented here");
+    handleEmergencyAction("REFUND");
   };
 
   return (
