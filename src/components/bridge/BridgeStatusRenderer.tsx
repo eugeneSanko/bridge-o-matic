@@ -98,11 +98,11 @@ export const BridgeStatusRenderer = ({
         description: `Processing ${choice === "EXCHANGE" ? "exchange" : "refund"} request...`,
       });
 
-      const { data, error } = await supabase.functions.invoke("bridge-status", {
+      // Call the emergency endpoint instead of status endpoint with action parameter
+      const { data, error } = await supabase.functions.invoke("bridge-emergency", {
         body: {
           id: orderDetails.ffOrderId,
           token: token,
-          action: "emergency",
           choice: choice,
         },
       });

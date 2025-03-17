@@ -1,0 +1,228 @@
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+console.log("Bridge Emergency Function Loaded");
+
+const FF_API_URL = "https://ff.io/api/v2";
+const FF_API_KEY = "lvW17QIF4SzDIzxBLg2oUandukccoZjwhsNGs3GC";
+const FF_API_SECRET = "RpPfjnFZx1TfRx6wmYzOgo5Y6QK3OgIETceFZLni";
+
+async function generateSignature(body: any): Promise<string> {
+  const encoder = new TextEncoder();
+  const bodyStr = JSON.stringify(body);
+  const key = encoder.encode(FF_API_SECRET);
+  const message = encoder.encode(bodyStr);
+  
+  // Ensure FF_API_SECRET is not empty
+  if (FF_API_SECRET.length === 0) {
+    throw new Error("API Secret is empty or undefined");
+  }
+  
+  return crypto.subtle.importKey(
+    "raw", key, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  ).then((key) => {
+    return crypto.subtle.sign("HMAC", key, message);
+  }).then((signature) => {
+    return Array.from(new Uint8Array(signature))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  });
+}
+
+serve(async (req) => {
+  // Handle CORS preflight request
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
+  }
+
+  try {
+    console.log("Processing bridge emergency action request");
+    const requestData = await req.json();
+    
+    // Extract required parameters from the request
+    const { id, token, choice } = requestData;
+    
+    console.log(`Received emergency request parameters - id: ${id}, token: ${token}, choice: ${choice}`);
+    
+    if (!id || !token || !choice) {
+      console.error("Missing required parameters", { id, token, choice });
+      return new Response(
+        JSON.stringify({
+          code: 400,
+          msg: "Missing required parameters: id, token, or choice",
+          debugInfo: { receivedParams: { id, token, choice } }
+        }),
+        {
+          status: 400,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    // Validate choice value
+    if (choice !== "EXCHANGE" && choice !== "REFUND") {
+      console.error("Invalid choice value", { choice });
+      return new Response(
+        JSON.stringify({
+          code: 400,
+          msg: "Invalid choice value. Must be either 'EXCHANGE' or 'REFUND'",
+          debugInfo: { receivedParams: { choice } }
+        }),
+        {
+          status: 400,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    console.log(`Processing emergency action: ${choice} for order ID: ${id}`);
+    
+    // Prepare request body for FixedFloat API
+    const requestBody = { id, token, choice };
+    if (requestData.address && choice === "REFUND") {
+      requestBody.address = requestData.address;
+    }
+    if (requestData.tag) {
+      requestBody.tag = requestData.tag;
+    }
+    
+    const requestBodyStr = JSON.stringify(requestBody);
+    
+    console.log("Request body:", requestBodyStr);
+    
+    // Generate signature
+    const signature = await generateSignature(requestBody);
+    
+    console.log(`Generated signature: ${signature}`);
+    
+    // Debugging information
+    const debugInfo = {
+      requestDetails: {
+        url: `${FF_API_URL}/emergency`,
+        method: "POST",
+        requestBody,
+        requestBodyString: requestBodyStr
+      },
+      signatureInfo: {
+        signature,
+        apiKey: FF_API_KEY,
+        secretLength: FF_API_SECRET.length
+      }
+    };
+    
+    console.log("Debug Info:", JSON.stringify(debugInfo, null, 2));
+    
+    // Call the FixedFloat API
+    const response = await fetch(`${FF_API_URL}/emergency`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-KEY": FF_API_KEY,
+        "X-API-SIGN": signature,
+      },
+      body: requestBodyStr,
+    });
+    
+    // Get the response body as text
+    const responseText = await response.text();
+    
+    // Update debug info with response details
+    debugInfo.responseDetails = {
+      status: response.status.toString(),
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+      body: responseText
+    };
+    
+    if (!response.ok) {
+      console.error(`API Error (${response.status}): ${responseText}`);
+      
+      return new Response(
+        JSON.stringify({
+          code: response.status,
+          msg: `API Error: ${response.statusText}`,
+          details: responseText,
+          debugInfo
+        }),
+        {
+          status: response.status,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+    
+    // Try to parse the response as JSON
+    let apiResponse;
+    try {
+      apiResponse = JSON.parse(responseText);
+    } catch (e) {
+      console.error("Failed to parse API response as JSON:", e);
+      return new Response(
+        JSON.stringify({
+          code: 500,
+          msg: "Failed to parse API response",
+          details: e.message,
+          debugInfo
+        }),
+        {
+          status: 500,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+    
+    console.log("API Response:", JSON.stringify(apiResponse));
+    
+    // Include debug info in the response
+    apiResponse.debugInfo = debugInfo;
+    
+    return new Response(
+      JSON.stringify(apiResponse),
+      {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  } catch (error) {
+    console.error("Error handling request:", error);
+    
+    return new Response(
+      JSON.stringify({
+        code: 500,
+        msg: "Internal server error",
+        details: error.message,
+        stack: error.stack
+      }),
+      {
+        status: 500,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+});
