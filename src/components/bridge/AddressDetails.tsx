@@ -1,3 +1,4 @@
+
 import { Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddressPlaceholder } from "./AddressPlaceholder";
@@ -11,6 +12,7 @@ interface AddressDetailsProps {
   orderType: "fixed" | "float";
   fromCurrency: string;
   fromCurrencyName?: string;
+  currentStatus?: string;
 }
 
 export const AddressDetails = ({
@@ -21,6 +23,7 @@ export const AddressDetails = ({
   orderType,
   fromCurrency,
   fromCurrencyName,
+  currentStatus,
 }: AddressDetailsProps) => {
   const hasAddress =
     depositAddress &&
@@ -66,6 +69,13 @@ export const AddressDetails = ({
   const currencyDisplay = fromCurrencyName
     ? `${fromCurrency.toUpperCase()} - ${fromCurrencyName}`
     : fromCurrency.toUpperCase();
+
+  // Check if status is emergency or expired
+  const isEmergencyOrExpired = 
+    currentStatus === "EMERGENCY" || 
+    currentStatus === "EXPIRED" || 
+    currentStatus === "emergency" || 
+    currentStatus === "expired";
 
   return (
     <div className="col-span-4 glass-card p-6 rounded-xl">
@@ -127,12 +137,14 @@ export const AddressDetails = ({
               <p className="mt-2">
                 Market fluctuations may affect the final amount you receive.
               </p>
-              <p className="mt-2 text-amber-400 font-medium">
-                Attention: if the market rate changes by more than 1.2% before
-                the appearance of the transaction in blockchain network, you
-                will be asked to make refund or continue exchanging at market
-                rate.
-              </p>
+              {orderType === "float" && isEmergencyOrExpired && (
+                <p className="mt-2 text-amber-400 font-medium">
+                  Attention: if the market rate changes by more than 1.2% before
+                  the appearance of the transaction in blockchain network, you
+                  will be asked to make refund or continue exchanging at market
+                  rate.
+                </p>
+              )}
             </>
           )}
         </div>

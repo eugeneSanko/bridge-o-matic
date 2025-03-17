@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
@@ -161,6 +160,7 @@ export const BridgeTransaction = ({
                 orderType={orderDetails.orderType}
                 fromCurrency={orderDetails.fromCurrency}
                 fromCurrencyName={orderDetails.fromCurrencyName}
+                currentStatus={displayStatus}
               />
 
               <QRCodeSection
