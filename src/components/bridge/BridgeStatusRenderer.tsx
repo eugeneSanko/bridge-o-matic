@@ -20,6 +20,8 @@ interface BridgeStatusRendererProps {
   transactionSaved: boolean;
   setTransactionSaved: (saved: boolean) => void;
   checkOrderStatus?: () => void;
+  onEmergencyExchange?: () => void;
+  onEmergencyRefund?: () => void;
 }
 
 export const BridgeStatusRenderer = ({
@@ -33,7 +35,9 @@ export const BridgeStatusRenderer = ({
   token,
   transactionSaved,
   setTransactionSaved,
-  checkOrderStatus
+  checkOrderStatus,
+  onEmergencyExchange,
+  onEmergencyRefund
 }: BridgeStatusRendererProps) => {
   // Add state to handle updated orderDetails after expired status check
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(initialOrderDetails);
@@ -87,26 +91,14 @@ export const BridgeStatusRenderer = ({
     }
   };
 
-  const handleEmergencyExchange = () => {
-    console.log("Emergency exchange requested");
-    // This would normally call an API endpoint to handle emergency exchange
-    alert("Emergency exchange functionality would be implemented here");
-  };
-
-  const handleEmergencyRefund = () => {
-    console.log("Emergency refund requested");
-    // This would normally call an API endpoint to handle emergency refund
-    alert("Emergency refund functionality would be implemented here");
-  };
-
   return (
     <>
       <BridgeTransaction 
         orderDetails={orderDetails} 
         onCopyAddress={handleCopyAddress} 
         onRetryCurrentPrice={handleRetryCurrentPrice}
-        onEmergencyExchange={handleEmergencyExchange}
-        onEmergencyRefund={handleEmergencyRefund}
+        onEmergencyExchange={onEmergencyExchange}
+        onEmergencyRefund={onEmergencyRefund}
       />
       
       <DebugInfoDisplay 
