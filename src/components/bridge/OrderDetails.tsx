@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Copy, Clock, Calendar, Tag, AlertCircle, TimerOff, RefreshCw, ArrowRight, LifeBuoy } from "lucide-react";
+import { Copy, Clock, Calendar, Tag, AlertCircle, TimerOff, ArrowRight, LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -137,7 +137,7 @@ export const OrderDetails = ({
             <TimerOff className="h-5 w-5" />
             <span className="font-medium">Deposit window expired</span>
           </div>
-          <div className="flex gap-2 mt-3">
+          <div className="flex mt-3">
             <Button 
               variant="default" 
               size="sm" 
@@ -146,16 +146,6 @@ export const OrderDetails = ({
             >
               <ArrowRight className="h-4 w-4 mr-1" />
               New Exchange
-            </Button>
-            <Button 
-              variant="secondary" 
-              size="sm" 
-              className="w-full"
-              onClick={onRetryCurrentPrice}
-              disabled={!onRetryCurrentPrice}
-            >
-              <RefreshCw className="h-4 w-4 mr-1" />
-              Retry Current Price
             </Button>
           </div>
         </div>
