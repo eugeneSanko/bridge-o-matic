@@ -235,6 +235,8 @@ export const OrderDetails = ({
             </span>
           </div>
         </div>
+
+         {renderStatusSection()}
         
         <div>
           <div className="text-sm text-gray-400 mb-2">Order Type</div>
@@ -251,7 +253,7 @@ export const OrderDetails = ({
           </div>
         </div>
         
-        {renderStatusSection()}
+       
       </div>
     </div>
   );
