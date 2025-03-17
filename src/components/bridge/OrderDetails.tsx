@@ -181,16 +181,36 @@ export const OrderDetails = ({
             <span className="font-medium">Deposit window expired</span>
           </div>
 
-          {showWaitingMessage && (
+          {showWaitingMessage ? (
             <Alert className="mt-3 mb-3 bg-blue-500/10 border-blue-500/20 text-blue-400">
               <AlertTitle className="text-blue-300 font-medium">Transaction Status</AlertTitle>
               <AlertDescription className="text-blue-200">
                 Waiting for the appearance of the transaction on the blockchain network. Funds have not yet arrived at the address indicated in the order. We will exchange funds after the receipt of the transaction and the receipt of the required number of confirmations of the blockchain network.
               </AlertDescription>
             </Alert>
+          ) : (
+            <div className="flex gap-2 mt-3 flex-col">
+              <Button
+                variant="default"
+                size="sm"
+                className="w-full"
+                onClick={handleNewExchange}
+              >
+                <ArrowRight className="h-4 w-4 mr-1" />
+                Create New Exchange
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full glass-card"
+                onClick={handleSentFunds}
+              >
+                <AlertCircle className="h-4 w-4 mr-1" />I sent funds already
+              </Button>
+            </div>
           )}
 
-          {showFundsSentAlert ? (
+          {showFundsSentAlert && !showWaitingMessage && (
             choiceMade ? (
               <Alert className="mt-3 mb-3 bg-green-500/10 border-green-500/20">
                 <div className="flex items-center gap-2 text-green-400">
@@ -251,26 +271,6 @@ export const OrderDetails = ({
                 </div>
               </Alert>
             )
-          ) : (
-            <div className="flex gap-2 mt-3 flex-col">
-              <Button
-                variant="default"
-                size="sm"
-                className="w-full"
-                onClick={handleNewExchange}
-              >
-                <ArrowRight className="h-4 w-4 mr-1" />
-                Create New Exchange
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="w-full glass-card"
-                onClick={handleSentFunds}
-              >
-                <AlertCircle className="h-4 w-4 mr-1" />I sent funds already
-              </Button>
-            </div>
           )}
         </div>
       );
@@ -284,69 +284,69 @@ export const OrderDetails = ({
             <span className="font-medium">Exchange emergency</span>
           </div>
           
-          {showWaitingMessage && (
+          {showWaitingMessage ? (
             <Alert className="mt-3 mb-3 bg-blue-500/10 border-blue-500/20 text-blue-400">
               <AlertTitle className="text-blue-300 font-medium">Transaction Status</AlertTitle>
               <AlertDescription className="text-blue-200">
                 Waiting for the appearance of the transaction on the blockchain network. Funds have not yet arrived at the address indicated in the order. We will exchange funds after the receipt of the transaction and the receipt of the required number of confirmations of the blockchain network.
               </AlertDescription>
             </Alert>
-          )}
-          
-          {choiceMade ? (
-            <Alert className="mt-3 mb-3 bg-green-500/10 border-green-500/20">
-              <div className="flex items-center gap-2 text-green-400">
-                <CheckCircle className="h-5 w-5" />
-                <AlertTitle className="text-green-300 font-medium">
-                  {selectedAction === "EXCHANGE" 
-                    ? "Exchange request submitted" 
-                    : "Refund request submitted"}
-                </AlertTitle>
-              </div>
-              <AlertDescription className="text-green-200 mt-1">
-                {selectedAction === "EXCHANGE"
-                  ? "Your transaction will be processed at the current market rate. We'll notify you when it's complete."
-                  : "Your refund request has been submitted. Funds will be returned to your wallet minus network fees."}
-              </AlertDescription>
-            </Alert>
           ) : (
-            <>
-              <p className="text-sm text-gray-400 mb-2">
-                Your exchange encountered an issue. Choose an option:
-              </p>
+            choiceMade ? (
+              <Alert className="mt-3 mb-3 bg-green-500/10 border-green-500/20">
+                <div className="flex items-center gap-2 text-green-400">
+                  <CheckCircle className="h-5 w-5" />
+                  <AlertTitle className="text-green-300 font-medium">
+                    {selectedAction === "EXCHANGE" 
+                      ? "Exchange request submitted" 
+                      : "Refund request submitted"}
+                  </AlertTitle>
+                </div>
+                <AlertDescription className="text-green-200 mt-1">
+                  {selectedAction === "EXCHANGE"
+                    ? "Your transaction will be processed at the current market rate. We'll notify you when it's complete."
+                    : "Your refund request has been submitted. Funds will be returned to your wallet minus network fees."}
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <>
+                <p className="text-sm text-gray-400 mb-2">
+                  Your exchange encountered an issue. Choose an option:
+                </p>
 
-              <div className="mt-3">
-                <RadioGroup
-                  value={emergencyAction}
-                  onValueChange={(value) =>
-                    setEmergencyAction(value as "EXCHANGE" | "REFUND")
-                  }
-                  className="space-y-2"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="EXCHANGE" id="emergency-exchange" />
-                    <Label htmlFor="emergency-exchange">
-                      Continue exchange at market rate
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="REFUND" id="emergency-refund" />
-                    <Label htmlFor="emergency-refund">
-                      Request refund minus fees
-                    </Label>
-                  </div>
-                </RadioGroup>
+                <div className="mt-3">
+                  <RadioGroup
+                    value={emergencyAction}
+                    onValueChange={(value) =>
+                      setEmergencyAction(value as "EXCHANGE" | "REFUND")
+                    }
+                    className="space-y-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="EXCHANGE" id="emergency-exchange" />
+                      <Label htmlFor="emergency-exchange">
+                        Continue exchange at market rate
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="REFUND" id="emergency-refund" />
+                      <Label htmlFor="emergency-refund">
+                        Request refund minus fees
+                      </Label>
+                    </div>
+                  </RadioGroup>
 
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="w-full mt-3"
-                  onClick={handleEmergencyAction}
-                >
-                  Confirm
-                </Button>
-              </div>
-            </>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="w-full mt-3"
+                    onClick={handleEmergencyAction}
+                  >
+                    Confirm
+                  </Button>
+                </div>
+              </>
+            )
           )}
         </div>
       );
