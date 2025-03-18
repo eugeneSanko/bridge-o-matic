@@ -1,6 +1,8 @@
+
 import { ArrowRight, Copy } from "lucide-react";
 import { AddressPlaceholder } from "./AddressPlaceholder";
 import { cleanSymbol } from "@/utils/symbolUtils";
+import { formatNumberString } from "@/utils/numberUtils";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
@@ -148,11 +150,10 @@ export const TransactionSummary = ({
             </div>
             <div>
               <div className="text-xl md:text-2xl lg:text-3xl font-bold mb-1 md:mb-2 md:text-right md:flex md:flex-row-reverse">
-                <div className="md:flex md:flex-row-reverse pl-1">{amount}</div>
+                <div className="md:flex md:flex-row-reverse pl-1">{formatNumberString(amount)}</div>
                 {formatFromCurrencyDisplay()}
               </div>
               <div className="text-xs md:text-sm text-gray-400 font-mono flex items-center md:flex-row-reverse">
-                {/* Send funds:{" "} */}
                 {depositAddress ? (
                   <span className="flex items-center gap-1 ml-1">
                     {formatAddress(depositAddress)}
@@ -203,10 +204,9 @@ export const TransactionSummary = ({
                 {orderType === "float" && (
                   <span className="text-gray-400 mr-1">≈</span>
                 )}
-                {receiveAmount || ""} {formatToCurrencyDisplay()}
+                {formatNumberString(receiveAmount)} {formatToCurrencyDisplay()}
               </div>
               <div className="text-xs md:text-sm text-gray-400 font-mono flex items-center">
-                {/* Receive at:{" "} */}
                 <span className="flex items-center gap-1 ml-1">
                   {formatAddress(destinationAddress)}
                   <Button
