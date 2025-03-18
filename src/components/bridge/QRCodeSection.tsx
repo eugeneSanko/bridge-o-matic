@@ -1,3 +1,4 @@
+
 import { QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -59,9 +60,9 @@ export const QRCodeSection = ({
           requestBodyString: JSON.stringify(requestBody)
         };
 
-        const curlCommand = `curl -X POST "https://[your-supabase-project].functions.supabase.co/bridge-qr" \\
+        const curlCommand = `curl -X POST "https://loqpepftcimqjkiinuwv.functions.supabase.co/bridge-qr" \\
   -H "Content-Type: application/json" \\
-  -H "Authorization: Bearer [your-supabase-anon-key]" \\
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvcXBlcGZ0Y2ltcWpraWludXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg3OTMxNjEsImV4cCI6MjA1NDM2OTE2MX0.R8z0PZx01OoNUEx-CA3yWmFHiI1gSXKKTNpA7D1_zYo" \\
   -d '${JSON.stringify(requestBody)}'`;
 
         const startTime = Date.now();

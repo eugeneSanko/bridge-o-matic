@@ -28,7 +28,7 @@ serve(async (req) => {
     
     // Get request body
     const requestBody: QrCodeRequest = await req.json();
-    console.log("QR code request body:", requestBody);
+    console.log("QR code request body:", JSON.stringify(requestBody, null, 2));
 
     // Validate request
     if (!requestBody.id || !requestBody.token) {
@@ -59,13 +59,25 @@ serve(async (req) => {
     const apiKey = Deno.env.get("FF_API_KEY");
     const apiSecret = Deno.env.get("FF_API_SECRET");
     
+    console.log("API Key exists:", !!apiKey);
+    console.log("API Secret exists:", !!apiSecret);
+    
     if (!apiKey || !apiSecret) {
       console.error("Missing API credentials");
+      
+      // Return detailed error for debugging
+      const debugInfo = {
+        apiKeyStatus: apiKey ? "present" : "missing",
+        apiSecretStatus: apiSecret ? "present" : "missing",
+        envVars: Object.keys(Deno.env.toObject()).filter(key => !key.includes("SECRET")).join(", ")
+      };
+      
       return new Response(
         JSON.stringify({
           code: 1,
           msg: "Configuration error",
           error: "API credentials not configured",
+          debugInfo
         }),
         { 
           headers: { 
@@ -135,6 +147,11 @@ serve(async (req) => {
           code: 1,
           msg: "Error from Fixed Float API",
           error: errorText,
+          debugInfo: {
+            status: ffResponse.status,
+            statusText: ffResponse.statusText,
+            headers: Object.fromEntries(ffResponse.headers.entries())
+          }
         }),
         { 
           headers: { 
@@ -147,7 +164,7 @@ serve(async (req) => {
     
     // Parse response
     const ffData = await ffResponse.json();
-    console.log("Fixed Float API response:", ffData);
+    console.log("Fixed Float API response:", JSON.stringify(ffData, null, 2));
     
     // Return response with CORS headers
     return new Response(JSON.stringify(ffData), {
@@ -164,6 +181,7 @@ serve(async (req) => {
         code: 1,
         msg: "Error processing request",
         error: error.message,
+        stack: error.stack
       }),
       { 
         headers: { 
