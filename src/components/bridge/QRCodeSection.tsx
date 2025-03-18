@@ -1,8 +1,10 @@
+
 import { QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { invokeFunctionWithRetry } from "@/config/api";
 import { toast } from "sonner";
+import { DebugPanel } from "./DebugPanel";
 
 interface QRCodeSectionProps {
   depositAddress?: string;
@@ -26,6 +28,7 @@ export const QRCodeSection = ({
   >([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   useEffect(() => {
     // Check if we have the necessary parameters
@@ -41,6 +44,7 @@ export const QRCodeSection = ({
     const fetchQrCodes = async () => {
       setLoading(true);
       setError(null);
+      setDebugInfo(null);
 
       try {
         // Prepare request body for the QR code API
@@ -53,12 +57,45 @@ export const QRCodeSection = ({
 
         console.log("Fetching QR codes with:", requestBody);
 
+        // Store request details for debug
+        const requestDetails = {
+          url: "https://supabase-edge-function/bridge-qr",
+          method: "POST",
+          requestBody: requestBody,
+          requestBodyString: JSON.stringify(requestBody)
+        };
+
+        // Build the cURL command for debugging
+        const curlCommand = `curl -X POST "https://[your-supabase-project].functions.supabase.co/bridge-qr" \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer [your-supabase-anon-key]" \\
+  -d '${JSON.stringify(requestBody)}'`;
+
         // Call the bridge-qr Supabase function
+        const startTime = Date.now();
         const response = await invokeFunctionWithRetry("bridge-qr", {
           body: requestBody,
         });
+        const endTime = Date.now();
 
         console.log("QR code API response:", response);
+
+        // Store response details for debug
+        const responseDetails = {
+          status: response?.code === 0 ? "200 OK" : "Error",
+          statusText: response?.code === 0 ? "Success" : "Failed",
+          body: JSON.stringify(response),
+          responseTime: `${endTime - startTime}ms`,
+        };
+
+        // Construct debug info
+        const newDebugInfo = {
+          requestDetails,
+          responseDetails,
+          curlCommand,
+        };
+
+        setDebugInfo(newDebugInfo);
 
         if (response && response.code === 0 && response.data) {
           setQrTypes(response.data);
@@ -68,6 +105,17 @@ export const QRCodeSection = ({
       } catch (err) {
         console.error("Error fetching QR codes:", err);
         setError(err instanceof Error ? err.message : "Unknown error");
+
+        // Update debug info with error
+        if (debugInfo) {
+          setDebugInfo({
+            ...debugInfo,
+            error: {
+              message: err instanceof Error ? err.message : "Unknown error",
+              stack: err instanceof Error ? err.stack : null,
+            }
+          });
+        }
 
         // Fall back to the previous implementation if API fails
         fallbackToLocalQrGeneration();
@@ -120,6 +168,18 @@ export const QRCodeSection = ({
           checked: false,
         },
       ]);
+
+      // Update debug info for fallback
+      setDebugInfo(prev => ({
+        ...prev,
+        fallback: {
+          method: "Local QR Generation",
+          addressQrUrl,
+          amountQrUrl,
+          addressQrData,
+          amountQrData
+        }
+      }));
     };
 
     // Fetch QR codes when component mounts or dependencies change
@@ -140,9 +200,31 @@ export const QRCodeSection = ({
 
   const activeQrCode = qrTypes.find((type) => type.checked) || qrTypes[0];
 
+  const toggleDebug = () => {
+    if (debugInfo) {
+      toast({
+        title: "Debug Info",
+        description: "Debug panel is displayed below the QR code section",
+      });
+    }
+  };
+
   return (
-    <div className="col-span-5 md:col-span-3 glass-card p-6 rounded-xl">
-      <div className="text-sm text-gray-400 mb-4">Scan QR code</div>
+    <div className="col-span-5 md:col-span-3 glass-card p-4 md:p-6 rounded-xl">
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-sm text-gray-400">Scan QR code</div>
+        {hasAddress && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-xs"
+            onClick={toggleDebug}
+          >
+            Debug
+          </Button>
+        )}
+      </div>
+      
       {loading ? (
         <div className="bg-white p-4 rounded-lg flex-col mb-4 w-full flex items-center justify-center">
           <div className="animate-pulse">
@@ -201,6 +283,12 @@ export const QRCodeSection = ({
           </>
         )}
       </div>
+      
+      {debugInfo && (
+        <div className="mt-4">
+          <DebugPanel debugInfo={debugInfo} isLoading={loading} />
+        </div>
+      )}
     </div>
   );
 };
