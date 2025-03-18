@@ -20,6 +20,30 @@ const loggerConfig = {
   prefix: '[Bridge]',
 };
 
+// Override console methods to prevent any direct console logs
+if (!LOGGING_ENABLED) {
+  // Store original console methods
+  const originalConsole = {
+    log: console.log,
+    info: console.info,
+    warn: console.warn,
+    error: console.error,
+    debug: console.debug
+  };
+
+  // Override with empty functions when logging is disabled
+  console.log = () => {};
+  console.info = () => {};
+  console.warn = () => {};
+  console.error = () => {};
+  console.debug = () => {};
+
+  // Only expose the original error in production for critical errors
+  if (!isDevMode) {
+    console.error = originalConsole.error;
+  }
+}
+
 /**
  * Main logger object
  */
@@ -96,3 +120,19 @@ export const createLogger = (prefix: string) => {
     },
   };
 };
+
+// Now let's also modify the console object's prototype to ensure that even console logs from external libraries or inaccessible files are suppressed
+if (!LOGGING_ENABLED) {
+  // This affects all console.log calls globally, even from third-party libraries
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      // Give time for other scripts to initialize, then silence the console
+      if (!isDevMode) {
+        console.log = () => {};
+        console.info = () => {};
+        console.warn = () => {};
+        console.debug = () => {};
+      }
+    }, 100);
+  });
+}

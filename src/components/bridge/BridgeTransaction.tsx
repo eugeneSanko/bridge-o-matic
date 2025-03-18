@@ -8,6 +8,7 @@ import { ProgressSteps } from "./ProgressSteps";
 import { InformationSection } from "./InformationSection";
 import { NotificationSection } from "./NotificationSection";
 import { OrderDetails as OrderDetailsType } from "@/hooks/useBridgeOrder";
+import { logger } from "@/utils/logger";
 
 interface BridgeTransactionProps {
   orderDetails: OrderDetailsType;
@@ -27,9 +28,10 @@ export const BridgeTransaction = ({
   const apiStatus =
     orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
 
-  console.log("API status in BridgeTransaction:", apiStatus);
-  console.log("Current status in orderDetails:", orderDetails.currentStatus);
-  console.log("Raw API response status:", orderDetails.rawApiResponse?.status);
+  // Replace console.log with logger
+  logger.debug("API status in BridgeTransaction:", apiStatus);
+  logger.debug("Current status in orderDetails:", orderDetails.currentStatus);
+  logger.debug("Raw API response status:", orderDetails.rawApiResponse?.status);
 
   const [isOrderComplete, setIsOrderComplete] = useState(false);
 
@@ -44,7 +46,7 @@ export const BridgeTransaction = ({
     const isStatusExpired = orderDetails.currentStatus === "expired";
     const isTimerExpired = timeLeft !== null && timeLeft <= 0;
 
-    console.log("Expiration checks:", {
+    logger.debug("Expiration checks:", {
       apiStatus,
       currentStatus: orderDetails.currentStatus,
       timeLeft,
@@ -54,10 +56,10 @@ export const BridgeTransaction = ({
     });
 
     if (orderDetails.currentStatus === "completed") {
-      console.log("Current status is 'completed', ignoring EXPIRED API status");
+      logger.debug("Current status is 'completed', ignoring EXPIRED API status");
       setIsExpired(false);
     } else if (isApiExpired || isStatusExpired || isTimerExpired) {
-      console.log("Order is expired");
+      logger.debug("Order is expired");
       setIsExpired(true);
     } else {
       setIsExpired(false);
@@ -80,7 +82,7 @@ export const BridgeTransaction = ({
       normalizedCurrentStatus === "completed" ||
       normalizedCurrentStatus === "done";
 
-    console.log("Checking if order is complete:", {
+    logger.debug("Checking if order is complete:", {
       normalizedApiStatus,
       normalizedCurrentStatus,
       isDone,
@@ -91,10 +93,10 @@ export const BridgeTransaction = ({
 
   React.useEffect(() => {
     if (orderDetails.rawApiResponse) {
-      console.log("Raw API response:", orderDetails.rawApiResponse);
+      logger.debug("Raw API response:", orderDetails.rawApiResponse);
       if (orderDetails.rawApiResponse.time) {
-        console.log("Time info:", orderDetails.rawApiResponse.time);
-        console.log("Time left:", orderDetails.rawApiResponse.time.left);
+        logger.debug("Time info:", orderDetails.rawApiResponse.time);
+        logger.debug("Time left:", orderDetails.rawApiResponse.time.left);
       }
     }
   }, [orderDetails.rawApiResponse]);

@@ -9,6 +9,7 @@ import { CompletedTransactionSaver } from "@/components/bridge/CompletedTransact
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/utils/logger";
 
 interface BridgeStatusRendererProps {
   loading: boolean;
@@ -22,7 +23,7 @@ interface BridgeStatusRendererProps {
   transactionSaved: boolean;
   setTransactionSaved: (saved: boolean) => void;
   checkOrderStatus?: () => void;
-  setEmergencyActionTaken?: (taken: boolean) => void; // Add this prop
+  setEmergencyActionTaken?: (taken: boolean) => void;
 }
 
 export const BridgeStatusRenderer = ({
@@ -37,7 +38,7 @@ export const BridgeStatusRenderer = ({
   transactionSaved,
   setTransactionSaved,
   checkOrderStatus,
-  setEmergencyActionTaken // Add this prop
+  setEmergencyActionTaken
 }: BridgeStatusRendererProps) => {
   // Add state to handle updated orderDetails after expired status check
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(initialOrderDetails);
@@ -79,7 +80,7 @@ export const BridgeStatusRenderer = ({
 
   // Function to update order details (used by CompletedTransactionSaver)
   const handleOrderDetailsUpdate = (updatedDetails: OrderDetails) => {
-    console.log("Updating order details:", updatedDetails);
+    logger.debug("Updating order details:", updatedDetails);
     setOrderDetails(updatedDetails);
   };
 
@@ -116,10 +117,10 @@ export const BridgeStatusRenderer = ({
         body: requestBody,
       });
 
-      console.log("Emergency action response:", data);
+      logger.debug("Emergency action response:", data);
 
       if (error) {
-        console.error("Error in emergency action:", error);
+        logger.error("Error in emergency action:", error);
         toast({
           title: "Error",
           description: `Failed to process ${choice.toLowerCase()}: ${error.message}`,
@@ -135,7 +136,7 @@ export const BridgeStatusRenderer = ({
         
         // Also call the setEmergencyActionTaken function if available
         if (setEmergencyActionTaken) {
-          console.log("Setting emergency action taken flag");
+          logger.debug("Setting emergency action taken flag");
           setEmergencyActionTaken(true);
         }
         
@@ -160,7 +161,7 @@ export const BridgeStatusRenderer = ({
         });
       }
     } catch (err) {
-      console.error("Exception in emergency action:", err);
+      logger.error("Exception in emergency action:", err);
       toast({
         title: "Error",
         description: "Failed to process request. Please try again later.",
@@ -171,34 +172,20 @@ export const BridgeStatusRenderer = ({
 
   // Handlers for new actions
   const handleRetryCurrentPrice = () => {
-    console.log("Retrying at current price");
+    logger.debug("Retrying at current price");
     if (checkOrderStatus) {
       checkOrderStatus();
     }
   };
 
   const handleEmergencyExchange = () => {
-    console.log("Emergency exchange requested");
+    logger.debug("Emergency exchange requested");
     handleEmergencyAction("EXCHANGE");
-    
-    // Show deposit confirmation notification
-    // toast({
-    //   title: "Transaction Status",
-    //   description: "Waiting for the appearance of the transaction on the blockchain network. Funds have not yet arrived at the address indicated in the order. We will exchange funds after the receipt of the transaction and the receipt of the required number of confirmations of the blockchain network.",
-    //   duration: 10000, // Show for 10 seconds since it's a longer message
-    // });
   };
 
   const handleEmergencyRefund = (refundAddress?: string) => {
-    console.log("Emergency refund requested with address:", refundAddress);
+    logger.debug("Emergency refund requested with address:", refundAddress);
     handleEmergencyAction("REFUND", refundAddress);
-    
-    // Show deposit confirmation notification
-    // toast({
-    //   title: "Transaction Status",
-    //   description: "Waiting for the appearance of the transaction on the blockchain network. Funds have not yet arrived at the address indicated in the order. We will exchange funds after the receipt of the transaction and the receipt of the required number of confirmations of the blockchain network.",
-    //   duration: 10000, // Show for 10 seconds since it's a longer message
-    // });
   };
 
   const handleAddressCopy = (address: string) => {
