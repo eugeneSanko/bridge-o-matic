@@ -10,12 +10,7 @@ export const CurlCommandSection = ({ command }: CurlCommandSectionProps) => {
   if (!command) return null;
 
   return (
-    <DebugSection 
-      title="cURL Command" 
-      titleColor="#0FA0CE"
-      copyData={command}
-      copyLabel="cURL command"
-    >
+    <DebugSection title="cURL Command">
       <CodeBlock 
         content={command} 
         label="cURL command" 

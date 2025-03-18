@@ -21,26 +21,18 @@ serve(async (req) => {
   }
 
   try {
-    // Log request details
-    console.log("QR code request URL:", req.url);
-    console.log("QR code request method:", req.method);
-    console.log("QR code request headers:", Object.fromEntries(req.headers.entries()));
-    
     // Get request body
     const requestBody: QrCodeRequest = await req.json();
-    console.log("QR code request body:", JSON.stringify(requestBody, null, 2));
+    console.log("QR code request:", requestBody);
 
     // Validate request
     if (!requestBody.id || !requestBody.token) {
-      const errorResponse = {
-        code: 1,
-        msg: "Invalid request parameters",
-        error: "Missing required parameters: id or token",
-      };
-      console.error("QR code validation error:", errorResponse);
-      
       return new Response(
-        JSON.stringify(errorResponse),
+        JSON.stringify({
+          code: 1,
+          msg: "Invalid request parameters",
+          error: "Missing required parameters: id or token",
+        }),
         { 
           headers: { 
             ...corsHeaders,
@@ -59,25 +51,13 @@ serve(async (req) => {
     const apiKey = Deno.env.get("FF_API_KEY");
     const apiSecret = Deno.env.get("FF_API_SECRET");
     
-    console.log("API Key exists:", !!apiKey);
-    console.log("API Secret exists:", !!apiSecret);
-    
     if (!apiKey || !apiSecret) {
       console.error("Missing API credentials");
-      
-      // Return detailed error for debugging
-      const debugInfo = {
-        apiKeyStatus: apiKey ? "present" : "missing",
-        apiSecretStatus: apiSecret ? "present" : "missing",
-        envVars: Object.keys(Deno.env.toObject()).filter(key => !key.includes("SECRET")).join(", ")
-      };
-      
       return new Response(
         JSON.stringify({
           code: 1,
           msg: "Configuration error",
           error: "API credentials not configured",
-          debugInfo
         }),
         { 
           headers: { 
@@ -113,19 +93,6 @@ serve(async (req) => {
     headers.set("X-API-SIGN", signatureHex);
     
     console.log("Making request to Fixed Float API...");
-    console.log("Request headers:", Object.fromEntries(headers.entries()));
-    console.log("Request body:", JSON.stringify(requestBody));
-    
-    // Equivalent curl command (masked for security)
-    const maskedApiKey = apiKey.substring(0, 3) + "..." + apiKey.substring(apiKey.length - 3);
-    const curlCommand = `curl -X POST "https://ff.io/api/v2/qr" \\
-  -H "Content-Type: application/json; charset=UTF-8" \\
-  -H "Accept: application/json" \\
-  -H "X-API-KEY: ${maskedApiKey}" \\
-  -H "X-API-SIGN: ${signatureHex}" \\
-  -d '${JSON.stringify(requestBody)}'`;
-    
-    console.log("Equivalent curl command:", curlCommand);
     
     // Make request to Fixed Float API
     const ffResponse = await fetch("https://ff.io/api/v2/qr", {
@@ -133,10 +100,6 @@ serve(async (req) => {
       headers,
       body: JSON.stringify(requestBody),
     });
-    
-    // Log response status
-    console.log("Fixed Float API response status:", ffResponse.status, ffResponse.statusText);
-    console.log("Fixed Float API response headers:", Object.fromEntries(ffResponse.headers.entries()));
     
     if (!ffResponse.ok) {
       const errorText = await ffResponse.text();
@@ -147,11 +110,6 @@ serve(async (req) => {
           code: 1,
           msg: "Error from Fixed Float API",
           error: errorText,
-          debugInfo: {
-            status: ffResponse.status,
-            statusText: ffResponse.statusText,
-            headers: Object.fromEntries(ffResponse.headers.entries())
-          }
         }),
         { 
           headers: { 
@@ -164,7 +122,7 @@ serve(async (req) => {
     
     // Parse response
     const ffData = await ffResponse.json();
-    console.log("Fixed Float API response:", JSON.stringify(ffData, null, 2));
+    console.log("Fixed Float API response:", ffData);
     
     // Return response with CORS headers
     return new Response(JSON.stringify(ffData), {
@@ -181,7 +139,6 @@ serve(async (req) => {
         code: 1,
         msg: "Error processing request",
         error: error.message,
-        stack: error.stack
       }),
       { 
         headers: { 
