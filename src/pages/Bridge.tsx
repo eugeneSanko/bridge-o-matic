@@ -1,9 +1,11 @@
+
 import { useBridge } from "@/contexts/BridgeContext";
 import { BridgeProvider } from "@/contexts/BridgeContext";
 import { BridgeHeader } from "@/components/bridge/BridgeHeader";
 import { BridgeForm } from "@/components/bridge/BridgeForm";
 import { FAQSection } from "@/components/bridge/FAQSection";
 import { useEffect } from "react";
+import { logger } from "@/utils/logger";
 
 const BridgeContent = () => {
   const { refreshCurrencies, availableCurrencies } = useBridge();
@@ -11,13 +13,13 @@ const BridgeContent = () => {
   useEffect(() => {
     // Fetch currencies when the component mounts
     refreshCurrencies();
-    console.log("Bridge component mounted, fetching currencies...");
+    logger.info("Bridge component mounted, fetching currencies...");
   }, [refreshCurrencies]);
 
   useEffect(() => {
     // Log currencies when they're loaded
     if (availableCurrencies.length > 0) {
-      console.log("Currencies loaded:", availableCurrencies.length);
+      logger.debug("Currencies loaded:", availableCurrencies.length);
     }
   }, [availableCurrencies]);
 

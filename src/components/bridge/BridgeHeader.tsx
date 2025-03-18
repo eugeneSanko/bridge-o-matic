@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Beaker } from "lucide-react";
 import { useState } from "react";
@@ -5,6 +6,7 @@ import { toast } from "@/hooks/use-toast";
 import { API_CONFIG, generateFixedFloatSignature } from "@/config/api";
 import { DebugPanel } from "./DebugPanel";
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/utils/logger";
 
 // Define proper types for debug info
 interface DebugInfo {
@@ -38,7 +40,7 @@ export const BridgeHeader = () => {
   const testApi = async () => {
     setIsTestingApi(true);
     try {
-      console.log("Starting API test...");
+      logger.info("Starting API test...");
       toast({
         title: "Testing API connection",
         description: "Please wait while we test the connection to FixedFloat API...",
@@ -58,7 +60,7 @@ export const BridgeHeader = () => {
       
       // Generate a simulated signature for display purposes only
       const signature = generateFixedFloatSignature(sampleRequestBody);
-      console.log("Generated simulated signature:", signature);
+      logger.debug("Generated simulated signature:", signature);
       
       // Prepare curl command for reference (with placeholders instead of actual keys)
       const curlCommand = `curl -X POST \\
@@ -91,13 +93,13 @@ export const BridgeHeader = () => {
       setTestDebugInfo(debugInfo);
       
       // Make an actual API call via the edge function
-      console.log("Making API request to edge function...");
+      logger.debug("Making API request to edge function...");
       const { data, error } = await supabase.functions.invoke('bridge-create', {
         body: sampleRequestBody
       });
       
       if (error) {
-        console.error("Edge function error:", error);
+        logger.error("Edge function error:", error);
         debugInfo.responseDetails = {
           status: `Error: ${error.status || 500}`,
           body: JSON.stringify({ error: error.message })
@@ -108,7 +110,7 @@ export const BridgeHeader = () => {
           stack: error.stack
         };
       } else {
-        console.log("API response:", data);
+        logger.debug("API response:", data);
         // Update debug info with actual response
         debugInfo.responseDetails = {
           status: data?.debugInfo?.responseDetails?.status || 200,
@@ -138,7 +140,7 @@ export const BridgeHeader = () => {
         variant: "default",
       });
     } catch (error) {
-      console.error("API test error:", error);
+      logger.error("API test error:", error);
       
       // Update debug info with the caught error
       if (testDebugInfo) {

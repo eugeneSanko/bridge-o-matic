@@ -1,8 +1,13 @@
+
 import { useState, useCallback } from 'react';
 import { API_CONFIG, generateFixedFloatSignature } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
 import { PriceResponse, BridgeError, Currency, ApiOrderResponse, OrderResponse } from "@/types/bridge";
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/utils/logger";
+
+// Create a specialized logger for this service
+const bridgeLogger = logger;
 
 const MOCK_CURRENCIES: Currency[] = [
   {
@@ -76,21 +81,21 @@ export function useBridgeService() {
   
   const fetchCurrencies = useCallback(async () => {
     try {
-      console.log('Fetching available currencies from FixedFloat API via Supabase Edge Function...');
+      bridgeLogger.info('Fetching available currencies from FixedFloat API via Supabase Edge Function...');
       
       const { data, error } = await supabase.functions.invoke('bridge-currencies');
       
       if (error) {
-        console.error('Edge function error:', error);
+        bridgeLogger.error('Edge function error:', error);
         throw new Error(`Edge function error: ${error.message}`);
       }
       
       if (!data) {
-        console.error('No data returned from edge function');
+        bridgeLogger.error('No data returned from edge function');
         throw new Error('No data returned from edge function');
       }
       
-      console.log('Edge function response:', data);
+      bridgeLogger.debug('Edge function response:', data);
       
       if (data.code === 0 && data.data && Array.isArray(data.data)) {
         const currenciesArray: Currency[] = data.data.map((currency: any) => ({
@@ -111,13 +116,13 @@ export function useBridgeService() {
         
         return currenciesArray;
       } else {
-        console.error('API returned an error or unexpected format:', data);
+        bridgeLogger.error('API returned an error or unexpected format:', data);
         throw new Error(data.msg || 'Unknown API error');
       }
     } catch (error) {
-      console.error('Error fetching currencies:', error);
+      bridgeLogger.error('Error fetching currencies:', error);
       
-      console.warn('Falling back to mock currency data due to API error');
+      bridgeLogger.warn('Falling back to mock currency data due to API error');
       toast({
         title: "API Error",
         description: "Could not connect to exchange API. Using fallback data.",
@@ -146,24 +151,24 @@ export function useBridgeService() {
         orderType
       };
       
-      console.log('Calculating price via Supabase Edge Function...');
-      console.log('API Request:', body);
+      bridgeLogger.info('Calculating price via Supabase Edge Function...');
+      bridgeLogger.debug('API Request:', body);
       
       const { data, error } = await supabase.functions.invoke('bridge-price', {
         body
       });
       
       if (error) {
-        console.error('Edge function error:', error);
+        bridgeLogger.error('Edge function error:', error);
         throw new Error(`Edge function error: ${error.message}`);
       }
       
       if (!data) {
-        console.error('No data returned from edge function');
+        bridgeLogger.error('No data returned from edge function');
         throw new Error('No data returned from edge function');
       }
       
-      console.log('Price calculation response:', data);
+      bridgeLogger.debug('Price calculation response:', data);
       
       if (data.code === 0) {
         const responseData: PriceResponse = {
@@ -177,13 +182,13 @@ export function useBridgeService() {
         setLastPriceCheck(responseData);
         return responseData;
       } else {
-        console.error('API returned an error:', data);
+        bridgeLogger.error('API returned an error:', data);
         throw new Error(data.msg || 'Unknown API error');
       }
     } catch (error) {
-      console.error('Error calculating amount:', error);
+      bridgeLogger.error('Error calculating amount:', error);
       
-      console.warn('Generating mock price data due to API error');
+      bridgeLogger.warn('Generating mock price data due to API error');
       
       const mockRate = fromCurrency === 'BTC' ? 65000 : 3000;
       const fromAmount = parseFloat(amount);
@@ -244,14 +249,14 @@ export function useBridgeService() {
         toAddress: destination
       };
       
-      console.log('Creating bridge order with parameters:', body);
+      bridgeLogger.info('Creating bridge order with parameters:', body);
       
       const { data, error } = await supabase.functions.invoke('bridge-create', {
         body
       });
       
       if (error) {
-        console.error('Edge function error:', error);
+        bridgeLogger.error('Edge function error:', error);
         return {
           orderId: '',
           code: 500,
@@ -260,7 +265,7 @@ export function useBridgeService() {
       }
       
       if (!data) {
-        console.error('No data returned from edge function');
+        bridgeLogger.error('No data returned from edge function');
         return {
           orderId: '',
           code: 500,
@@ -268,7 +273,7 @@ export function useBridgeService() {
         };
       }
       
-      console.log('Order creation response:', data);
+      bridgeLogger.debug('Order creation response:', data);
       
       if (data.code === 0 && data.data) {
         return { 
@@ -280,7 +285,7 @@ export function useBridgeService() {
           debugInfo: data.debugInfo
         };
       } else {
-        console.error('API returned an error:', data);
+        bridgeLogger.error('API returned an error:', data);
         return {
           orderId: '',
           code: data.code || 500,
@@ -289,10 +294,10 @@ export function useBridgeService() {
         };
       }
     } catch (error) {
-      console.error('Bridge transaction error:', error);
+      bridgeLogger.error('Bridge transaction error:', error);
       
       if (import.meta.env.DEV) {
-        console.warn('Generating mock order data due to API error');
+        bridgeLogger.warn('Generating mock order data due to API error');
         
         if (error && typeof error === 'object' && 'code' in error && error.code === 301) {
           return {
@@ -356,9 +361,9 @@ export function useBridgeService() {
       
       const signature = generateApiSignature(body);
       
-      console.log('Simulating order status check due to CORS restrictions');
-      console.log('API Request would include:', body);
-      console.log('API Signature:', signature);
+      bridgeLogger.info('Simulating order status check due to CORS restrictions');
+      bridgeLogger.debug('API Request would include:', body);
+      bridgeLogger.debug('API Signature:', signature);
       
       await new Promise(resolve => setTimeout(resolve, 1000));
       
@@ -381,7 +386,7 @@ export function useBridgeService() {
         }
       };
     } catch (error) {
-      console.error('Error checking order status:', error);
+      bridgeLogger.error('Error checking order status:', error);
       return null;
     }
   }, []);

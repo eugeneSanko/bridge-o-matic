@@ -1,6 +1,11 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { logger } from "@/utils/logger";
+
+// Create a dedicated logger for this hook
+const orderLogger = logger;
 
 export interface OrderData {
   id: string;
@@ -61,7 +66,7 @@ export function useBridgeOrder(
 
   useEffect(() => {
     const emergencyActionHandler = () => {
-      console.log("Emergency action detected in useBridgeOrder, enabling polling");
+      orderLogger.info("Emergency action detected in useBridgeOrder, enabling polling");
       setEmergencyActionTaken(true);
     };
     
@@ -79,15 +84,15 @@ export function useBridgeOrder(
     }
 
     try {
-      console.log("Fetching order details for", orderId, "with token", token);
+      orderLogger.info("Fetching order details for", orderId, "with token", token);
 
-      console.log("Fetching real-time order status from API");
+      orderLogger.info("Fetching real-time order status from API");
       const apiRequestBody = {
         id: orderId,
         token: token,
       };
 
-      console.log("API request parameters:", apiRequestBody);
+      orderLogger.debug("API request parameters:", apiRequestBody);
 
       const { data: apiResponse, error: apiError } =
         await supabase.functions.invoke("bridge-status", {
@@ -95,14 +100,14 @@ export function useBridgeOrder(
         });
 
       if (apiError) {
-        console.error("API error when fetching order status:", apiError);
+        orderLogger.error("API error when fetching order status:", apiError);
         throw new Error(`API error: ${apiError.message}`);
       }
 
       if (apiResponse && apiResponse.code === 0 && apiResponse.data) {
-        console.log("API returned order status:", apiResponse);
+        orderLogger.debug("API returned order status:", apiResponse);
         const apiStatus = apiResponse.data.status;
-        console.log("Raw API status:", apiStatus);
+        orderLogger.debug("Raw API status:", apiStatus);
 
         const statusMap: Record<string, string> = {
           NEW: "pending",
@@ -116,7 +121,7 @@ export function useBridgeOrder(
         };
 
         const currentStatus = statusMap[apiStatus] || apiStatus.toLowerCase();
-        console.log("Mapped status:", currentStatus);
+        orderLogger.debug("Mapped status:", currentStatus);
 
         const orderType: "fixed" | "float" =
           apiResponse.data.type?.toLowerCase() === "float"
@@ -157,7 +162,7 @@ export function useBridgeOrder(
           (apiResponse.data.status === "EXPIRED" && !emergencyActionTaken) || 
           (apiResponse.data.status === "EMERGENCY" && !emergencyActionTaken))
         ) {
-          console.log(
+          orderLogger.info(
             `Terminal status (${apiResponse.data.status}) received and no emergency action taken. Stopping polling in 1500ms.`
           );
           setTimeout(() => {
@@ -167,14 +172,14 @@ export function useBridgeOrder(
             }
           }, 1500);
         } else if (emergencyActionTaken) {
-          console.log(`Status is ${apiResponse.data.status} but emergency action was taken, continuing to poll`);
+          orderLogger.info(`Status is ${apiResponse.data.status} but emergency action was taken, continuing to poll`);
         }
 
         setLoading(false);
         return;
       }
 
-      console.log("No valid API response, using fallback data");
+      orderLogger.info("No valid API response, using fallback data");
       const fallbackData = {
         id: orderId,
         fromCurrency: "USDT",
@@ -213,7 +218,7 @@ export function useBridgeOrder(
 
       setLoading(false);
     } catch (error) {
-      console.error("Error fetching order details:", error);
+      orderLogger.error("Error fetching order details:", error);
       setError(
         error instanceof Error ? error.message : "An unknown error occurred"
       );

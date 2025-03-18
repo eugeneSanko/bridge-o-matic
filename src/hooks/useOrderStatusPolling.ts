@@ -3,6 +3,10 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { OrderDetails } from "@/hooks/useBridgeOrder";
+import { logger } from "@/utils/logger";
+
+// Create a dedicated logger for this hook
+const pollingLogger = logger;
 
 // Polling intervals in milliseconds for different order statuses
 const POLLING_INTERVALS = {
@@ -59,7 +63,7 @@ export const useOrderStatusPolling = ({
     
     // If emergency action has been taken, always use polling regardless of status
     if (emergencyActionTaken && (apiStatus === 'EMERGENCY' || apiStatus === 'EXPIRED')) {
-      console.log(`Emergency action was taken. Enabling polling for ${apiStatus} status`);
+      pollingLogger.info(`Emergency action was taken. Enabling polling for ${apiStatus} status`);
       setPollingInterval(POLLING_INTERVALS.DEFAULT);
       return;
     }
@@ -67,7 +71,7 @@ export const useOrderStatusPolling = ({
     const newInterval =
       POLLING_INTERVALS[apiStatus] ?? POLLING_INTERVALS.DEFAULT;
 
-    console.log(
+    pollingLogger.debug(
       `Setting polling interval to ${
         newInterval === null ? "none" : `${newInterval}ms`
       } for status ${apiStatus}`
@@ -79,20 +83,20 @@ export const useOrderStatusPolling = ({
   const checkOrderStatus = useCallback(
     async (force = false) => {
       if (!orderId || !token) {
-        console.error("Missing order ID or token for status check");
+        pollingLogger.error("Missing order ID or token for status check");
         setStatusCheckError("Missing order ID or token");
         return;
       }
 
       // Always check if force is true or if emergencyActionTaken is true
       if (pollingInterval === null && !force && !emergencyActionTaken) {
-        console.log("Polling disabled for current status, skipping check");
+        pollingLogger.debug("Polling disabled for current status, skipping check");
         return;
       }
 
       const now = Date.now();
       if (!force && now - lastPollTimestamp < pollingInterval) {
-        console.log(
+        pollingLogger.debug(
           `Not enough time elapsed since last poll (${
             (now - lastPollTimestamp) / 1000
           }s), skipping`
@@ -103,7 +107,7 @@ export const useOrderStatusPolling = ({
       setLastPollTimestamp(now);
 
       try {
-        console.log(
+        pollingLogger.info(
           `${
             force ? "Forcing" : "Scheduled"
           } order status check with bridge-status function`
@@ -113,7 +117,7 @@ export const useOrderStatusPolling = ({
         // When an emergency action is taken, mark it
         if (force && (originalOrderDetails?.rawApiResponse?.status === 'EMERGENCY' || 
                       originalOrderDetails?.rawApiResponse?.status === 'EXPIRED')) {
-          console.log("Setting emergencyActionTaken flag to true");
+          pollingLogger.info("Setting emergencyActionTaken flag to true");
           setEmergencyActionTaken(true);
         }
 
@@ -125,13 +129,13 @@ export const useOrderStatusPolling = ({
         );
 
         if (error) {
-          console.error("Error calling bridge-status function:", error);
+          pollingLogger.error("Error calling bridge-status function:", error);
           setStatusCheckError(`Error: ${error.message}`);
           updateDebugInfo({ error });
           return;
         }
 
-        console.log("Status check response:", data);
+        pollingLogger.debug("Status check response:", data);
 
         if (data.debugInfo) {
           updateDebugInfo(data.debugInfo);
@@ -139,10 +143,10 @@ export const useOrderStatusPolling = ({
 
         if (data.code === 0 && data.data) {
           const status = data.data.status;
-          console.log(`Order status from API: ${status}`);
+          pollingLogger.info(`Order status from API: ${status}`);
 
           if (status === "DONE" && originalOrderDetails) {
-            console.log("Order is complete, showing notification");
+            pollingLogger.info("Order is complete, showing notification");
             toast({
               title: "Transaction Complete",
               description: `Your transaction has been completed successfully.`,
@@ -164,11 +168,11 @@ export const useOrderStatusPolling = ({
             onTransactionComplete(updatedDetails, data);
           }
         } else {
-          console.error("API returned an error:", data);
+          pollingLogger.error("API returned an error:", data);
           setStatusCheckError(`API Error: ${data.msg || "Unknown error"}`);
         }
       } catch (error) {
-        console.error("Error checking order status:", error);
+        pollingLogger.error("Error checking order status:", error);
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
         setStatusCheckError(`Error: ${errorMessage}`);
@@ -197,14 +201,14 @@ export const useOrderStatusPolling = ({
   useEffect(() => {
     if (!orderId || !token || pollingInterval === null) return;
 
-    console.log(`Setting up polling with ${pollingInterval}ms interval`);
+    pollingLogger.debug(`Setting up polling with ${pollingInterval}ms interval`);
 
     const intervalId = setInterval(() => {
       checkOrderStatus();
     }, pollingInterval);
 
     return () => {
-      console.log('Clearing polling interval');
+      pollingLogger.debug('Clearing polling interval');
       clearInterval(intervalId);
     };
   }, [orderId, token, pollingInterval, checkOrderStatus]);

@@ -20,6 +20,19 @@ const corsHeaders = {
   "Access-Control-Max-Age": "86400",
 };
 
+// Simple logging function
+const log = {
+  info: (message: string, ...args: any[]) => console.log(`[Bridge-Create] ${message}`, ...args),
+  error: (message: string, ...args: any[]) => console.error(`[Bridge-Create] ${message}`, ...args),
+  debug: (message: string, ...args: any[]) => {
+    // Only log in development
+    const isDev = Deno.env.get("DENO_ENV") === "development";
+    if (isDev) {
+      console.log(`[Bridge-Create] ${message}`, ...args);
+    }
+  }
+};
+
 // Generate HMAC signature for FixedFloat API using the correct Deno crypto API
 async function generateSignature(message: string): Promise<string> {
   // Use native Deno crypto for HMAC
@@ -27,7 +40,7 @@ async function generateSignature(message: string): Promise<string> {
   
   // Verify API_SECRET is defined and has length
   if (!API_SECRET || API_SECRET.length === 0) {
-    console.error("API_SECRET is empty or undefined. Cannot generate signature.");
+    log.error("API_SECRET is empty or undefined. Cannot generate signature.");
     throw new Error("API secret key is not configured properly");
   }
   
@@ -36,11 +49,11 @@ async function generateSignature(message: string): Promise<string> {
   
   // Check key length before attempting to create HMAC
   if (keyData.length === 0) {
-    console.error("Key data length is zero after encoding");
+    log.error("Key data length is zero after encoding");
     throw new Error("API secret key is empty after encoding");
   }
   
-  console.log(`Using API secret with length: ${keyData.length}`);
+  log.info(`Using API secret with length: ${keyData.length}`);
   
   try {
     // Create HMAC using subtle crypto API
@@ -66,17 +79,17 @@ async function generateSignature(message: string): Promise<string> {
       .map(b => b.toString(16).padStart(2, "0"))
       .join("");
   } catch (error) {
-    console.error("Error generating signature:", error);
+    log.error("Error generating signature:", error);
     throw error;
   }
 }
 
 serve(async (req) => {
-  console.log(`Received ${req.method} request to bridge-create`);
+  log.info(`Received ${req.method} request to bridge-create`);
   
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    console.log("Responding to CORS preflight request");
+    log.info("Responding to CORS preflight request");
     return new Response(null, {
       status: 204,
       headers: corsHeaders,
@@ -86,7 +99,7 @@ serve(async (req) => {
   try {
     // Parse request body and log it
     const requestData = await req.json();
-    console.log("Original request body:", JSON.stringify(requestData));
+    log.debug("Original request body:", JSON.stringify(requestData));
     
     // Create a detailed debug object
     const debugInfo = {
@@ -103,7 +116,7 @@ serve(async (req) => {
     
     // First verify that we have the required secrets
     if (!API_KEY || !API_SECRET) {
-      console.error("Missing API keys in environment variables.");
+      log.error("Missing API keys in environment variables.");
       return new Response(
         JSON.stringify({
           code: 500,
@@ -122,7 +135,7 @@ serve(async (req) => {
     }
     
     if (!REF_CODE) {
-      console.warn("Missing REF_CODE in environment variables. Proceeding without refcode.");
+      log.info("Missing REF_CODE in environment variables. Proceeding without refcode.");
     }
     
     // Add refcode to the request data if available
@@ -134,7 +147,7 @@ serve(async (req) => {
     // Convert to string for signature and request
     const updatedRequestBodyStr = JSON.stringify(requestDataWithRefcode);
     
-    console.log("Updated request body:", updatedRequestBodyStr);
+    log.debug("Updated request body:", updatedRequestBodyStr);
     debugInfo.requestDetails.modifiedRequestBody = requestDataWithRefcode;
     if (REF_CODE) {
       debugInfo.requestDetails.refcode = REF_CODE;
@@ -149,8 +162,8 @@ serve(async (req) => {
         signatureGeneratedFor: updatedRequestBodyStr
       };
       
-      console.log("Generated signature:", signature);
-      console.log("Using API key:", API_KEY);
+      log.info("Generated signature:", signature);
+      log.info("Using API key:", API_KEY);
       
       // Create curl command for debugging
       const curlCommand = `curl -X POST \\
@@ -162,11 +175,11 @@ serve(async (req) => {
   "${API_URL}" -L`;
       
       debugInfo.curlCommand = curlCommand;
-      console.log("\nEquivalent curl command:");
-      console.log(curlCommand);
+      log.debug("\nEquivalent curl command:");
+      log.debug(curlCommand);
       
       // Make request to FixedFloat API
-      console.log("Sending request to FixedFloat API...");
+      log.info("Sending request to FixedFloat API...");
       const response = await fetch(API_URL, {
         method: "POST",
         headers: {
@@ -179,13 +192,13 @@ serve(async (req) => {
       });
       
       // Log response status and headers
-      console.log("\nRESPONSE DETAILS:");
-      console.log("Response status:", response.status);
-      console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+      log.info("\nRESPONSE DETAILS:");
+      log.info("Response status:", response.status);
+      log.info("Response headers:", Object.fromEntries(response.headers.entries()));
       
       // Get response body as text first for logging
       const responseText = await response.text();
-      console.log("Response body (text):", responseText);
+      log.debug("Response body (text):", responseText);
       
       // Record response details
       debugInfo.responseDetails = {
@@ -199,7 +212,7 @@ serve(async (req) => {
       try {
         responseData = JSON.parse(responseText);
       } catch (e) {
-        console.error("Failed to parse response as JSON:", e);
+        log.error("Failed to parse response as JSON:", e);
         debugInfo.error = {
           type: "JSON parsing error",
           message: e.message,
@@ -247,7 +260,7 @@ serve(async (req) => {
         }
       );
     } catch (error) {
-      console.error("Error generating signature:", error);
+      log.error("Error generating signature:", error);
       debugInfo.error = {
         type: "Signature Error",
         message: error instanceof Error ? error.message : String(error),
@@ -257,7 +270,7 @@ serve(async (req) => {
       throw error; // Rethrow to be caught by the outer catch block
     }
   } catch (error) {
-    console.error("Error processing request:", error);
+    log.error("Error processing request:", error);
     
     // Create error response with debug info
     const errorDebugInfo = {
