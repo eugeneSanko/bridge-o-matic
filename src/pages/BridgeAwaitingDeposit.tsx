@@ -97,6 +97,7 @@ const BridgeAwaitingDeposit = () => {
         setTransactionSaved={setTransactionSaved}
         checkOrderStatus={() => checkOrderStatus && checkOrderStatus(true)}
         setEmergencyActionTaken={setEmergencyActionTaken}
+        // We don't need to pass statusCheckDebugInfo since we made it optional
       />
     </div>
   );

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { OrderDetails } from "@/hooks/useBridgeOrder";
 import { invokeFunctionWithRetry } from "@/config/api";
@@ -18,6 +19,8 @@ export const useOrderStatusPolling = ({
   onTransactionComplete
 }: UseOrderStatusPollingProps) => {
   const [statusCheckError, setStatusCheckError] = useState<string | null>(null);
+  // Since we're removing debuggers, we won't track debug info anymore
+  // const [statusCheckDebugInfo, setStatusCheckDebugInfo] = useState<any | null>(null);
 
   const checkOrderStatus = useCallback(
     async (isRetry: boolean = false) => {
@@ -79,5 +82,6 @@ export const useOrderStatusPolling = ({
     }
   }, [orderId, token, checkOrderStatus]);
 
+  // Return only the error and the check function since we're removing debuggers
   return { statusCheckError, checkOrderStatus };
 };
