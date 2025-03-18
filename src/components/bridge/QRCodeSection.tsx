@@ -203,8 +203,8 @@ export const QRCodeSection = ({
   const toggleDebug = () => {
     if (debugInfo) {
       toast({
-        title: "Debug Info",
         description: "Debug panel is displayed below the QR code section",
+        className: "bg-[#0FA0CE] text-white font-medium",
       });
     }
   };
