@@ -17,6 +17,7 @@ const BridgeAwaitingDeposit = () => {
   const [simulateSuccess, setSimulateSuccess] = useState(false);
   const [apiAttempted, setApiAttempted] = useState(false);
   const [transactionSaved, setTransactionSaved] = useState(false);
+  const [statusCheckDebugInfo, setStatusCheckDebugInfo] = useState(null);
   
   // Load order details from the bridge API
   const { 
@@ -44,6 +45,9 @@ const BridgeAwaitingDeposit = () => {
       apiResponse,
       transactionSaved
     });
+    
+    // The actual saving logic is now in the CompletedTransactionSaver component
+    // This function is just for additional logging or future extensibility
   };
 
   // Use custom hook for order status polling
@@ -52,7 +56,8 @@ const BridgeAwaitingDeposit = () => {
     token,
     originalOrderDetails,
     setOrderDetails,
-    onTransactionComplete: handleTransactionComplete
+    onTransactionComplete: handleTransactionComplete,
+    setStatusCheckDebugInfo
   });
 
   // Update orderDetails when originalOrderDetails changes
@@ -90,6 +95,7 @@ const BridgeAwaitingDeposit = () => {
         error={error}
         orderDetails={orderDetails}
         handleCopyAddress={handleCopyAddress}
+        statusCheckDebugInfo={statusCheckDebugInfo}
         simulateSuccess={simulateSuccess}
         originalOrderDetails={originalOrderDetails}
         token={token}
@@ -97,7 +103,6 @@ const BridgeAwaitingDeposit = () => {
         setTransactionSaved={setTransactionSaved}
         checkOrderStatus={() => checkOrderStatus && checkOrderStatus(true)}
         setEmergencyActionTaken={setEmergencyActionTaken}
-        // We don't need to pass statusCheckDebugInfo since we made it optional
       />
     </div>
   );

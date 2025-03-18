@@ -27,6 +27,10 @@ export const BridgeTransaction = ({
   const apiStatus =
     orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
 
+  console.log("API status in BridgeTransaction:", apiStatus);
+  console.log("Current status in orderDetails:", orderDetails.currentStatus);
+  console.log("Raw API response status:", orderDetails.rawApiResponse?.status);
+
   const [isOrderComplete, setIsOrderComplete] = useState(false);
 
   const timeLeft = orderDetails.rawApiResponse?.time?.left || null;
@@ -40,9 +44,20 @@ export const BridgeTransaction = ({
     const isStatusExpired = orderDetails.currentStatus === "expired";
     const isTimerExpired = timeLeft !== null && timeLeft <= 0;
 
+    console.log("Expiration checks:", {
+      apiStatus,
+      currentStatus: orderDetails.currentStatus,
+      timeLeft,
+      isApiExpired,
+      isStatusExpired,
+      isTimerExpired,
+    });
+
     if (orderDetails.currentStatus === "completed") {
+      console.log("Current status is 'completed', ignoring EXPIRED API status");
       setIsExpired(false);
     } else if (isApiExpired || isStatusExpired || isTimerExpired) {
+      console.log("Order is expired");
       setIsExpired(true);
     } else {
       setIsExpired(false);
@@ -65,8 +80,24 @@ export const BridgeTransaction = ({
       normalizedCurrentStatus === "completed" ||
       normalizedCurrentStatus === "done";
 
+    console.log("Checking if order is complete:", {
+      normalizedApiStatus,
+      normalizedCurrentStatus,
+      isDone,
+    });
+
     setIsOrderComplete(isDone);
   }, [apiStatus, orderDetails.currentStatus]);
+
+  React.useEffect(() => {
+    if (orderDetails.rawApiResponse) {
+      console.log("Raw API response:", orderDetails.rawApiResponse);
+      if (orderDetails.rawApiResponse.time) {
+        console.log("Time info:", orderDetails.rawApiResponse.time);
+        console.log("Time left:", orderDetails.rawApiResponse.time.left);
+      }
+    }
+  }, [orderDetails.rawApiResponse]);
 
   const displayStatus =
     orderDetails.currentStatus === "completed"
