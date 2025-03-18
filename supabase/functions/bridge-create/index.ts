@@ -4,6 +4,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // Validate required environment variables
 const API_KEY = Deno.env.get("FIXED_FLOAT_API_KEY") || "lvW17QIF4SzDIzxBLg2oUandukccoZjwhsNGs3GC";
 const API_SECRET = Deno.env.get("FIXED_FLOAT_API_SECRET") || "RpPfjnFZx1TfRx6wmYzOgo5Y6QK3OgIETceFZLni";
+const REF_CODE = Deno.env.get("FIXED_FLOAT_REF_CODE") || "w15ymdba"; // Get refcode from environment
 const API_URL = "https://ff.io/api/v2/create";
 
 // Check if API keys are properly configured
@@ -108,9 +109,19 @@ serve(async (req) => {
       console.error("Missing API keys in environment variables. Using fallback values.");
     }
     
+    // Add refcode to the request data
+    const requestDataWithRefcode = {
+      ...requestData,
+      refcode: REF_CODE
+    };
+    
+    // Update the request body string with the refcode
+    const updatedRequestBodyStr = JSON.stringify(requestDataWithRefcode);
+    console.log("Updated request body with refcode:", updatedRequestBodyStr);
+    
     // Generate signature for the exact string we're sending
     try {
-      const signature = await generateSignature(requestBodyStr);
+      const signature = await generateSignature(updatedRequestBodyStr);
       debugInfo.signatureInfo = {
         signature: signature,
         apiKey: API_KEY
@@ -125,7 +136,7 @@ serve(async (req) => {
   -H "X-API-KEY: ${API_KEY}" \\
   -H "X-API-SIGN: ${signature}" \\ 
   -H "Content-Type: application/json; charset=UTF-8" \\
-  -d '${requestBodyStr}' \\ 
+  -d '${updatedRequestBodyStr}' \\ 
   "${API_URL}" -L`;
       
       debugInfo.curlCommand = curlCommand;
@@ -141,7 +152,7 @@ serve(async (req) => {
           "X-API-SIGN": signature,
           "Content-Type": "application/json; charset=UTF-8",
         },
-        body: requestBodyStr,
+        body: updatedRequestBodyStr,
       });
       
       // Log response status and headers
