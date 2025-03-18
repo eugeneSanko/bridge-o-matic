@@ -28,7 +28,7 @@ export const TransactionSummary = ({
   toCurrencyName,
 }: TransactionSummaryProps) => {
   const { toast } = useToast();
-  
+
   const getCurrencyIcon = (currency: string) => {
     const lowerCurrency = currency.toLowerCase();
     if (lowerCurrency === "btc") return "₿";
@@ -73,12 +73,12 @@ export const TransactionSummary = ({
     if (address.length <= 16) return address;
     return `${address.slice(0, 8)}...${address.slice(-8)}`;
   };
-  
+
   const handleCopyAddress = (text: string, type: string) => {
     navigator.clipboard.writeText(text).then(() => {
       toast({
         title: "Copied to clipboard",
-        description: `${type} address has been copied.`
+        description: `${type} address has been copied.`,
       });
     });
   };
@@ -151,16 +151,18 @@ export const TransactionSummary = ({
                 <div className="md:flex md:flex-row-reverse pl-1">{amount}</div>
                 {formatFromCurrencyDisplay()}
               </div>
-              <div className="text-xs md:text-sm text-gray-400 font-mono flex items-center">
-                Send funds:{" "}
+              <div className="text-xs md:text-sm text-gray-400 font-mono flex items-center md:flex-row-reverse">
+                {/* Send funds:{" "} */}
                 {depositAddress ? (
                   <span className="flex items-center gap-1 ml-1">
                     {formatAddress(depositAddress)}
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       className="h-5 w-5 p-0"
-                      onClick={() => handleCopyAddress(depositAddress, "Deposit")}
+                      onClick={() =>
+                        handleCopyAddress(depositAddress, "Deposit")
+                      }
                     >
                       <Copy className="h-3 w-3 text-gray-400" />
                     </Button>
@@ -204,14 +206,16 @@ export const TransactionSummary = ({
                 {receiveAmount || ""} {formatToCurrencyDisplay()}
               </div>
               <div className="text-xs md:text-sm text-gray-400 font-mono flex items-center">
-                Receive at:{" "}
+                {/* Receive at:{" "} */}
                 <span className="flex items-center gap-1 ml-1">
                   {formatAddress(destinationAddress)}
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-5 w-5 p-0"
-                    onClick={() => handleCopyAddress(destinationAddress, "Destination")}
+                    onClick={() =>
+                      handleCopyAddress(destinationAddress, "Destination")
+                    }
                   >
                     <Copy className="h-3 w-3 text-gray-400" />
                   </Button>

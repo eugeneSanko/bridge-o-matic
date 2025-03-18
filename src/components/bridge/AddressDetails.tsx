@@ -1,4 +1,3 @@
-
 import { Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddressPlaceholder } from "./AddressPlaceholder";
@@ -71,14 +70,14 @@ export const AddressDetails = ({
     : fromCurrency.toUpperCase();
 
   // Check if status is emergency or expired
-  const isEmergencyOrExpired = 
-    currentStatus === "EMERGENCY" || 
-    currentStatus === "EXPIRED" || 
-    currentStatus === "emergency" || 
+  const isEmergencyOrExpired =
+    currentStatus === "EMERGENCY" ||
+    currentStatus === "EXPIRED" ||
+    currentStatus === "emergency" ||
     currentStatus === "expired";
 
   return (
-    <div className="col-span-4 glass-card p-6 rounded-xl">
+    <div className="md:col-span-4 glass-card p-6 rounded-xl col-span-5">
       <div className="space-y-6">
         <div>
           <div className="text-sm text-gray-400 mb-2">
