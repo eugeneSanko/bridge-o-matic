@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import * as crypto from 'crypto';
 import { toast } from "@/hooks/use-toast";
@@ -21,11 +20,6 @@ export const API_CONFIG = {
   // Direct API URL for backend requests
   FF_API_URL: "https://ff.io/api/v2",
   
-  // API credentials - these are now used only as fallbacks
-  // The actual keys are stored in Supabase secrets and used in edge functions
-  FF_API_KEY: "lvW17QIF4SzDIzxBLg2oUandukccoZjwhsNGs3GC",
-  FF_API_SECRET: "RpPfjnFZx1TfRx6wmYzOgo5Y6QK3OgIETceFZLni",
-  
   // Maximum retries for API calls
   MAX_RETRIES: 3,
   RETRY_DELAY: 1000,
@@ -35,20 +29,22 @@ export const API_CONFIG = {
 };
 
 /**
- * Generates a FixedFloat API signature for the given request body
+ * Generate a client-side signature (only used for debugging purposes, actual signatures are generated server-side)
  * @param body The request body as a JavaScript object
- * @returns The HMAC-SHA256 signature of the stringified body
+ * @returns A placeholder string indicating client signatures are not used in production
  */
 export function generateFixedFloatSignature(body: any): string {
-  // Convert body to string - if empty, use '{}' as that's what the API expects
+  // In the actual implementation, signatures are generated in the Edge Functions
+  // This is only for local development debugging
+  console.log("Client-side signature generation is only for debugging");
+  console.log("Real signatures are generated in Edge Functions");
+  
+  // Convert body to string for debugging
   const bodyStr = body ? JSON.stringify(body) : '{}';
+  console.log("Would generate signature for:", bodyStr);
   
-  // Create HMAC signature
-  const hmac = crypto.createHmac('sha256', API_CONFIG.FF_API_SECRET);
-  hmac.update(bodyStr);
-  
-  // Return the signature as a hex string
-  return hmac.digest('hex');
+  // Return a placeholder - this is never used in actual API calls
+  return "client-side-signature-placeholder";
 }
 
 // API request wrapper specifically for Supabase functions with timeout, retry logic, and detailed error handling
@@ -58,24 +54,6 @@ export async function invokeFunctionWithRetry(
 ) {
   const { timeout = API_CONFIG.TIMEOUT, ...invokeOptions } = options;
   
-  // If this is a FixedFloat API request, append the needed headers
-  if (functionName.startsWith('ff-')) {
-    // Ensure we have a body object
-    const body = options.body || {};
-    
-    // Generate the API signature
-    const signature = generateFixedFloatSignature(body);
-    
-    // Add FixedFloat API headers to the request
-    invokeOptions.headers = {
-      ...invokeOptions.headers,
-      'X-API-KEY': API_CONFIG.FF_API_KEY,
-      'X-API-SIGN': signature
-    };
-    
-    console.log(`Prepared FixedFloat API request for ${functionName} with signature: ${signature}`);
-  }
-
   let lastError: Error | null = null;
 
   for (let i = 0; i < API_CONFIG.MAX_RETRIES; i++) {

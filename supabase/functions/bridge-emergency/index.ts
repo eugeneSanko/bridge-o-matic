@@ -9,19 +9,20 @@ const corsHeaders = {
 console.log("Bridge Emergency Function Loaded");
 
 const FF_API_URL = "https://ff.io/api/v2";
-const FF_API_KEY = Deno.env.get("FIXED_FLOAT_API_KEY") || "lvW17QIF4SzDIzxBLg2oUandukccoZjwhsNGs3GC";
-const FF_API_SECRET = Deno.env.get("FIXED_FLOAT_API_SECRET") || "RpPfjnFZx1TfRx6wmYzOgo5Y6QK3OgIETceFZLni";
+const FF_API_KEY = Deno.env.get("FIXED_FLOAT_API_KEY");
+const FF_API_SECRET = Deno.env.get("FIXED_FLOAT_API_SECRET");
 
 async function generateSignature(body: any): Promise<string> {
   const encoder = new TextEncoder();
   const bodyStr = JSON.stringify(body);
-  const key = encoder.encode(FF_API_SECRET);
-  const message = encoder.encode(bodyStr);
   
-  // Ensure FF_API_SECRET is not empty
-  if (FF_API_SECRET.length === 0) {
+  // Verify API_SECRET is defined and has length
+  if (!FF_API_SECRET || FF_API_SECRET.length === 0) {
     throw new Error("API Secret is empty or undefined");
   }
+  
+  const key = encoder.encode(FF_API_SECRET);
+  const message = encoder.encode(bodyStr);
   
   return crypto.subtle.importKey(
     "raw", key, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
@@ -45,6 +46,26 @@ serve(async (req) => {
 
   try {
     console.log("Processing bridge emergency action request");
+    
+    // Check API configuration
+    if (!FF_API_KEY || !FF_API_SECRET) {
+      console.error("Missing API credentials");
+      return new Response(
+        JSON.stringify({
+          code: 500,
+          msg: "API configuration error. Missing API keys.",
+          error: "Server configuration error"
+        }),
+        {
+          status: 500,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+    
     const requestData = await req.json();
     
     // Extract required parameters from the request

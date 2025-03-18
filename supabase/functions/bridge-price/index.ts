@@ -2,8 +2,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // API Configuration from environment variables
-const API_KEY = Deno.env.get("FIXED_FLOAT_API_KEY") || "lvW17QIF4SzDIzxBLg2oUandukccoZjwhsNGs3GC";
-const API_SECRET = Deno.env.get("FIXED_FLOAT_API_SECRET") || "RpPfjnFZx1TfRx6wmYzOgo5Y6QK3OgIETceFZLni";
+const API_KEY = Deno.env.get("FIXED_FLOAT_API_KEY");
+const API_SECRET = Deno.env.get("FIXED_FLOAT_API_SECRET");
 
 // CORS headers
 const corsHeaders = {
@@ -19,6 +19,22 @@ serve(async (req) => {
 
   try {
     console.log('FixedFloat edge function: Calculating price');
+    
+    // Check if API keys are properly configured
+    if (!API_KEY || !API_SECRET) {
+      console.error("Missing API keys in environment variables");
+      return new Response(
+        JSON.stringify({
+          code: 500,
+          msg: "API configuration error. Missing API keys.",
+          error: "Server configuration error"
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
+    }
     
     // Parse the request body
     const requestData = await req.json();

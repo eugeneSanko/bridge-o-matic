@@ -2,9 +2,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // Validate required environment variables
-const API_KEY = Deno.env.get("FIXED_FLOAT_API_KEY") || "lvW17QIF4SzDIzxBLg2oUandukccoZjwhsNGs3GC";
-const API_SECRET = Deno.env.get("FIXED_FLOAT_API_SECRET") || "RpPfjnFZx1TfRx6wmYzOgo5Y6QK3OgIETceFZLni";
-const REF_CODE = Deno.env.get("FIXED_FLOAT_REF_CODE") || "w15ymdba"; // Get refcode from environment
+const API_KEY = Deno.env.get("FIXED_FLOAT_API_KEY");
+const API_SECRET = Deno.env.get("FIXED_FLOAT_API_SECRET");
+const REF_CODE = Deno.env.get("FIXED_FLOAT_REF_CODE"); 
 const API_URL = "https://ff.io/api/v2/create";
 
 // Check if API keys are properly configured
@@ -103,22 +103,42 @@ serve(async (req) => {
     
     // First verify that we have the required secrets
     if (!API_KEY || !API_SECRET) {
-      console.error("Missing API keys in environment variables. Using fallback values.");
+      console.error("Missing API keys in environment variables.");
+      return new Response(
+        JSON.stringify({
+          code: 500,
+          msg: "API configuration error. Missing API keys.",
+          error: "Server configuration error",
+          debugInfo
+        }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        }
+      );
     }
     
-    // Add refcode to the request data
+    if (!REF_CODE) {
+      console.warn("Missing REF_CODE in environment variables. Proceeding without refcode.");
+    }
+    
+    // Add refcode to the request data if available
     // Important: Create a new object to avoid mutating the original request
-    const requestDataWithRefcode = {
-      ...requestData,
-      refcode: REF_CODE
-    };
+    const requestDataWithRefcode = REF_CODE 
+      ? { ...requestData, refcode: REF_CODE }
+      : { ...requestData };
     
     // Convert to string for signature and request
     const updatedRequestBodyStr = JSON.stringify(requestDataWithRefcode);
     
-    console.log("Updated request body with refcode:", updatedRequestBodyStr);
+    console.log("Updated request body:", updatedRequestBodyStr);
     debugInfo.requestDetails.modifiedRequestBody = requestDataWithRefcode;
-    debugInfo.requestDetails.refcode = REF_CODE;
+    if (REF_CODE) {
+      debugInfo.requestDetails.refcode = REF_CODE;
+    }
     
     // Generate signature for the exact string we're sending
     try {
