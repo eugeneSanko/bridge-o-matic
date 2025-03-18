@@ -1,4 +1,3 @@
-
 import { ArrowRight, Copy } from "lucide-react";
 import { AddressPlaceholder } from "./AddressPlaceholder";
 import { cleanSymbol } from "@/utils/symbolUtils";
@@ -39,7 +38,6 @@ export const TransactionSummary = ({
   };
 
   const getCurrencyImageUrl = (currency: string) => {
-    // Clean the currency to remove any network information
     const cleanCurrency = cleanSymbol(currency).toLowerCase();
 
     if (cleanCurrency === "btc")
@@ -59,7 +57,6 @@ export const TransactionSummary = ({
   };
 
   const getCurrencyColor = (currency: string) => {
-    // Clean the currency to remove any network information
     const cleanCurrency = cleanSymbol(currency).toLowerCase();
 
     if (cleanCurrency === "btc") return "bg-[#F7931A]";
@@ -86,12 +83,10 @@ export const TransactionSummary = ({
     });
   };
 
-  // Get the clean symbol for display
   const getCleanedCurrency = (currency: string) => {
     return cleanSymbol(currency).toUpperCase();
   };
 
-  // Format the display for from/to currencies to show both code and name
   const formatFromCurrencyDisplay = () => {
     const cleanCurrency = getCleanedCurrency(fromCurrency);
 
@@ -125,18 +120,18 @@ export const TransactionSummary = ({
   };
 
   return (
-    <div className="glass-card p-8 md:p-12 rounded-xl mb-8 relative overflow-hidden">
+    <div className="glass-card p-4 md:p-8 rounded-xl mb-4 md:mb-8 relative overflow-hidden">
       <div className="absolute inset-0 opacity-20">
         <div className="absolute inset-0 bg-gradient-to-br from-[#9b87f5]/30 via-[#7a64ff]/20 to-transparent backdrop-blur-sm animate-pulse-subtle" />
       </div>
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-12 relative">
-        <div className="flex-1 w-full md:w-auto ">
-          <div className="text-sm text-gray-400 mb-3 md:text-right">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-12 relative">
+        <div className="flex-1 w-full md:w-auto">
+          <div className="text-sm text-gray-400 mb-2 md:mb-3 md:text-right">
             YOU SEND
           </div>
-          <div className="flex items-center gap-4 md:flex-row-reverse">
+          <div className="flex items-center gap-3 md:gap-4 md:flex-row-reverse">
             <div
-              className={`w-12 h-12 rounded-full ${getCurrencyColor(
+              className={`w-10 h-10 md:w-12 md:h-12 rounded-full ${getCurrencyColor(
                 fromCurrency
               )} flex items-center justify-center text-lg font-bold text-white overflow-hidden`}
             >
@@ -152,11 +147,11 @@ export const TransactionSummary = ({
               />
             </div>
             <div>
-              <div className="text-2xl md:text-3xl font-bold mb-2 md:text-right md:flex md:flex-row-reverse">
+              <div className="text-xl md:text-2xl lg:text-3xl font-bold mb-1 md:mb-2 md:text-right md:flex md:flex-row-reverse">
                 <div className="md:flex md:flex-row-reverse pl-1">{amount}</div>
                 {formatFromCurrencyDisplay()}
               </div>
-              <div className="text-sm text-gray-400 font-mono flex items-center">
+              <div className="text-xs md:text-sm text-gray-400 font-mono flex items-center">
                 Send funds:{" "}
                 {depositAddress ? (
                   <span className="flex items-center gap-1 ml-1">
@@ -178,15 +173,15 @@ export const TransactionSummary = ({
           </div>
         </div>
 
-        <div className="w-16 h-16 md:w-12 md:h-12 rounded-full bg-secondary/20 flex items-center justify-center md:-mb-2">
-          <ArrowRight className="w-8 h-8 md:w-10 md:h-10 text-[#9b87f5]" />
+        <div className="w-12 h-12 md:w-12 md:h-12 rounded-full bg-secondary/20 flex items-center justify-center my-1 md:-mb-2">
+          <ArrowRight className="w-6 h-6 md:w-8 md:h-8 text-[#9b87f5]" />
         </div>
 
         <div className="flex-1 w-full md:w-auto">
-          <div className="text-sm text-gray-400 mb-3">YOU RECEIVE</div>
-          <div className="flex items-center gap-4">
+          <div className="text-sm text-gray-400 mb-2 md:mb-3">YOU RECEIVE</div>
+          <div className="flex items-center gap-3 md:gap-4">
             <div
-              className={`w-12 h-12 rounded-full ${getCurrencyColor(
+              className={`w-10 h-10 md:w-12 md:h-12 rounded-full ${getCurrencyColor(
                 toCurrency
               )} flex items-center justify-center text-lg font-bold text-white overflow-hidden`}
             >
@@ -202,13 +197,13 @@ export const TransactionSummary = ({
               />
             </div>
             <div>
-              <div className="text-2xl md:text-3xl font-bold mb-2 ">
+              <div className="text-xl md:text-2xl lg:text-3xl font-bold mb-1 md:mb-2">
                 {orderType === "float" && (
                   <span className="text-gray-400 mr-1">≈</span>
                 )}
                 {receiveAmount || ""} {formatToCurrencyDisplay()}
               </div>
-              <div className="text-sm text-gray-400 font-mono flex items-center">
+              <div className="text-xs md:text-sm text-gray-400 font-mono flex items-center">
                 Receive at:{" "}
                 <span className="flex items-center gap-1 ml-1">
                   {formatAddress(destinationAddress)}

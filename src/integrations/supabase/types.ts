@@ -1536,6 +1536,180 @@ export type Database = {
         }
         Relationships: []
       }
+      tradenly_v3_analysis_results: {
+        Row: {
+          analysis: Json | null
+          analysis_summary: string | null
+          chain: string
+          confidence_score: number
+          contract_address: string
+          created_at: string
+          direction: string | null
+          fundamentals_score: number | null
+          holder_data: Json | null
+          id: string
+          market_activity_score: number | null
+          on_chain_data: Json | null
+          price_data: Json | null
+          project_name: string
+          risk_level: string | null
+          risk_rating_score: number | null
+          risk_score: number | null
+          social_media_url: string | null
+          social_sentiment_score: number | null
+          token_stats: Json | null
+          value_opportunity_score: number | null
+          wallet_address: string | null
+        }
+        Insert: {
+          analysis?: Json | null
+          analysis_summary?: string | null
+          chain: string
+          confidence_score?: number
+          contract_address: string
+          created_at?: string
+          direction?: string | null
+          fundamentals_score?: number | null
+          holder_data?: Json | null
+          id?: string
+          market_activity_score?: number | null
+          on_chain_data?: Json | null
+          price_data?: Json | null
+          project_name: string
+          risk_level?: string | null
+          risk_rating_score?: number | null
+          risk_score?: number | null
+          social_media_url?: string | null
+          social_sentiment_score?: number | null
+          token_stats?: Json | null
+          value_opportunity_score?: number | null
+          wallet_address?: string | null
+        }
+        Update: {
+          analysis?: Json | null
+          analysis_summary?: string | null
+          chain?: string
+          confidence_score?: number
+          contract_address?: string
+          created_at?: string
+          direction?: string | null
+          fundamentals_score?: number | null
+          holder_data?: Json | null
+          id?: string
+          market_activity_score?: number | null
+          on_chain_data?: Json | null
+          price_data?: Json | null
+          project_name?: string
+          risk_level?: string | null
+          risk_rating_score?: number | null
+          risk_score?: number | null
+          social_media_url?: string | null
+          social_sentiment_score?: number | null
+          token_stats?: Json | null
+          value_opportunity_score?: number | null
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
+      tradenly_v3_api_cache: {
+        Row: {
+          cache_key: string
+          created_at: string
+          data: Json
+          expires_at: string
+          id: string
+          source: string
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string
+          data: Json
+          expires_at: string
+          id?: string
+          source: string
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string
+          data?: Json
+          expires_at?: string
+          id?: string
+          source?: string
+        }
+        Relationships: []
+      }
+      tradenly_v3_solana_analysis_results: {
+        Row: {
+          analysis: Json | null
+          analysis_summary: string | null
+          chain: string
+          confidence_score: number
+          contract_address: string
+          created_at: string
+          direction: string | null
+          fundamentals_score: number | null
+          holder_data: Json | null
+          id: string
+          market_activity_score: number | null
+          on_chain_data: Json | null
+          project_name: string
+          risk_level: string | null
+          risk_rating_score: number | null
+          risk_score: number | null
+          social_media_url: string | null
+          social_sentiment_score: number | null
+          token_metadata: Json | null
+          value_opportunity_score: number | null
+          wallet_address: string | null
+        }
+        Insert: {
+          analysis?: Json | null
+          analysis_summary?: string | null
+          chain?: string
+          confidence_score?: number
+          contract_address: string
+          created_at?: string
+          direction?: string | null
+          fundamentals_score?: number | null
+          holder_data?: Json | null
+          id?: string
+          market_activity_score?: number | null
+          on_chain_data?: Json | null
+          project_name: string
+          risk_level?: string | null
+          risk_rating_score?: number | null
+          risk_score?: number | null
+          social_media_url?: string | null
+          social_sentiment_score?: number | null
+          token_metadata?: Json | null
+          value_opportunity_score?: number | null
+          wallet_address?: string | null
+        }
+        Update: {
+          analysis?: Json | null
+          analysis_summary?: string | null
+          chain?: string
+          confidence_score?: number
+          contract_address?: string
+          created_at?: string
+          direction?: string | null
+          fundamentals_score?: number | null
+          holder_data?: Json | null
+          id?: string
+          market_activity_score?: number | null
+          on_chain_data?: Json | null
+          project_name?: string
+          risk_level?: string | null
+          risk_rating_score?: number | null
+          risk_score?: number | null
+          social_media_url?: string | null
+          social_sentiment_score?: number | null
+          token_metadata?: Json | null
+          value_opportunity_score?: number | null
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
       typescript_definitions: {
         Row: {
           content: string
@@ -1725,6 +1899,27 @@ export type Database = {
         Args: {
           p_contract_address: string
           p_chain: string
+        }
+        Returns: {
+          analysis_exists: boolean
+          created_at: string
+          is_recent: boolean
+        }[]
+      }
+      get_token_v3_analysis_status: {
+        Args: {
+          p_contract_address: string
+          p_chain: string
+        }
+        Returns: {
+          analysis_exists: boolean
+          created_at: string
+          is_recent: boolean
+        }[]
+      }
+      get_token_v3_solana_analysis_status: {
+        Args: {
+          p_contract_address: string
         }
         Returns: {
           analysis_exists: boolean
