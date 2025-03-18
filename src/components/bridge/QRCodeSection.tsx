@@ -1,4 +1,3 @@
-
 import { QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -31,10 +30,8 @@ export const QRCodeSection = ({
   const [debugInfo, setDebugInfo] = useState<any>(null);
 
   useEffect(() => {
-    // Check if we have the necessary parameters
     if (!depositAddress || !orderId || !token) return;
 
-    // Only fetch QR codes if the address is not in a loading state
     if (
       depositAddress === "Generating deposit address..." ||
       depositAddress === "Generating address..."
@@ -47,17 +44,14 @@ export const QRCodeSection = ({
       setDebugInfo(null);
 
       try {
-        // Prepare request body for the QR code API
         const requestBody = {
           id: orderId,
           token: token,
-          // Default to EXCHANGE option
           choice: "EXCHANGE",
         };
 
         console.log("Fetching QR codes with:", requestBody);
 
-        // Store request details for debug
         const requestDetails = {
           url: "https://supabase-edge-function/bridge-qr",
           method: "POST",
@@ -65,13 +59,11 @@ export const QRCodeSection = ({
           requestBodyString: JSON.stringify(requestBody)
         };
 
-        // Build the cURL command for debugging
         const curlCommand = `curl -X POST "https://[your-supabase-project].functions.supabase.co/bridge-qr" \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer [your-supabase-anon-key]" \\
   -d '${JSON.stringify(requestBody)}'`;
 
-        // Call the bridge-qr Supabase function
         const startTime = Date.now();
         const response = await invokeFunctionWithRetry("bridge-qr", {
           body: requestBody,
@@ -80,7 +72,6 @@ export const QRCodeSection = ({
 
         console.log("QR code API response:", response);
 
-        // Store response details for debug
         const responseDetails = {
           status: response?.code === 0 ? "200 OK" : "Error",
           statusText: response?.code === 0 ? "Success" : "Failed",
@@ -88,7 +79,6 @@ export const QRCodeSection = ({
           responseTime: `${endTime - startTime}ms`,
         };
 
-        // Construct debug info
         const newDebugInfo = {
           requestDetails,
           responseDetails,
@@ -106,7 +96,6 @@ export const QRCodeSection = ({
         console.error("Error fetching QR codes:", err);
         setError(err instanceof Error ? err.message : "Unknown error");
 
-        // Update debug info with error
         if (debugInfo) {
           setDebugInfo({
             ...debugInfo,
@@ -117,24 +106,20 @@ export const QRCodeSection = ({
           });
         }
 
-        // Fall back to the previous implementation if API fails
         fallbackToLocalQrGeneration();
       } finally {
         setLoading(false);
       }
     };
 
-    // Fallback to local QR code generation if the API call fails
     const fallbackToLocalQrGeneration = () => {
       console.log("Falling back to local QR code generation");
 
-      // Generate QR code with address only
       let addressQrData = depositAddress;
       if (tag && fromCurrency === "xrp") {
         addressQrData = `${depositAddress}?dt=${tag}`;
       }
 
-      // Generate QR code with amount
       let amountQrData = depositAddress;
       if (fromCurrency === "btc") {
         amountQrData = `bitcoin:${depositAddress}?amount=${depositAmount}`;
@@ -146,7 +131,6 @@ export const QRCodeSection = ({
         amountQrData = `${depositAddress}?amount=${depositAmount}`;
       }
 
-      // Create QR code URLs
       const addressQrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
         addressQrData
       )}&size=200x200&margin=10`;
@@ -155,7 +139,6 @@ export const QRCodeSection = ({
         amountQrData
       )}&size=200x200&margin=10`;
 
-      // Set local QR codes
       setQrTypes([
         {
           title: "With amount",
@@ -169,7 +152,6 @@ export const QRCodeSection = ({
         },
       ]);
 
-      // Update debug info for fallback
       setDebugInfo(prev => ({
         ...prev,
         fallback: {
@@ -182,7 +164,6 @@ export const QRCodeSection = ({
       }));
     };
 
-    // Fetch QR codes when component mounts or dependencies change
     fetchQrCodes();
   }, [depositAddress, depositAmount, fromCurrency, tag, orderId, token]);
 
@@ -202,8 +183,7 @@ export const QRCodeSection = ({
 
   const toggleDebug = () => {
     if (debugInfo) {
-      toast({
-        description: "Debug panel is displayed below the QR code section",
+      toast("Debug panel is displayed below the QR code section", {
         className: "bg-[#0FA0CE] text-white font-medium",
       });
     }
