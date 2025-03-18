@@ -21,7 +21,8 @@ export const API_CONFIG = {
   // Direct API URL for backend requests
   FF_API_URL: "https://ff.io/api/v2",
   
-  // API credentials - updated with new keys
+  // API credentials - these are now used only as fallbacks
+  // The actual keys are stored in Supabase secrets and used in edge functions
   FF_API_KEY: "lvW17QIF4SzDIzxBLg2oUandukccoZjwhsNGs3GC",
   FF_API_SECRET: "RpPfjnFZx1TfRx6wmYzOgo5Y6QK3OgIETceFZLni",
   

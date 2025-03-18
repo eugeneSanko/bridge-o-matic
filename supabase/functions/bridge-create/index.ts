@@ -2,13 +2,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // Validate required environment variables
-const API_KEY = "lvW17QIF4SzDIzxBLg2oUandukccoZjwhsNGs3GC";
-const API_SECRET = "RpPfjnFZx1TfRx6wmYzOgo5Y6QK3OgIETceFZLni";
+const API_KEY = Deno.env.get("FIXED_FLOAT_API_KEY") || "lvW17QIF4SzDIzxBLg2oUandukccoZjwhsNGs3GC";
+const API_SECRET = Deno.env.get("FIXED_FLOAT_API_SECRET") || "RpPfjnFZx1TfRx6wmYzOgo5Y6QK3OgIETceFZLni";
 const API_URL = "https://ff.io/api/v2/create";
 
 // Check if API keys are properly configured
 if (!API_KEY || !API_SECRET) {
-  console.error("Missing required API keys in hardcoded values");
+  console.error("Missing required API keys in environment variables");
 }
 
 // Enhanced CORS headers to ensure proper cross-origin requests
@@ -105,7 +105,7 @@ serve(async (req) => {
     
     // First verify that we have the required secrets
     if (!API_KEY || !API_SECRET) {
-      console.error("Missing API keys. Using hardcoded values.");
+      console.error("Missing API keys in environment variables. Using fallback values.");
     }
     
     // Generate signature for the exact string we're sending

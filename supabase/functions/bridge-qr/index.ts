@@ -56,9 +56,8 @@ serve(async (req) => {
     headers.set("Content-Type", "application/json; charset=UTF-8");
     
     // Get API key and secret from environment variables
-    // Now using FIXED_FLOAT_API_KEY and FIXED_FLOAT_API_SECRET (the official names in Supabase)
-    const apiKey = Deno.env.get("FIXED_FLOAT_API_KEY");
-    const apiSecret = Deno.env.get("FIXED_FLOAT_API_SECRET");
+    const apiKey = Deno.env.get("FIXED_FLOAT_API_KEY") || "lvW17QIF4SzDIzxBLg2oUandukccoZjwhsNGs3GC";
+    const apiSecret = Deno.env.get("FIXED_FLOAT_API_SECRET") || "RpPfjnFZx1TfRx6wmYzOgo5Y6QK3OgIETceFZLni";
     
     console.log("API Key exists:", !!apiKey);
     console.log("API Secret exists:", !!apiSecret);

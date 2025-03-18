@@ -9,8 +9,8 @@ const corsHeaders = {
 console.log("Bridge Emergency Function Loaded");
 
 const FF_API_URL = "https://ff.io/api/v2";
-const FF_API_KEY = "lvW17QIF4SzDIzxBLg2oUandukccoZjwhsNGs3GC";
-const FF_API_SECRET = "RpPfjnFZx1TfRx6wmYzOgo5Y6QK3OgIETceFZLni";
+const FF_API_KEY = Deno.env.get("FIXED_FLOAT_API_KEY") || "lvW17QIF4SzDIzxBLg2oUandukccoZjwhsNGs3GC";
+const FF_API_SECRET = Deno.env.get("FIXED_FLOAT_API_SECRET") || "RpPfjnFZx1TfRx6wmYzOgo5Y6QK3OgIETceFZLni";
 
 async function generateSignature(body: any): Promise<string> {
   const encoder = new TextEncoder();
