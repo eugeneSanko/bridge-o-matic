@@ -86,17 +86,14 @@ serve(async (req) => {
   try {
     // Parse request body and log it
     const requestData = await req.json();
-    const requestBodyStr = JSON.stringify(requestData);
-    
-    console.log("Request body:", requestBodyStr);
+    console.log("Original request body:", JSON.stringify(requestData));
     
     // Create a detailed debug object
     const debugInfo = {
       requestDetails: {
         url: API_URL,
         method: "POST",
-        requestBody: requestData,
-        requestBodyString: requestBodyStr,
+        originalRequestBody: requestData,
       },
       signatureInfo: {},
       responseDetails: {},
@@ -110,21 +107,26 @@ serve(async (req) => {
     }
     
     // Add refcode to the request data
+    // Important: Create a new object to avoid mutating the original request
     const requestDataWithRefcode = {
       ...requestData,
       refcode: REF_CODE
     };
     
-    // Update the request body string with the refcode
+    // Convert to string for signature and request
     const updatedRequestBodyStr = JSON.stringify(requestDataWithRefcode);
+    
     console.log("Updated request body with refcode:", updatedRequestBodyStr);
+    debugInfo.requestDetails.modifiedRequestBody = requestDataWithRefcode;
+    debugInfo.requestDetails.refcode = REF_CODE;
     
     // Generate signature for the exact string we're sending
     try {
       const signature = await generateSignature(updatedRequestBodyStr);
       debugInfo.signatureInfo = {
         signature: signature,
-        apiKey: API_KEY
+        apiKey: API_KEY,
+        signatureGeneratedFor: updatedRequestBodyStr
       };
       
       console.log("Generated signature:", signature);
@@ -144,6 +146,7 @@ serve(async (req) => {
       console.log(curlCommand);
       
       // Make request to FixedFloat API
+      console.log("Sending request to FixedFloat API...");
       const response = await fetch(API_URL, {
         method: "POST",
         headers: {
