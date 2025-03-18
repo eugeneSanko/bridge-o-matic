@@ -1,9 +1,7 @@
-
 import { useState, useCallback } from 'react';
-import { API_CONFIG } from "@/config/api";
+import { API_CONFIG, generateFixedFloatSignature } from "@/config/api";
 import { toast } from "@/hooks/use-toast";
 import { PriceResponse, BridgeError, Currency, ApiOrderResponse, OrderResponse } from "@/types/bridge";
-import CryptoJS from 'crypto-js';
 import { supabase } from "@/integrations/supabase/client";
 
 const MOCK_CURRENCIES: Currency[] = [
@@ -73,10 +71,7 @@ export function useBridgeService() {
   const [lastPriceCheck, setLastPriceCheck] = useState<PriceResponse | null>(null);
   
   const generateApiSignature = (body: any = {}) => {
-    const bodyString = Object.keys(body).length ? JSON.stringify(body) : '{}';
-    const signature = CryptoJS.HmacSHA256(bodyString, API_CONFIG.FF_API_SECRET).toString();
-    console.log('Generated API signature:', signature);
-    return signature;
+    return generateFixedFloatSignature(body);
   };
   
   const fetchCurrencies = useCallback(async () => {

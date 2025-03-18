@@ -1,5 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import * as crypto from 'crypto';
 import { toast } from "@/hooks/use-toast";
 
 // Base URL for Supabase functions

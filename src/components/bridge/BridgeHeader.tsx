@@ -1,10 +1,8 @@
-
 import { Button } from "@/components/ui/button";
 import { Beaker } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
-import { API_CONFIG } from "@/config/api";
-import CryptoJS from 'crypto-js';
+import { API_CONFIG, generateFixedFloatSignature } from "@/config/api";
 import { DebugPanel } from "./DebugPanel";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -16,11 +14,11 @@ interface DebugInfo {
     requestBody: any;
     requestBodyString: string;
   };
-  signatureInfo: {
+  signatureInfo?: {
     signature: string;
-    apiKey: string;
+    apiKey?: string;
   };
-  curlCommand: string;
+  curlCommand?: string;
   responseDetails: {
     status: string;
     body: string;
@@ -58,15 +56,15 @@ export const BridgeHeader = () => {
       
       const bodyString = JSON.stringify(sampleRequestBody);
       
-      // Create signature locally to show in debug
-      const signature = CryptoJS.HmacSHA256(bodyString, API_CONFIG.FF_API_SECRET).toString();
-      console.log("Generated API signature:", signature);
+      // Generate a simulated signature for display purposes only
+      const signature = generateFixedFloatSignature(sampleRequestBody);
+      console.log("Generated simulated signature:", signature);
       
-      // Prepare curl command for reference
+      // Prepare curl command for reference (with placeholders instead of actual keys)
       const curlCommand = `curl -X POST \\
   -H "Accept: application/json" \\
-  -H "X-API-KEY: ${API_CONFIG.FF_API_KEY}" \\
-  -H "X-API-SIGN: $(echo -n '${bodyString}' | openssl dgst -sha256 -hmac "${API_CONFIG.FF_API_SECRET}" | awk '{print $2}')" \\
+  -H "X-API-KEY: [YOUR_API_KEY]" \\
+  -H "X-API-SIGN: [GENERATED_SIGNATURE]" \\
   -H "Content-Type: application/json; charset=UTF-8" \\
   -d '${bodyString}' \\
   "https://ff.io/api/v2/create" -L`;
@@ -81,7 +79,6 @@ export const BridgeHeader = () => {
         },
         signatureInfo: {
           signature: signature,
-          apiKey: API_CONFIG.FF_API_KEY
         },
         curlCommand,
         responseDetails: {
