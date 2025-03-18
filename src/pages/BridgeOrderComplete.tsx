@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Check, CircleCheckBig, Copy, ExternalLink } from "lucide-react";
@@ -24,7 +23,6 @@ interface OrderData {
   to_currency_name?: string;
 }
 
-// API response interface
 interface ApiOrderData {
   id: string;
   type: string;
@@ -122,14 +120,12 @@ const BridgeOrderComplete = () => {
         console.log("Order details fetched successfully:", result.data);
         setOrderDetails(result.data);
         
-        // Verify order is actually completed
         if (result.data.status !== "completed") {
           console.log(`Order status is ${result.data.status}, not completed. Redirecting to order page.`);
           navigate(`/bridge/awaiting-deposit?orderId=${orderId}`);
           return;
         }
 
-        // Also need to fetch detailed API data for transaction info
         try {
           console.log("Fetching detailed transaction data");
           const statusResult = await invokeFunctionWithRetry('bridge-status', {
@@ -166,13 +162,11 @@ const BridgeOrderComplete = () => {
     fetchOrderDetails();
   }, [orderId, apiAttempted, navigate]);
 
-  // Format UNIX timestamp to human-readable date
   const formatTimestamp = (timestamp: number | undefined) => {
     if (!timestamp) return "N/A";
     return new Date(timestamp * 1000).toLocaleString();
   };
 
-  // Function to truncate transaction IDs for display
   const truncateTxId = (txId: string | undefined) => {
     if (!txId) return "N/A";
     if (txId.length <= 20) return txId;
@@ -207,7 +201,6 @@ const BridgeOrderComplete = () => {
     );
   }
 
-  // Extract transaction data for display
   const fromTx = apiOrderData?.from?.tx;
   const toTx = apiOrderData?.to?.tx;
 
@@ -252,7 +245,6 @@ const BridgeOrderComplete = () => {
           </div>
         </div>
 
-        {/* Transaction details with data from API */}
         <div className="glass-card p-0 rounded-xl mb-9 overflow-hidden">
           <div className="glass-card p-6 md:p-8 rounded-xl mb-4">
             <div className="grid grid-cols-4 gap-4 md:gap-8 relative">
@@ -295,7 +287,6 @@ const BridgeOrderComplete = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 boarder-0">
-            {/* Order Details Card */}
             <div className="glass-card p-6 space-y-4">
               <div className="border-b border-white/10 pb-3">
                 <div className="text-gray-400 text-sm">Order ID</div>
@@ -341,11 +332,10 @@ const BridgeOrderComplete = () => {
               </div>
             </div>
 
-            {/* Confirmation Card */}
             <div className="glass-card p-6 flex flex-col items-center justify-center relative overflow-hidden md:col-span-2">
               <div className="hidden md:block absolute left-0 -bottom-14 opacity-50">
                 <img
-                  src="/lovable-uploads/robo.png"
+                  src="https://tradenly.xyz/wp-content/uploads/2024/12/AlbedoBase_XL_Design_a_futuristic_space_robot_fighter_sleek_an_0-removebg-preview.png"
                   alt="Robot"
                   className="w-40 h-40 md:w-[15rem] md:h-[22rem] lg:w-[22rem] lg:h-[25rem] object-contain"
                 />
@@ -384,9 +374,7 @@ const BridgeOrderComplete = () => {
             </div>
           </div>
 
-          {/* Transaction Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            {/* Accepted Transaction Info */}
             <div className="glass-card p-6 border-0">
               <h3 className="text-xl font-semibold text-white mb-4">
                 Accepted transaction info
@@ -413,14 +401,7 @@ const BridgeOrderComplete = () => {
 
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">View Receipt</span>
-                  <a
-                    className="flex gap-2 text-blue-400"
-                    href={`https://ff.io/order/${apiOrderData?.id || orderDetails.ff_order_id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
+                  <span className="text-gray-400">Available in dashboard</span>
                 </div>
 
                 <div className="flex justify-between items-center">
@@ -458,7 +439,6 @@ const BridgeOrderComplete = () => {
               </div>
             </div>
 
-            {/* Sent Transaction Info */}
             <div className="glass-card p-6 border-0">
               <h3 className="text-xl font-semibold text-white mb-4">
                 Sent transaction info
@@ -485,14 +465,7 @@ const BridgeOrderComplete = () => {
 
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">View Receipt</span>
-                  <a
-                    className="flex gap-2 text-blue-400"
-                    href={`https://ff.io/order/${apiOrderData?.id || orderDetails.ff_order_id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
+                  <span className="text-gray-400">Available in dashboard</span>
                 </div>
 
                 <div className="flex justify-between items-center">
@@ -529,6 +502,14 @@ const BridgeOrderComplete = () => {
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="glass-card p-4 mt-4 bg-slate-800/30">
+            <p className="text-xs text-gray-400 text-center">
+              By using Tradenly Bridge, you agree to our <a href="#" className="text-blue-400 hover:underline">Terms of Service</a> and <a href="#" className="text-blue-400 hover:underline">Privacy Policy</a>. 
+              Tradenly is not liable for any loss of funds due to blockchain errors, network issues, or third-party service failures. 
+              Exchange services are provided in partnership with FixedFloat.
+            </p>
           </div>
         </div>
 
