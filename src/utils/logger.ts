@@ -3,6 +3,9 @@
  * Logger utility for managing application logs
  */
 
+// Enable/disable all logs using this flag
+const LOGGING_ENABLED = false; 
+
 // Enable/disable debug logs based on environment
 const isDevMode = import.meta.env.DEV || false;
 const isDebugEnabled = isDevMode || import.meta.env.VITE_DEBUG_LOGS === 'true';
@@ -12,7 +15,7 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 // Logger configuration
 const loggerConfig = {
-  enabled: true,
+  enabled: LOGGING_ENABLED,
   debugEnabled: isDebugEnabled,
   prefix: '[Bridge]',
 };
@@ -46,9 +49,10 @@ export const logger = {
   },
 
   /**
-   * Log error messages (always enabled)
+   * Log error messages (also affected by global logging flag)
    */
   error: (message: string, ...data: any[]) => {
+    if (!loggerConfig.enabled) return;
     console.error(`${loggerConfig.prefix} ${message}`, ...data);
   },
 
@@ -87,6 +91,7 @@ export const createLogger = (prefix: string) => {
       console.warn(`[${prefix}] ${message}`, ...data);
     },
     error: (message: string, ...data: any[]) => {
+      if (!loggerConfig.enabled) return;
       console.error(`[${prefix}] ${message}`, ...data);
     },
   };
