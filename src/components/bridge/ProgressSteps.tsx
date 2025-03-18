@@ -1,4 +1,3 @@
-
 import {
   Loader,
   Clock,
@@ -15,6 +14,7 @@ import { Card } from "../ui/card";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { TransactionInfoItem } from "./TransactionInfoItem";
+import { useMobile } from "@/hooks/use-mobile";
 
 interface ProgressStepsProps {
   currentStatus?: string;
@@ -28,6 +28,7 @@ export const ProgressSteps = ({
   // State to track final status after normalization
   const [normalizedStatus, setNormalizedStatus] = useState(currentStatus);
   const [animate, setAnimate] = useState(false);
+  const isMobile = useMobile();
 
   // Log the current status to debug
   console.log("ProgressSteps received status:", currentStatus);
@@ -198,9 +199,11 @@ export const ProgressSteps = ({
     ];
 
     return (
-      <div className="grid grid-cols-4 gap-4 md:gap-8 relative">
+      <div className="grid grid-cols-4 gap-2 md:gap-8 relative">
         {steps.map((step, i) => {
           const Icon = step.icon;
+          const isLastStep = i === steps.length - 1;
+          
           return (
             <motion.div
               key={i}
@@ -223,36 +226,38 @@ export const ProgressSteps = ({
                   : "text-gray-500"
               } ${animate ? "animate-pulse" : ""}`}
             >
-              <div className="flex justify-center mb-3 -ml-10">
+              <div className={`flex justify-center mb-2 md:mb-3 ${isMobile ? "" : "-ml-10"}`}>
                 <Icon
-                  className={`h-6 w-6 md:h-8 md:w-8 ${
+                  className={`h-5 w-5 md:h-8 md:w-8 ${
                     step.active && step.icon === Loader
                       ? "animate-spin [animation-duration:3s]"
                       : ""
                   }`}
                 />
               </div>
-              <div className="text-xs md:text-sm font-medium -ml-10">
-                {step.label}
+              <div className={`text-xs md:text-sm font-medium ${isMobile ? "" : "-ml-10"} truncate`}>
+                {isMobile && step.label.length > 10 
+                  ? step.label.split(' ')[0] 
+                  : step.label}
               </div>
               {step.status === "failed" && (
-                <div className="text-xs text-red-500 mt-1 -ml-10">
+                <div className={`text-xs text-red-500 mt-1 ${isMobile ? "hidden" : "-ml-10"}`}>
                   Transaction failed
                 </div>
               )}
               {step.status === "refunded" && (
-                <div className="text-xs text-yellow-500 mt-1 -ml-10">
+                <div className={`text-xs text-yellow-500 mt-1 ${isMobile ? "hidden" : "-ml-10"}`}>
                   Funds refunded
                 </div>
               )}
               {step.status === "expired" && (
-                <div className="text-xs text-red-500 mt-1 -ml-10">
+                <div className={`text-xs text-red-500 mt-1 ${isMobile ? "hidden" : "-ml-10"}`}>
                   Time window expired
                 </div>
               )}
               {i < 3 && (
                 <div
-                  className={`absolute top-4 left-[60%] w-[80%] h-[2px] ${
+                  className={`absolute top-3 md:top-4 left-[60%] w-[80%] h-[1px] md:h-[2px] ${
                     activeStep > i ? "bg-green-700" : "bg-gray-700"
                   }`}
                 />
@@ -272,33 +277,33 @@ export const ProgressSteps = ({
     const toTx = apiResponse?.to?.tx || {};
 
     return (
-      <div className=" p-0 rounded-xl mb-9 overflow-hidden">
-        <div className="glass-card p-6 md:p-8 rounded-xl mb-4">
+      <div className="p-0 rounded-xl mb-4 md:mb-9 overflow-hidden">
+        <div className="glass-card p-3 md:p-8 rounded-xl mb-4">
           {renderStepper()}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 boarder-0">
           {/* Order Details Card (Left) */}
-          <Card className=" p-6 space-y-4 glass-card">
-            <div className="border-b border-white/10 pb-3">
-              <div className="text-gray-400 text-sm">Order ID</div>
-              <div className="text-[#f0b90b] font-mono font-semibold text-xl flex items-center gap-2">
+          <Card className="p-4 md:p-6 space-y-3 md:space-y-4 glass-card">
+            <div className="border-b border-white/10 pb-2 md:pb-3">
+              <div className="text-gray-400 text-xs md:text-sm">Order ID</div>
+              <div className="text-[#f0b90b] font-mono font-semibold text-base md:text-xl flex items-center gap-2">
                 {apiResponse?.id || orderDetails?.orderId || "N/A"}
-                <Button variant="ghost" size="icon" className="h-6 w-6">
-                  <Copy className="h-4 w-4 text-gray-400" />
+                <Button variant="ghost" size="icon" className="h-5 w-5 md:h-6 md:w-6">
+                  <Copy className="h-3 w-3 md:h-4 md:w-4 text-gray-400" />
                 </Button>
               </div>
             </div>
 
-            <div className="border-b border-white/10 pb-3">
-              <div className="text-gray-400 text-sm">Order status</div>
-              <div className="text-green-500 font-medium text-xl">
+            <div className="border-b border-white/10 pb-2 md:pb-3">
+              <div className="text-gray-400 text-xs md:text-sm">Order status</div>
+              <div className="text-green-500 font-medium text-base md:text-xl">
                 Completed
               </div>
             </div>
 
-            <div className="border-b border-white/10 pb-3">
-              <div className="text-gray-400 text-sm">Order type</div>
+            <div className="border-b border-white/10 pb-2 md:pb-3">
+              <div className="text-gray-400 text-xs md:text-sm">Order type</div>
               <div className="text-white text-lg">
                 {apiResponse?.type === "fixed"
                   ? "Fixed rate"
@@ -306,22 +311,22 @@ export const ProgressSteps = ({
               </div>
             </div>
 
-            <div className="border-b border-white/10 pb-3">
-              <div className="text-gray-400 text-sm">Creation Time</div>
+            <div className="border-b border-white/10 pb-2 md:pb-3">
+              <div className="text-gray-400 text-xs md:text-sm">Creation Time</div>
               <div className="text-white text-lg">
                 {formatTimestamp(apiResponse?.time?.reg)}
               </div>
             </div>
 
-            <div className="border-b border-white/10 pb-3">
-              <div className="text-gray-400 text-sm">Received Time</div>
+            <div className="border-b border-white/10 pb-2 md:pb-3">
+              <div className="text-gray-400 text-xs md:text-sm">Received Time</div>
               <div className="text-white text-lg">
                 {formatTimestamp(fromTx?.timeReg)}
               </div>
             </div>
 
             <div>
-              <div className="text-gray-400 text-sm">Completed Time</div>
+              <div className="text-gray-400 text-xs md:text-sm">Completed Time</div>
               <div className="text-white text-lg">
                 {formatTimestamp(apiResponse?.time?.finish)}
               </div>
@@ -329,7 +334,7 @@ export const ProgressSteps = ({
           </Card>
 
           {/* Confirmation Card (Right) */}
-          <Card className="glass-card p-6 flex flex-col items-center justify-center relative overflow-hidden md:col-span-2">
+          <Card className="glass-card p-4 md:p-6 flex flex-col items-center justify-center relative overflow-hidden md:col-span-2">
             {/* Robot image on the left */}
             <div className="hidden md:block absolute left-0 -bottom-14 opa-50">
               <img
@@ -477,8 +482,9 @@ export const ProgressSteps = ({
   }
 
   return (
-    <div className="glass-card p-6 md:p-8 rounded-xl mb-9">
+    <div className="glass-card p-3 md:p-6 lg:p-8 rounded-xl mb-6 md:mb-9">
       {renderStepper()}
     </div>
   );
 };
+

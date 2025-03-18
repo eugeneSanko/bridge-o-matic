@@ -109,7 +109,7 @@ export const BridgeTransaction = ({
       : apiStatus;
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] pt-12 md:pt-24 px-4 md:px-8 pb-16 md:pb-24">
+    <div className="min-h-screen bg-[#0D0D0D] pt-6 md:pt-24 px-3 md:px-8 pb-10 md:pb-24">
       <div className="max-w-6xl mx-auto">
         <TransactionSummary
           fromCurrency={orderDetails.fromCurrency}
@@ -130,7 +130,7 @@ export const BridgeTransaction = ({
 
         {!isOrderComplete && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 mb-6 md:mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 mb-4 md:mb-12">
               <OrderDetails
                 orderId={orderDetails.orderId}
                 orderType={orderDetails.orderType}
@@ -168,7 +168,7 @@ export const BridgeTransaction = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6">
               <InformationSection />
               <NotificationSection />
             </div>

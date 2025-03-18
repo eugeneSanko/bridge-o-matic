@@ -1,8 +1,8 @@
 
 export const InformationSection = () => (
-  <div className="col-span-12 md:col-span-8 glass-card p-4 md:p-6 rounded-xl">
-    <h3 className="text-lg font-medium mb-3 md:mb-4">Information</h3>
-    <div className="space-y-3 md:space-y-4 text-xs md:text-sm text-gray-400">
+  <div className="col-span-12 md:col-span-8 glass-card p-3 md:p-6 rounded-xl">
+    <h3 className="text-base md:text-lg font-medium mb-2 md:mb-4">Information</h3>
+    <div className="space-y-2 md:space-y-4 text-xs md:text-sm text-gray-400">
       <p>
         Your transaction is being processed. The exchange partner will send your coins as soon as your transfer receives the required number of confirmations from the blockchain network.
       </p>
