@@ -5,6 +5,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 const API_KEY = Deno.env.get("FIXED_FLOAT_API_KEY");
 const API_SECRET = Deno.env.get("FIXED_FLOAT_API_SECRET");
 const REF_CODE = Deno.env.get("FIXED_FLOAT_REF_CODE"); 
+const AFF_TAX = Deno.env.get("FIXED_FLOAT_AFF_TAX") || "1"; // Default to 1 if not set
 const API_URL = "https://ff.io/api/v2/create";
 
 // Check if API keys are properly configured
@@ -142,11 +143,11 @@ serve(async (req) => {
     // Important: Create a new object to avoid mutating the original request
     const requestDataWithAffiliateInfo = { 
       ...requestData, 
-      refcode: REF_CODE,  // Add refcode 
-      afftax: 0.01        // Add afftax (1%)
+      refcode: REF_CODE,       // Add refcode 
+      afftax: parseInt(AFF_TAX, 10)  // Add afftax from env var
     };
     
-    log.info(`Using refcode: ${REF_CODE} and afftax: 0.01 (1%)`);
+    log.info(`Using refcode: ${REF_CODE} and afftax: ${AFF_TAX}`);
     
     // Convert to string for signature and request
     const updatedRequestBodyStr = JSON.stringify(requestDataWithAffiliateInfo);
@@ -156,7 +157,7 @@ serve(async (req) => {
     if (REF_CODE) {
       debugInfo.requestDetails.refcode = REF_CODE;
     }
-    debugInfo.requestDetails.afftax = 0.01;
+    debugInfo.requestDetails.afftax = parseInt(AFF_TAX, 10);
     
     // Generate signature for the exact string we're sending
     try {

@@ -5,6 +5,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 const API_KEY = Deno.env.get("FIXED_FLOAT_API_KEY");
 const API_SECRET = Deno.env.get("FIXED_FLOAT_API_SECRET");
 const REF_CODE = Deno.env.get("FIXED_FLOAT_REF_CODE");
+const AFF_TAX = Deno.env.get("FIXED_FLOAT_AFF_TAX") || "1"; // Default to 1 if not set
 
 // CORS headers
 const corsHeaders = {
@@ -71,7 +72,7 @@ serve(async (req) => {
       direction: direction,
       type: orderType,
       refcode: REF_CODE,  // Added refcode
-      afftax: 0.01        // Added afftax (1%)
+      afftax: parseInt(AFF_TAX, 10)  // Added afftax from env var
     };
     
     // Log the complete request body

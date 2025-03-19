@@ -6,3 +6,4 @@ export * from './SignatureSection';
 export * from './CurlCommandSection';
 export * from './ResponseSection';
 export * from './ErrorSection';
+export * from './AffiliateTaxSection';
