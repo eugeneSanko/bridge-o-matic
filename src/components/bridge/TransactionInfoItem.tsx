@@ -2,7 +2,7 @@
 import { Copy, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { getExplorerUrl, hasExplorerUrl } from "@/utils/explorerUtils";
+import { getExplorerUrl, hasExplorerUrl, getNetworkName } from "@/utils/explorerUtils";
 
 interface TransactionInfoItemProps {
   label: string;
@@ -57,6 +57,9 @@ export const TransactionInfoItem = ({
   // 2. We have a valid explorer URL for this network
   const showExplorerLink = isTxId && explorerUrl !== null;
 
+  // Get a display name for the network if available
+  const networkDisplayName = network ? getNetworkName(network) : "";
+
   return (
     <div className="flex justify-between items-center py-2">
       <span className="text-gray-400">{label}</span>
@@ -87,6 +90,7 @@ export const TransactionInfoItem = ({
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-400 hover:text-blue-300"
+            title={`View on ${networkDisplayName} explorer`}
           >
             <Button variant="ghost" size="icon" className="h-6 w-6 p-0">
               <ExternalLink className="h-4 w-4 text-blue-400" />

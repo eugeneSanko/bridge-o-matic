@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { TransactionSummary } from "./TransactionSummary";
@@ -114,6 +115,10 @@ export const BridgeTransaction = ({
       ? "EMERGENCY"
       : apiStatus;
 
+  // Extract network information for explorer links
+  const fromNetwork = orderDetails.fromCurrency;
+  const toNetwork = orderDetails.toCurrency;
+
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-6 md:pt-24 px-3 md:px-8 pb-10 md:pb-24">
       <div className="max-w-6xl mx-auto">
@@ -154,6 +159,8 @@ export const BridgeTransaction = ({
                 onEmergencyRefund={onEmergencyRefund}
                 fromCurrency={orderDetails.fromCurrency}
                 fromCurrencyName={orderDetails.fromCurrencyName}
+                // Pass network information for explorer links
+                network={fromNetwork}
               />
               <AddressDetails
                 depositAddress={orderDetails.depositAddress}
@@ -164,6 +171,9 @@ export const BridgeTransaction = ({
                 fromCurrency={orderDetails.fromCurrency}
                 fromCurrencyName={orderDetails.fromCurrencyName}
                 currentStatus={displayStatus}
+                // Pass network information for explorer links
+                fromNetwork={fromNetwork}
+                toNetwork={toNetwork}
               />
 
               <QRCodeSection
