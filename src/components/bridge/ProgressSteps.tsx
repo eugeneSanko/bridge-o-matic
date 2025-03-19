@@ -339,7 +339,7 @@ export const ProgressSteps = ({
             {/* Updated robot image on the left */}
             <div className="hidden md:block absolute left-0 -bottom-14 opa-50">
               <img
-                src="https://tradenly.xyz/wp-content/uploads/2024/12/Al…ace_robot_fighter_sleek_an_0-removebg-preview.png"
+                src="https://tradenly.xyz/wp-content/uploads/2024/12/AlbedoBase_XL_Design_a_futuristic_space_robot_fighter_sleek_an_0-removebg-preview.png"
                 alt="Robot"
                 className="w-40 h-40 md:w-[15rem] md:h-[22rem] lg:w-[22rem] lg:h-[25rem] object-contain "
               />
