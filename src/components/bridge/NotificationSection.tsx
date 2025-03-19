@@ -1,4 +1,3 @@
-
 import { Bell } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -6,26 +5,16 @@ import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSearchParams } from "react-router-dom";
-import { logger } from "@/utils/logger";
-import { generateTransactionStatusUrl } from "@/utils/urlUtils";
 
-interface NotificationSectionProps {
-  orderDetails?: {
-    orderId: string;
-    fromCurrency: string;
-    toCurrency: string;
-    depositAmount: string;
-  };
-}
-
-export const NotificationSection = ({ orderDetails }: NotificationSectionProps) => {
+export const NotificationSection = () => {
   const [searchParams] = useSearchParams();
-  const orderId = orderDetails?.orderId || searchParams.get("orderId");
+  const orderId = searchParams.get("orderId");
   const token = searchParams.get("token") || "";
 
   const [email, setEmail] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   const handleSubscribe = async () => {
     if (!email || !email.includes("@")) {
@@ -49,61 +38,52 @@ export const NotificationSection = ({ orderDetails }: NotificationSectionProps) 
     setIsLoading(true);
 
     try {
-      logger.info(`Setting up email notifications for order ${orderId} to ${email}`);
+      console.log(
+        `Setting up email notifications for order ${orderId} to ${email}`
+      );
 
-      // First, register the email with FixedFloat's API
-      const { data: ffResponse, error: ffError } = await supabase.functions.invoke(
+      const { data, error } = await supabase.functions.invoke(
         "bridge-set-email",
         {
           body: { id: orderId, token, email },
         }
       );
 
-      if (ffError) {
-        logger.error("Edge function error when setting email with FF:", ffError);
-        throw new Error(`Could not set up email notifications: ${ffError.message}`);
+      if (error) {
+        console.error("Edge function error:", error);
+        setIsLoading(false);
+        setDebugInfo(error);
+
+        toast({
+          title: "Notification Error",
+          description: `Could not set up email notifications: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
       }
 
-      if (ffResponse.code !== 0) {
-        logger.error("API error when setting email with FF:", ffResponse);
-        throw new Error(ffResponse.msg || "Could not set up email notifications");
+      console.log("Email notification response:", data);
+
+      if (data.debugInfo) {
+        setDebugInfo(data.debugInfo);
       }
 
-      // Now send our own welcome email with the transaction URL and tracking link
-      if (orderDetails) {
-        const transactionStatusUrl = generateTransactionStatusUrl(orderId, token);
-        
-        const { data: emailResponse, error: emailError } = await supabase.functions.invoke(
-          "bridge-send-email",
-          {
-            body: {
-              email,
-              orderId,
-              token,
-              fromCurrency: orderDetails.fromCurrency,
-              toCurrency: orderDetails.toCurrency,
-              amount: orderDetails.depositAmount,
-              transactionUrl: transactionStatusUrl
-            },
-          }
-        );
-
-        if (emailError) {
-          logger.error("Error sending welcome email:", emailError);
-          // Continue despite error with welcome email - the FF notifications are set up
-        } else {
-          logger.info("Welcome email sent successfully:", emailResponse);
-        }
+      if (data.code === 0) {
+        setIsSubscribed(true);
+        toast({
+          title: "Notifications Set",
+          description: `You will receive email updates at ${email}`,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Notification Error",
+          description: data.msg || "Could not set up email notifications",
+          variant: "destructive",
+        });
       }
-
-      setIsSubscribed(true);
-      toast({
-        title: "Notifications Set",
-        description: `You will receive email updates at ${email}`,
-        variant: "default",
-      });
     } catch (error) {
-      logger.error("Error setting email notifications:", error);
+      console.error("Error setting email notifications:", error);
       toast({
         title: "Notification Error",
         description:
@@ -146,10 +126,9 @@ export const NotificationSection = ({ orderDetails }: NotificationSectionProps) 
         </div>
       ) : (
         <div className="text-sm text-gray-400">
-          <p className="bg-secondary/20 p-3 rounded-lg flex items-center">
-            <span className="mr-2">✓</span>
+          <p className="bg-secondary/20 p-3 rounded-lg">
             You will receive email notifications about your transaction status
-            at <span className="font-semibold ml-1">{email}</span>.
+            at <span className="font-semibold">{email}</span>.
           </p>
         </div>
       )}

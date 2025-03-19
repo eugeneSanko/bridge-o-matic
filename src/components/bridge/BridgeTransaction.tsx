@@ -172,7 +172,7 @@ export const BridgeTransaction = ({
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6">
               <InformationSection />
-              <NotificationSection orderDetails={orderDetails} />
+              <NotificationSection />
             </div>
           </>
         )}

@@ -1,9 +1,10 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // Validate required environment variables
 const API_KEY = Deno.env.get("FIXED_FLOAT_API_KEY");
 const API_SECRET = Deno.env.get("FIXED_FLOAT_API_SECRET");
-const REF_CODE = Deno.env.get("FIXED_FLOAT_REF_CODE") || "tradenly"; 
+const REF_CODE = Deno.env.get("FIXED_FLOAT_REF_CODE"); 
 const API_URL = "https://ff.io/api/v2/create";
 
 // Check if API keys are properly configured
