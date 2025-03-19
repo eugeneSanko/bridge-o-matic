@@ -120,7 +120,7 @@ serve(async (req) => {
       // Insert into bridge_transactions
       const { data: savedTx, error: saveTxError } = await supabase
         .from('bridge_transactions')
-        .insert([{
+        .insert({
           ff_order_id: transaction.ff_order_id,
           ff_order_token: transaction.ff_order_token,
           from_currency: transaction.from_currency,
@@ -130,7 +130,7 @@ serve(async (req) => {
           status: 'completed',
           deposit_address: transaction.deposit_address,
           client_metadata: clientMetadata
-        }]);
+        });
         
       if (saveTxError) {
         console.error("Error saving transaction to bridge_transactions:", saveTxError);

@@ -81,11 +81,11 @@ export const CompletedTransactionSaver = ({
           return;
         }
 
-        // Collect client metadata
+        // Collect client metadata - convert readonly array to regular array
         const clientMetadata = {
           ip: 'client-side',
           user_agent: navigator.userAgent,
-          languages: navigator.languages || [navigator.language],
+          languages: Array.from(navigator.languages || [navigator.language]),
           device: {
             width: window.innerWidth,
             height: window.innerHeight,
@@ -95,24 +95,22 @@ export const CompletedTransactionSaver = ({
           simulation: simulateSuccess
         };
 
-        // Insert the transaction data into the database
+        // Insert the transaction data into the database - pass a single object, not an array
         const { data, error } = await supabase
           .from('bridge_transactions')
-          .insert([
-            {
-              ff_order_id: orderDetails.orderId,
-              ff_order_token: orderDetails.ffOrderToken,
-              from_currency: orderDetails.fromCurrency,
-              to_currency: orderDetails.toCurrency,
-              amount: parseFloat(orderDetails.depositAmount),
-              destination_address: orderDetails.destinationAddress,
-              status: orderDetails.currentStatus,
-              deposit_address: orderDetails.depositAddress,
-              client_metadata: clientMetadata,
-              initial_rate: 0, // You might want to replace this with the actual rate
-              expiration_time: orderDetails.expiresAt || new Date().toISOString(),
-            }
-          ]);
+          .insert({
+            ff_order_id: orderDetails.orderId,
+            ff_order_token: orderDetails.ffOrderToken,
+            from_currency: orderDetails.fromCurrency,
+            to_currency: orderDetails.toCurrency,
+            amount: parseFloat(orderDetails.depositAmount),
+            destination_address: orderDetails.destinationAddress,
+            status: orderDetails.currentStatus,
+            deposit_address: orderDetails.depositAddress,
+            client_metadata: clientMetadata,
+            initial_rate: 0, // You might want to replace this with the actual rate
+            expiration_time: orderDetails.expiresAt || new Date().toISOString(),
+          });
 
         if (error) {
           logger.error("Error saving transaction:", error);
