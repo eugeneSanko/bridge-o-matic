@@ -1,3 +1,4 @@
+
 import {
   Loader,
   Clock,
@@ -335,10 +336,10 @@ export const ProgressSteps = ({
 
           {/* Confirmation Card (Right) */}
           <Card className="glass-card p-4 md:p-6 flex flex-col items-center justify-center relative overflow-hidden md:col-span-2">
-            {/* Robot image on the left */}
+            {/* Updated robot image on the left */}
             <div className="hidden md:block absolute left-0 -bottom-14 opa-50">
               <img
-                src="/lovable-uploads/robo.png"
+                src="https://tradenly.xyz/wp-content/uploads/2024/12/Al…ace_robot_fighter_sleek_an_0-removebg-preview.png"
                 alt="Robot"
                 className="w-40 h-40 md:w-[15rem] md:h-[22rem] lg:w-[22rem] lg:h-[25rem] object-contain "
               />

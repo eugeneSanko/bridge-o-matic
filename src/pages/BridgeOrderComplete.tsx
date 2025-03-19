@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Check, CircleCheckBig, Copy, ExternalLink } from "lucide-react";
@@ -24,7 +23,6 @@ interface OrderData {
   to_currency_name?: string;
 }
 
-// API response interface
 interface ApiOrderData {
   id: string;
   type: string;
@@ -122,14 +120,12 @@ const BridgeOrderComplete = () => {
         console.log("Order details fetched successfully:", result.data);
         setOrderDetails(result.data);
         
-        // Verify order is actually completed
         if (result.data.status !== "completed") {
           console.log(`Order status is ${result.data.status}, not completed. Redirecting to order page.`);
           navigate(`/bridge/awaiting-deposit?orderId=${orderId}`);
           return;
         }
 
-        // Also need to fetch detailed API data for transaction info
         try {
           console.log("Fetching detailed transaction data");
           const statusResult = await invokeFunctionWithRetry('bridge-status', {
@@ -148,7 +144,11 @@ const BridgeOrderComplete = () => {
           }
         } catch (statusError) {
           console.error("Error fetching transaction details:", statusError);
-          // Continue with basic order data even if detailed data fails
+          toast({
+            title: "Error",
+            description: "Failed to load order details",
+            variant: "destructive"
+          });
         }
       } catch (error) {
         console.error("Error fetching order details:", error);
@@ -166,13 +166,11 @@ const BridgeOrderComplete = () => {
     fetchOrderDetails();
   }, [orderId, apiAttempted, navigate]);
 
-  // Format UNIX timestamp to human-readable date
   const formatTimestamp = (timestamp: number | undefined) => {
     if (!timestamp) return "N/A";
     return new Date(timestamp * 1000).toLocaleString();
   };
 
-  // Function to truncate transaction IDs for display
   const truncateTxId = (txId: string | undefined) => {
     if (!txId) return "N/A";
     if (txId.length <= 20) return txId;
@@ -207,7 +205,6 @@ const BridgeOrderComplete = () => {
     );
   }
 
-  // Extract transaction data for display
   const fromTx = apiOrderData?.from?.tx;
   const toTx = apiOrderData?.to?.tx;
 
@@ -252,7 +249,6 @@ const BridgeOrderComplete = () => {
           </div>
         </div>
 
-        {/* Transaction details with data from API */}
         <div className="glass-card p-0 rounded-xl mb-9 overflow-hidden">
           <div className="glass-card p-6 md:p-8 rounded-xl mb-4">
             <div className="grid grid-cols-4 gap-4 md:gap-8 relative">
@@ -295,7 +291,6 @@ const BridgeOrderComplete = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 boarder-0">
-            {/* Order Details Card */}
             <div className="glass-card p-6 space-y-4">
               <div className="border-b border-white/10 pb-3">
                 <div className="text-gray-400 text-sm">Order ID</div>
@@ -341,11 +336,10 @@ const BridgeOrderComplete = () => {
               </div>
             </div>
 
-            {/* Confirmation Card */}
             <div className="glass-card p-6 flex flex-col items-center justify-center relative overflow-hidden md:col-span-2">
               <div className="hidden md:block absolute left-0 -bottom-14 opacity-50">
                 <img
-                  src="/lovable-uploads/robo.png"
+                  src="https://tradenly.xyz/wp-content/uploads/2024/12/Al…ace_robot_fighter_sleek_an_0-removebg-preview.png"
                   alt="Robot"
                   className="w-40 h-40 md:w-[15rem] md:h-[22rem] lg:w-[22rem] lg:h-[25rem] object-contain"
                 />
@@ -384,9 +378,7 @@ const BridgeOrderComplete = () => {
             </div>
           </div>
 
-          {/* Transaction Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            {/* Accepted Transaction Info */}
             <div className="glass-card p-6 border-0">
               <h3 className="text-xl font-semibold text-white mb-4">
                 Accepted transaction info
@@ -458,7 +450,6 @@ const BridgeOrderComplete = () => {
               </div>
             </div>
 
-            {/* Sent Transaction Info */}
             <div className="glass-card p-6 border-0">
               <h3 className="text-xl font-semibold text-white mb-4">
                 Sent transaction info
@@ -546,3 +537,4 @@ const BridgeOrderComplete = () => {
 };
 
 export default BridgeOrderComplete;
+
