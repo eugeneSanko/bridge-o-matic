@@ -1,10 +1,12 @@
+
 import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Check, CircleCheckBig, Copy, ExternalLink } from "lucide-react";
 import { TransactionSummary } from "@/components/bridge/TransactionSummary";
 import { toast } from "@/hooks/use-toast";
 import { invokeFunctionWithRetry } from "@/config/api";
 import { Progress } from "@/components/ui/progress";
+import { ProgressSteps } from "@/components/bridge/ProgressSteps";
 
 interface OrderData {
   id: string;
@@ -85,6 +87,9 @@ const BridgeOrderComplete = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get("orderId");
+  const isRefunded = searchParams.get("refund") === "true";
+  const refundCurrency = searchParams.get("refundCurrency") || "";
+  
   const [orderDetails, setOrderDetails] = useState<OrderData | null>(null);
   const [apiOrderData, setApiOrderData] = useState<ApiOrderData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -208,6 +213,19 @@ const BridgeOrderComplete = () => {
   const fromTx = apiOrderData?.from?.tx;
   const toTx = apiOrderData?.to?.tx;
 
+  // Create object similar to orderDetails type expected by ProgressSteps
+  const progressOrderDetails = {
+    fromCurrency: orderDetails.from_currency,
+    toCurrency: orderDetails.to_currency,
+    depositAmount: orderDetails.amount.toString(),
+    depositAddress: orderDetails.deposit_address,
+    destinationAddress: orderDetails.destination_address,
+    currentStatus: "DONE",
+    fromCurrencyName: orderDetails.from_currency_name,
+    toCurrencyName: orderDetails.to_currency_name,
+    orderId: orderDetails.ff_order_id
+  };
+
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-24 px-8 pb-24">
       <div className="max-w-6xl mx-auto">
@@ -221,16 +239,30 @@ const BridgeOrderComplete = () => {
           depositAddress={orderDetails.deposit_address}
         />
 
+        {/* Use ProgressSteps for consistent UI */}
+        <ProgressSteps 
+          currentStatus="DONE" 
+          orderDetails={progressOrderDetails}
+          isRefunded={isRefunded}
+          refundCurrency={refundCurrency || apiOrderData?.from?.coin || orderDetails.from_currency}
+        />
+
         <div className="glass-card p-8 rounded-xl mb-8">
           <div className="flex items-center justify-center mb-8">
-            <div className="bg-green-500/20 rounded-full p-3">
-              <Check className="h-8 w-8 text-green-500" />
+            <div className={`${isRefunded ? "bg-blue-500/20" : "bg-green-500/20"} rounded-full p-3`}>
+              <Check className={`h-8 w-8 ${isRefunded ? "text-blue-500" : "text-green-500"}`} />
             </div>
           </div>
           
-          <h2 className="text-2xl font-bold text-center mb-2">Transaction Complete</h2>
+          <h2 className="text-2xl font-bold text-center mb-2">
+            {isRefunded 
+              ? "Refund Complete" 
+              : "Transaction Complete"}
+          </h2>
           <p className="text-gray-400 text-center mb-8">
-            Your {orderDetails.to_currency} has been sent to your wallet
+            {isRefunded
+              ? `Your ${refundCurrency || apiOrderData?.from?.coin || orderDetails.from_currency} has been refunded to your wallet`
+              : `Your ${orderDetails.to_currency} has been sent to your wallet`}
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -250,46 +282,6 @@ const BridgeOrderComplete = () => {
         </div>
 
         <div className="glass-card p-0 rounded-xl mb-9 overflow-hidden">
-          <div className="glass-card p-6 md:p-8 rounded-xl mb-4">
-            <div className="grid grid-cols-4 gap-4 md:gap-8 relative">
-              <div className="text-center relative text-green-500">
-                <div className="flex justify-center mb-3 -ml-10">
-                  <Check className="h-6 w-6 md:h-8 md:w-8" />
-                </div>
-                <div className="text-xs md:text-sm font-medium -ml-10">
-                  Awaiting deposit
-                </div>
-                <div className="absolute top-4 left-[60%] w-[80%] h-[2px] bg-green-700"></div>
-              </div>
-              <div className="text-center relative text-green-500">
-                <div className="flex justify-center mb-3 -ml-10">
-                  <Check className="h-6 w-6 md:h-8 md:w-8" />
-                </div>
-                <div className="text-xs md:text-sm font-medium -ml-10">
-                  Awaiting confirmations
-                </div>
-                <div className="absolute top-4 left-[60%] w-[80%] h-[2px] bg-green-700"></div>
-              </div>
-              <div className="text-center relative text-green-500">
-                <div className="flex justify-center mb-3 -ml-10">
-                  <Check className="h-6 w-6 md:h-8 md:w-8" />
-                </div>
-                <div className="text-xs md:text-sm font-medium -ml-10">
-                  Perform exchange
-                </div>
-                <div className="absolute top-4 left-[60%] w-[80%] h-[2px] bg-green-700"></div>
-              </div>
-              <div className="text-center relative text-green-500">
-                <div className="flex justify-center mb-3 -ml-10">
-                  <CircleCheckBig className="h-6 w-6 md:h-8 md:w-8" />
-                </div>
-                <div className="text-xs md:text-sm font-medium -ml-10">
-                  Done
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 boarder-0">
             <div className="glass-card p-6 space-y-4">
               <div className="border-b border-white/10 pb-3">
@@ -301,8 +293,8 @@ const BridgeOrderComplete = () => {
 
               <div className="border-b border-white/10 pb-3">
                 <div className="text-gray-400 text-sm">Order status</div>
-                <div className="text-green-500 font-medium text-xl">
-                  Completed
+                <div className={`${isRefunded ? "text-blue-500" : "text-green-500"} font-medium text-xl`}>
+                  {isRefunded ? "Refunded" : "Completed"}
                 </div>
               </div>
 
@@ -339,7 +331,7 @@ const BridgeOrderComplete = () => {
             <div className="glass-card p-6 flex flex-col items-center justify-center relative overflow-hidden md:col-span-2">
               <div className="hidden md:block absolute left-0 -bottom-14 opacity-50">
                 <img
-                  src="https://tradenly.xyz/wp-content/uploads/2024/12/Al…ace_robot_fighter_sleek_an_0-removebg-preview.png"
+                  src="https://tradenly.xyz/wp-content/uploads/2024/12/AlbedoBase_XL_Design_a_futuristic_space_robot_fighter_sleek_an_0-removebg-preview.png"
                   alt="Robot"
                   className="w-40 h-40 md:w-[15rem] md:h-[22rem] lg:w-[22rem] lg:h-[25rem] object-contain"
                 />
@@ -347,33 +339,39 @@ const BridgeOrderComplete = () => {
 
               <div className="relative z-10 text-center space-y-8 md:pl-48">
                 <h2 className="text-3xl font-bold text-white flex items-center justify-center gap-2 md:justify-items-start">
-                  Your {apiOrderData?.to.coin || orderDetails.to_currency} was sent
-                  <Check className="h-6 w-6 text-green-500" />
+                  {isRefunded 
+                    ? `Your ${refundCurrency || apiOrderData?.from?.coin || orderDetails.from_currency} was refunded` 
+                    : `Your ${apiOrderData?.to.coin || orderDetails.to_currency} was sent`}
+                  <Check className={`h-6 w-6 ${isRefunded ? "text-blue-500" : "text-green-500"}`} />
                 </h2>
                 <p className="text-gray-300 max-w-md mx-auto md:text-left">
-                  If you enjoy your experience, please leave a review at services below. 
-                  We appreciate your support!
+                  {isRefunded 
+                    ? "Your refund has been processed. Thank you for using our service."
+                    : "If you enjoy your experience, please leave a review at services below. We appreciate your support!"}
                 </p>
-                <div className="flex gap-6 justify-center mt-4">
-                  <a
-                    href="https://www.bestchange.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
-                  >
-                    <div className="bg-[#9EA13F]/20 p-2 rounded">BC</div>
-                    <span>Bestchange</span>
-                  </a>
-                  <a
-                    href="https://www.trustpilot.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
-                  >
-                    <div className="bg-[#00B67A]/20 p-2 rounded text-[#00B67A]">★</div>
-                    <span>Trustpilot</span>
-                  </a>
-                </div>
+                
+                {!isRefunded && (
+                  <div className="flex gap-6 justify-center mt-4">
+                    <a
+                      href="https://www.bestchange.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+                    >
+                      <div className="bg-[#9EA13F]/20 p-2 rounded">BC</div>
+                      <span>Bestchange</span>
+                    </a>
+                    <a
+                      href="https://www.trustpilot.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+                    >
+                      <div className="bg-[#00B67A]/20 p-2 rounded text-[#00B67A]">★</div>
+                      <span>Trustpilot</span>
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -452,7 +450,7 @@ const BridgeOrderComplete = () => {
 
             <div className="glass-card p-6 border-0">
               <h3 className="text-xl font-semibold text-white mb-4">
-                Sent transaction info
+                {isRefunded ? "Refund transaction info" : "Sent transaction info"}
               </h3>
 
               <div className="space-y-3">
@@ -487,7 +485,7 @@ const BridgeOrderComplete = () => {
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Sending time</span>
+                  <span className="text-gray-400">{isRefunded ? "Refund time" : "Sending time"}</span>
                   <span className="text-white">
                     {toTx?.timeReg ? formatTimestamp(toTx.timeReg) : "N/A"}
                   </span>
@@ -537,4 +535,3 @@ const BridgeOrderComplete = () => {
 };
 
 export default BridgeOrderComplete;
-

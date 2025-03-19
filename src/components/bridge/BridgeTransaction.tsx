@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { TransactionSummary } from "./TransactionSummary";
 import { OrderDetails } from "./OrderDetails";
 import { AddressDetails } from "./AddressDetails";
@@ -25,6 +26,10 @@ export const BridgeTransaction = ({
   onEmergencyExchange,
   onEmergencyRefund,
 }: BridgeTransactionProps) => {
+  const [searchParams] = useSearchParams();
+  const isRefunded = searchParams.get("refund") === "true";
+  const refundCurrency = searchParams.get("refundCurrency") || orderDetails.fromCurrency;
+  
   const apiStatus =
     orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
 
@@ -32,6 +37,7 @@ export const BridgeTransaction = ({
   logger.debug("API status in BridgeTransaction:", apiStatus);
   logger.debug("Current status in orderDetails:", orderDetails.currentStatus);
   logger.debug("Raw API response status:", orderDetails.rawApiResponse?.status);
+  logger.debug("Refund parameters:", { isRefunded, refundCurrency });
 
   const [isOrderComplete, setIsOrderComplete] = useState(false);
 
@@ -128,6 +134,8 @@ export const BridgeTransaction = ({
         <ProgressSteps
           currentStatus={displayStatus}
           orderDetails={orderDetails}
+          isRefunded={isRefunded}
+          refundCurrency={refundCurrency}
         />
 
         {!isOrderComplete && (

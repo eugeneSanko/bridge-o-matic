@@ -13,7 +13,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -53,6 +53,7 @@ export const OrderDetails = ({
   fromCurrencyName = "",
 }: OrderDetailsProps) => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [localTimeRemaining, setLocalTimeRemaining] = useState(
     timeRemaining || "20:00"
   );
@@ -174,6 +175,14 @@ export const OrderDetails = ({
         setChoiceMade(true);
         setSelectedAction("REFUND");
         setShowWaitingMessage(true);
+        
+        // Add refund parameter to the URL when refund is selected and confirmed
+        const currentParams = Object.fromEntries(searchParams.entries());
+        setSearchParams({
+          ...currentParams,
+          refund: 'true',
+          refundCurrency: fromCurrency || ''
+        });
       }
     }
   };
