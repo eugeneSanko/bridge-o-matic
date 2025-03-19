@@ -95,6 +95,50 @@ serve(async (req) => {
       );
     }
     
+    // Check if transaction with this ff_order_id already exists in bridge_transactions
+    const { data: existingTx, error: existingTxError } = await supabase
+      .from('bridge_transactions')
+      .select('id, ff_order_id')
+      .eq('ff_order_id', transaction.ff_order_id)
+      .limit(1);
+      
+    if (existingTxError) {
+      console.error("Error checking for existing transaction:", existingTxError);
+    }
+    
+    // If transaction already exists, don't save it again
+    if (existingTx && existingTx.length > 0) {
+      console.log(`Transaction with ff_order_id ${transaction.ff_order_id} already exists in bridge_transactions. Skipping save.`);
+    } else {
+      // Prepare client metadata if provided in the request or from the transaction
+      const clientMetadata = metadata || transaction.client_metadata || {
+        ip: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown',
+        user_agent: req.headers.get('user-agent') || 'unknown',
+        languages: [req.headers.get('accept-language') || 'en-US']
+      };
+      
+      // Insert into bridge_transactions
+      const { data: savedTx, error: saveTxError } = await supabase
+        .from('bridge_transactions')
+        .insert([{
+          ff_order_id: transaction.ff_order_id,
+          ff_order_token: transaction.ff_order_token,
+          from_currency: transaction.from_currency,
+          to_currency: transaction.to_currency,
+          amount: transaction.amount,
+          destination_address: transaction.destination_address,
+          status: 'completed',
+          deposit_address: transaction.deposit_address,
+          client_metadata: clientMetadata
+        }]);
+        
+      if (saveTxError) {
+        console.error("Error saving transaction to bridge_transactions:", saveTxError);
+      } else {
+        console.log("Transaction saved to bridge_transactions successfully");
+      }
+    }
+    
     // Log the completed transaction details 
     console.log("Transaction completed:", {
       id: transaction.id, 
@@ -105,23 +149,6 @@ serve(async (req) => {
       created_at: transaction.created_at,
       metadata: transaction.client_metadata
     });
-    
-    // Here you would typically send a notification (email, webhook, etc.)
-    // For now, we'll just log it
-    
-    // Pseudocode for email notification (implement once email service is connected)
-    // if (Deno.env.get("ENABLE_EMAIL_NOTIFICATIONS") === "true") {
-    //   const emailResult = await sendEmail({
-    //     to: "admin@example.com",
-    //     subject: `Bridge Transaction Completed: ${transaction.ff_order_id}`,
-    //     body: `A bridge transaction has been completed:\n\n` +
-    //           `From: ${transaction.from_currency}\n` +
-    //           `To: ${transaction.to_currency}\n` +
-    //           `Amount: ${transaction.amount}\n` +
-    //           `Time: ${transaction.created_at}`
-    //   });
-    //   console.log("Email notification result:", emailResult);
-    // }
     
     // Collect some additional analytics about the transaction
     const analyticsData = {
@@ -135,9 +162,6 @@ serve(async (req) => {
     };
     
     console.log("Transaction analytics:", analyticsData);
-    
-    // Simulate saving analytics (would typically go to a separate analytics table or service)
-    console.log("Would save analytics data for later analysis");
     
     return new Response(
       JSON.stringify({

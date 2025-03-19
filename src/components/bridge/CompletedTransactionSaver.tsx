@@ -81,6 +81,20 @@ export const CompletedTransactionSaver = ({
           return;
         }
 
+        // Collect client metadata
+        const clientMetadata = {
+          ip: 'client-side',
+          user_agent: navigator.userAgent,
+          languages: navigator.languages || [navigator.language],
+          device: {
+            width: window.innerWidth,
+            height: window.innerHeight,
+            platform: navigator.platform,
+            vendor: navigator.vendor
+          },
+          simulation: simulateSuccess
+        };
+
         // Insert the transaction data into the database
         const { data, error } = await supabase
           .from('bridge_transactions')
@@ -94,10 +108,9 @@ export const CompletedTransactionSaver = ({
               destination_address: orderDetails.destinationAddress,
               status: orderDetails.currentStatus,
               deposit_address: orderDetails.depositAddress,
+              client_metadata: clientMetadata,
               initial_rate: 0, // You might want to replace this with the actual rate
               expiration_time: orderDetails.expiresAt || new Date().toISOString(),
-              // Removed fields that don't exist in the schema:
-              // tag, tagName, addressAlt, orderType, receiveAmount, fromCurrencyName, toCurrencyName
             }
           ]);
 

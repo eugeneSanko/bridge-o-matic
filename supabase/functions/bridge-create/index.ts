@@ -102,6 +102,16 @@ serve(async (req) => {
     const requestData = await req.json();
     log.debug("Original request body:", JSON.stringify(requestData));
     
+    // Collect client metadata
+    const clientMetadata = {
+      ip: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown',
+      user_agent: req.headers.get('user-agent') || 'unknown',
+      languages: [req.headers.get('accept-language') || 'en-US'],
+      device: requestData.device || {}
+    };
+    
+    log.info("Collected client metadata:", clientMetadata);
+    
     // Create a detailed debug object
     const debugInfo = {
       requestDetails: {
@@ -109,6 +119,7 @@ serve(async (req) => {
         method: "POST",
         originalRequestBody: requestData,
       },
+      clientMetadata,
       signatureInfo: {},
       responseDetails: {},
       curlCommand: "",
@@ -243,10 +254,66 @@ serve(async (req) => {
         );
       }
       
+      // If the API call was successful and we have an order ID, save to completed_bridge_transactions
+      if (responseData.code === 0 && responseData.data && responseData.data.id) {
+        // Get Supabase URL and key from environment variables
+        const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+        const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+        
+        if (supabaseUrl && supabaseAnonKey) {
+          // Create Supabase client
+          const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.7.1");
+          const supabase = createClient(supabaseUrl, supabaseAnonKey);
+          
+          // Check if transaction with this ff_order_id already exists
+          const { data: existingTx, error: existingTxError } = await supabase
+            .from('bridge_transactions')
+            .select('id, ff_order_id')
+            .eq('ff_order_id', responseData.data.id)
+            .limit(1);
+            
+          if (existingTxError) {
+            log.error("Error checking for existing transaction:", existingTxError);
+          }
+          
+          // If transaction already exists, don't save it again
+          if (existingTx && existingTx.length > 0) {
+            log.info(`Transaction with ff_order_id ${responseData.data.id} already exists. Skipping save.`);
+          } else {
+            // Prepare transaction data for saving including client metadata
+            const transactionData = {
+              ff_order_id: responseData.data.id,
+              ff_order_token: responseData.data.token,
+              status: 'pending',
+              from_currency: requestDataWithAffiliateInfo.fromCcy,
+              to_currency: requestDataWithAffiliateInfo.toCcy,
+              amount: parseFloat(requestDataWithAffiliateInfo.amount),
+              destination_address: requestDataWithAffiliateInfo.toAddress,
+              deposit_address: responseData.data.from?.address || null,
+              client_metadata: clientMetadata
+            };
+            
+            // Save transaction data to bridge_transactions
+            const { data: savedTx, error: saveTxError } = await supabase
+              .from('bridge_transactions')
+              .insert([transactionData]);
+              
+            if (saveTxError) {
+              log.error("Error saving transaction:", saveTxError);
+            } else {
+              log.info("Transaction saved successfully");
+            }
+          }
+        } else {
+          log.error("Missing Supabase credentials. Cannot save transaction data.");
+        }
+      }
+      
       // Make sure we properly pass along any token from the API response
       // Add debug info to the response
       const enrichedResponse = {
         ...responseData,
+        clientMetadata,
         debugInfo
       };
       
