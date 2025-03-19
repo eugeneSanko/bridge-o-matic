@@ -40,6 +40,7 @@ export type Database = {
         Row: {
           analysis: Json | null
           analysis_summary: string
+          chain: string | null
           confidence_score: number | null
           contract_address: string | null
           created_at: string
@@ -64,6 +65,7 @@ export type Database = {
         Insert: {
           analysis?: Json | null
           analysis_summary: string
+          chain?: string | null
           confidence_score?: number | null
           contract_address?: string | null
           created_at?: string
@@ -88,6 +90,7 @@ export type Database = {
         Update: {
           analysis?: Json | null
           analysis_summary?: string
+          chain?: string | null
           confidence_score?: number | null
           contract_address?: string | null
           created_at?: string

@@ -62,8 +62,9 @@ export const CompletedTransactionSaver = ({
         // Check if the transaction already exists in the database
         const { data: existingTransaction, error: selectError } = await supabase
           .from('bridge_transactions')
-          .select('*')
-          .eq('ff_order_id', orderDetails.orderId);
+          .select('id')
+          .eq('ff_order_id', orderDetails.orderId)
+          .limit(1);
 
         if (selectError) {
           logger.error("Error checking for existing transaction:", selectError);
@@ -76,7 +77,7 @@ export const CompletedTransactionSaver = ({
         }
 
         if (existingTransaction && existingTransaction.length > 0) {
-          logger.info("Transaction already exists in database, skipping save");
+          logger.info("Transaction already exists in database, updating saved state");
           setTransactionSaved(true);
           return;
         }
@@ -95,36 +96,48 @@ export const CompletedTransactionSaver = ({
           simulation: simulateSuccess
         };
 
-        // Insert the transaction data into the database - pass a single object, not an array
-        const { data, error } = await supabase
-          .from('bridge_transactions')
-          .insert({
-            ff_order_id: orderDetails.orderId,
-            ff_order_token: orderDetails.ffOrderToken,
-            from_currency: orderDetails.fromCurrency,
-            to_currency: orderDetails.toCurrency,
-            amount: parseFloat(orderDetails.depositAmount),
-            destination_address: orderDetails.destinationAddress,
-            status: orderDetails.currentStatus,
-            deposit_address: orderDetails.depositAddress,
-            client_metadata: clientMetadata,
-            initial_rate: 0, // You might want to replace this with the actual rate
-            expiration_time: orderDetails.expiresAt || new Date().toISOString(),
-          });
+        // Use a more reliable approach with error handling
+        try {
+          // Insert the transaction data into the database
+          const { data, error } = await supabase
+            .from('bridge_transactions')
+            .insert({
+              ff_order_id: orderDetails.orderId,
+              ff_order_token: orderDetails.ffOrderToken,
+              from_currency: orderDetails.fromCurrency,
+              to_currency: orderDetails.toCurrency,
+              amount: parseFloat(orderDetails.depositAmount),
+              destination_address: orderDetails.destinationAddress,
+              status: orderDetails.currentStatus,
+              deposit_address: orderDetails.depositAddress,
+              client_metadata: clientMetadata,
+              initial_rate: 0, // You might want to replace this with the actual rate
+              expiration_time: orderDetails.expiresAt || new Date().toISOString(),
+            })
+            .select('id');
 
-        if (error) {
-          logger.error("Error saving transaction:", error);
+          if (error) {
+            // Handle duplicate key errors gracefully
+            if (error.message?.includes('duplicate key') || error.message?.includes('unique constraint')) {
+              logger.info("Transaction already exists in database (constraint violation)");
+              setTransactionSaved(true);
+            } else {
+              throw error;
+            }
+          } else {
+            logger.info("Transaction saved successfully:", data);
+            setTransactionSaved(true);
+            toast({
+              title: "Transaction Saved",
+              description: "Transaction details saved successfully",
+            });
+          }
+        } catch (dbError) {
+          logger.error("Database error saving transaction:", dbError);
           toast({
             title: "Database Error",
             description: "Failed to save transaction",
             variant: "destructive"
-          });
-        } else {
-          logger.info("Transaction saved successfully:", data);
-          setTransactionSaved(true);
-          toast({
-            title: "Transaction Saved",
-            description: "Transaction details saved successfully",
           });
         }
       } catch (e) {

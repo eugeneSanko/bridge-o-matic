@@ -96,6 +96,7 @@ serve(async (req) => {
     }
     
     // Check if transaction with this ff_order_id already exists in bridge_transactions
+    // We perform this check to avoid race conditions, but ultimately rely on the database constraint
     const { data: existingTx, error: existingTxError } = await supabase
       .from('bridge_transactions')
       .select('id, ff_order_id')
@@ -109,15 +110,39 @@ serve(async (req) => {
     // If transaction already exists, don't save it again
     if (existingTx && existingTx.length > 0) {
       console.log(`Transaction with ff_order_id ${transaction.ff_order_id} already exists in bridge_transactions. Skipping save.`);
-    } else {
-      // Prepare client metadata if provided in the request or from the transaction
-      const clientMetadata = metadata || transaction.client_metadata || {
-        ip: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown',
-        user_agent: req.headers.get('user-agent') || 'unknown',
-        languages: [req.headers.get('accept-language') || 'en-US']
-      };
       
-      // Insert into bridge_transactions
+      // Return success even though we didn't save (idempotent operation)
+      return new Response(
+        JSON.stringify({
+          code: 0,
+          msg: "Transaction already processed",
+          transaction: {
+            id: transaction.id,
+            ff_order_id: transaction.ff_order_id,
+            status: 'completed',
+            from_currency: transaction.from_currency,
+            to_currency: transaction.to_currency
+          },
+        }),
+        {
+          status: 200,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+    
+    // Prepare client metadata if provided in the request or from the transaction
+    const clientMetadata = metadata || transaction.client_metadata || {
+      ip: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown',
+      user_agent: req.headers.get('user-agent') || 'unknown',
+      languages: [req.headers.get('accept-language') || 'en-US']
+    };
+    
+    // Insert into bridge_transactions with error handling for constraint violations
+    try {
       const { data: savedTx, error: saveTxError } = await supabase
         .from('bridge_transactions')
         .insert({
@@ -130,12 +155,28 @@ serve(async (req) => {
           status: 'completed',
           deposit_address: transaction.deposit_address,
           client_metadata: clientMetadata
-        });
+        })
+        .select('*')
+        .single();
         
       if (saveTxError) {
-        console.error("Error saving transaction to bridge_transactions:", saveTxError);
+        // Check if the error is a unique constraint violation
+        if (saveTxError.message.includes('unique constraint') || 
+            saveTxError.message.includes('duplicate key')) {
+          console.log("Transaction already exists due to constraint. Safe to ignore:", saveTxError.message);
+        } else {
+          console.error("Error saving transaction to bridge_transactions:", saveTxError);
+          throw saveTxError;
+        }
       } else {
         console.log("Transaction saved to bridge_transactions successfully");
+      }
+    } catch (insertError) {
+      console.error("Exception during transaction insert:", insertError);
+      // If it's not a duplicate key error, we should re-throw
+      if (!insertError.message?.includes('unique constraint') && 
+          !insertError.message?.includes('duplicate key')) {
+        throw insertError;
       }
     }
     
