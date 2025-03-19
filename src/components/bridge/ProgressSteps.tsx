@@ -20,11 +20,15 @@ import { useMobile } from "@/hooks/use-mobile";
 interface ProgressStepsProps {
   currentStatus?: string;
   orderDetails?: any;
+  isRefunded?: boolean;
+  refundCurrency?: string;
 }
 
 export const ProgressSteps = ({
   currentStatus = "pending",
   orderDetails,
+  isRefunded = false,
+  refundCurrency = "",
 }: ProgressStepsProps) => {
   // State to track final status after normalization
   const [normalizedStatus, setNormalizedStatus] = useState(currentStatus);
@@ -349,33 +353,38 @@ export const ProgressSteps = ({
             <div className="relative z-10 text-center space-y-8 md:pl-48">
               {/* Add padding-left to avoid text overlapping with the image */}
               <h2 className="text-3xl font-bold text-white flex items-center justify-center gap-2 md:justify-items-start">
-                Your {apiResponse?.to?.coin || orderDetails?.toCurrency || "Ethereum"} was sent
-                <Check className="h-6 w-6 text-green-500" />
+                {isRefunded 
+                  ? `Your ${refundCurrency || apiResponse?.from?.coin || orderDetails?.fromCurrency || "crypto"} was refunded` 
+                  : `Your ${apiResponse?.to?.coin || orderDetails?.toCurrency || "Ethereum"} was sent`}
+                <Check className={`h-6 w-6 ${isRefunded ? "text-blue-500" : "text-green-500"}`} />
               </h2>
               <p className="text-gray-300 max-w-md mx-auto md:text-left">
-                If you enjoy your experience on FixedFloat, please leave a
-                review at services below. We appreciate your support!
+                {isRefunded 
+                  ? "Your refund has been processed. Thank you for using our service."
+                  : "If you enjoy your experience on FixedFloat, please leave a review at services below. We appreciate your support!"}
               </p>
-              <div className="flex gap-6 justify-center mt-4">
-                <a
-                  href="https://www.bestchange.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
-                >
-                  <div className="bg-[#9EA13F]/20 p-2 rounded">BC</div>
-                  <span>Bestchange</span>
-                </a>
-                <a
-                  href="https://www.trustpilot.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
-                >
-                  <Star className="h-5 w-5 text-green-500" />
-                  <span>Trustpilot</span>
-                </a>
-              </div>
+              {!isRefunded && (
+                <div className="flex gap-6 justify-center mt-4">
+                  <a
+                    href="https://www.bestchange.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+                  >
+                    <div className="bg-[#9EA13F]/20 p-2 rounded">BC</div>
+                    <span>Bestchange</span>
+                  </a>
+                  <a
+                    href="https://www.trustpilot.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+                  >
+                    <Star className="h-5 w-5 text-green-500" />
+                    <span>Trustpilot</span>
+                  </a>
+                </div>
+              )}
             </div>
           </Card>
         </div>
@@ -488,4 +497,3 @@ export const ProgressSteps = ({
     </div>
   );
 };
-

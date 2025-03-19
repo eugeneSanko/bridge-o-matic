@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Check, CircleCheckBig, Copy, ExternalLink } from "lucide-react";
 import { TransactionSummary } from "@/components/bridge/TransactionSummary";
 import { toast } from "@/hooks/use-toast";
