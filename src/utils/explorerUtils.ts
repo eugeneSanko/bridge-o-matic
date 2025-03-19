@@ -1,3 +1,4 @@
+
 /**
  * Provides utility functions for blockchain explorer URLs
  */
@@ -215,7 +216,7 @@ export function getNetworkName(network: string): string {
  * @param recvEnabled Check if receiving is enabled
  * @returns Boolean indicating if the network is available
  */
-export function isNetworkAvailable(networkCode: string, sendEnabled?: boolean, recvEnabled?: boolean): boolean {
+export function isNetworkAvailable(networkCode: string, sendEnabled?: number, recvEnabled?: number): boolean {
   if (!networkCode) return false;
   
   // Determine availability based on send/recv flags if provided
