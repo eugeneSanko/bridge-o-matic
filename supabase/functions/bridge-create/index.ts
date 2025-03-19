@@ -138,20 +138,25 @@ serve(async (req) => {
       log.info("Missing REF_CODE in environment variables. Proceeding without refcode.");
     }
     
-    // Add refcode to the request data if available
+    // Add refcode and afftax to the request data
     // Important: Create a new object to avoid mutating the original request
-    const requestDataWithRefcode = REF_CODE 
-      ? { ...requestData, refcode: REF_CODE }
-      : { ...requestData };
+    const requestDataWithAffiliateInfo = { 
+      ...requestData, 
+      refcode: REF_CODE,  // Add refcode 
+      afftax: 0.01        // Add afftax (1%)
+    };
+    
+    log.info(`Using refcode: ${REF_CODE} and afftax: 0.01 (1%)`);
     
     // Convert to string for signature and request
-    const updatedRequestBodyStr = JSON.stringify(requestDataWithRefcode);
+    const updatedRequestBodyStr = JSON.stringify(requestDataWithAffiliateInfo);
     
-    log.debug("Updated request body:", updatedRequestBodyStr);
-    debugInfo.requestDetails.modifiedRequestBody = requestDataWithRefcode;
+    log.debug("Updated request body with refcode and afftax:", updatedRequestBodyStr);
+    debugInfo.requestDetails.modifiedRequestBody = requestDataWithAffiliateInfo;
     if (REF_CODE) {
       debugInfo.requestDetails.refcode = REF_CODE;
     }
+    debugInfo.requestDetails.afftax = 0.01;
     
     // Generate signature for the exact string we're sending
     try {

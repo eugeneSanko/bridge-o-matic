@@ -4,6 +4,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // API Configuration from environment variables
 const API_KEY = Deno.env.get("FIXED_FLOAT_API_KEY");
 const API_SECRET = Deno.env.get("FIXED_FLOAT_API_SECRET");
+const REF_CODE = Deno.env.get("FIXED_FLOAT_REF_CODE");
 
 // CORS headers
 const corsHeaders = {
@@ -62,14 +63,19 @@ serve(async (req) => {
       );
     }
     
-    // Prepare the API request body
+    // Prepare the API request body with added refcode and afftax
     const apiRequestBody = {
       fromCcy: fromCurrency,
       toCcy: toCurrency,
       amount: parseFloat(amount),
       direction: direction,
-      type: orderType
+      type: orderType,
+      refcode: REF_CODE,  // Added refcode
+      afftax: 0.01        // Added afftax (1%)
     };
+    
+    // Log the complete request body
+    console.log(`API Request body with refcode and afftax:`, JSON.stringify(apiRequestBody));
     
     const bodyString = JSON.stringify(apiRequestBody);
     
