@@ -12,6 +12,8 @@ interface AddressDetailsProps {
   fromCurrency: string;
   fromCurrencyName?: string;
   currentStatus?: string;
+  fromNetwork?: string;
+  toNetwork?: string;
 }
 
 export const AddressDetails = ({
@@ -23,6 +25,8 @@ export const AddressDetails = ({
   fromCurrency,
   fromCurrencyName,
   currentStatus,
+  fromNetwork,
+  toNetwork,
 }: AddressDetailsProps) => {
   const hasAddress =
     depositAddress &&

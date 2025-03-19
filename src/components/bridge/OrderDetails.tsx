@@ -34,6 +34,7 @@ interface OrderDetailsProps {
   onEmergencyRefund?: (refundAddress?: string) => void;
   fromCurrency?: string;
   fromCurrencyName?: string;
+  network?: string; // Add network prop for explorer links
 }
 
 export const OrderDetails = ({

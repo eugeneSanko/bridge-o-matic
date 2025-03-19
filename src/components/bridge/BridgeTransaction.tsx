@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { TransactionSummary } from "./TransactionSummary";
@@ -159,7 +158,6 @@ export const BridgeTransaction = ({
                 onEmergencyRefund={onEmergencyRefund}
                 fromCurrency={orderDetails.fromCurrency}
                 fromCurrencyName={orderDetails.fromCurrencyName}
-                // Pass network information for explorer links
                 network={fromNetwork}
               />
               <AddressDetails
@@ -171,7 +169,6 @@ export const BridgeTransaction = ({
                 fromCurrency={orderDetails.fromCurrency}
                 fromCurrencyName={orderDetails.fromCurrencyName}
                 currentStatus={displayStatus}
-                // Pass network information for explorer links
                 fromNetwork={fromNetwork}
                 toNetwork={toNetwork}
               />
