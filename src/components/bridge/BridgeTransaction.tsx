@@ -27,8 +27,9 @@ export const BridgeTransaction = ({
 }: BridgeTransactionProps) => {
   const [searchParams] = useSearchParams();
   const isRefunded = searchParams.get("refund") === "true";
-  const refundCurrency = searchParams.get("refundCurrency") || orderDetails.fromCurrency;
-  
+  const refundCurrency =
+    searchParams.get("refundCurrency") || orderDetails.fromCurrency;
+
   const apiStatus =
     orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
 
@@ -60,7 +61,9 @@ export const BridgeTransaction = ({
     });
 
     if (orderDetails.currentStatus === "completed") {
-      logger.debug("Current status is 'completed', ignoring EXPIRED API status");
+      logger.debug(
+        "Current status is 'completed', ignoring EXPIRED API status"
+      );
       setIsExpired(false);
     } else if (isApiExpired || isStatusExpired || isTimerExpired) {
       logger.debug("Order is expired");
@@ -119,7 +122,7 @@ export const BridgeTransaction = ({
   const toNetwork = orderDetails.toCurrency;
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] pt-6 md:pt-24 px-3 md:px-8 pb-10 md:pb-24">
+    <div className="min-h-screen  pt-6 md:pt-24 px-3 md:px-8 pb-10 md:pb-24">
       <div className="max-w-6xl mx-auto">
         <TransactionSummary
           fromCurrency={orderDetails.fromCurrency}
