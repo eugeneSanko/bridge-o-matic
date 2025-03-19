@@ -1,7 +1,8 @@
 
-import { Copy } from "lucide-react";
+import { Copy, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { getExplorerUrl, hasExplorerUrl } from "@/utils/explorerUtils";
 
 interface TransactionInfoItemProps {
   label: string;
@@ -10,6 +11,7 @@ interface TransactionInfoItemProps {
   isLink?: boolean;
   linkUrl?: string;
   copyable?: boolean;
+  network?: string; // Add network prop for explorer links
 }
 
 export const TransactionInfoItem = ({
@@ -19,6 +21,7 @@ export const TransactionInfoItem = ({
   isLink = false,
   linkUrl = "",
   copyable = false,
+  network = "", // Default to empty string
 }: TransactionInfoItemProps) => {
   const { toast } = useToast();
 
@@ -44,6 +47,16 @@ export const TransactionInfoItem = ({
     ? formatTxId(value) 
     : value || "N/A";
 
+  // Check if we can show an explorer link for this transaction
+  const explorerUrl = isTxId && typeof value === 'string' && network 
+    ? getExplorerUrl(value.toString(), network) 
+    : null;
+
+  // We'll show the explorer link if:
+  // 1. This is a transaction ID AND
+  // 2. We have a valid explorer URL for this network
+  const showExplorerLink = isTxId && explorerUrl !== null;
+
   return (
     <div className="flex justify-between items-center py-2">
       <span className="text-gray-400">{label}</span>
@@ -65,6 +78,20 @@ export const TransactionInfoItem = ({
           <Button variant="ghost" size="icon" className="h-6 w-6 p-0" onClick={handleCopy}>
             <Copy className="h-4 w-4 text-gray-400" />
           </Button>
+        )}
+        
+        {/* Add explorer link button if applicable */}
+        {showExplorerLink && (
+          <a
+            href={explorerUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:text-blue-300"
+          >
+            <Button variant="ghost" size="icon" className="h-6 w-6 p-0">
+              <ExternalLink className="h-4 w-4 text-blue-400" />
+            </Button>
+          </a>
         )}
       </div>
     </div>

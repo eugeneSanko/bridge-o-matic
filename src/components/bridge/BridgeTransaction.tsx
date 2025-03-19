@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { TransactionSummary } from "./TransactionSummary";
@@ -33,7 +32,6 @@ export const BridgeTransaction = ({
   const apiStatus =
     orderDetails.rawApiResponse?.status || orderDetails.currentStatus;
 
-  // Replace console.log with logger
   logger.debug("API status in BridgeTransaction:", apiStatus);
   logger.debug("Current status in orderDetails:", orderDetails.currentStatus);
   logger.debug("Raw API response status:", orderDetails.rawApiResponse?.status);

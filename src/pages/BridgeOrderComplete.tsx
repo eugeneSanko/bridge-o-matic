@@ -1,12 +1,12 @@
-
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Check, CircleCheckBig, Copy, ExternalLink } from "lucide-react";
+import { Check, Copy, ExternalLink } from "lucide-react";
 import { TransactionSummary } from "@/components/bridge/TransactionSummary";
 import { toast } from "@/hooks/use-toast";
 import { invokeFunctionWithRetry } from "@/config/api";
 import { Progress } from "@/components/ui/progress";
 import { ProgressSteps } from "@/components/bridge/ProgressSteps";
+import { TransactionInfoItem } from "@/components/bridge/TransactionInfoItem";
 
 interface OrderData {
   id: string;
@@ -213,7 +213,6 @@ const BridgeOrderComplete = () => {
   const fromTx = apiOrderData?.from?.tx;
   const toTx = apiOrderData?.to?.tx;
 
-  // Create object similar to orderDetails type expected by ProgressSteps
   const progressOrderDetails = {
     fromCurrency: orderDetails.from_currency,
     toCurrency: orderDetails.to_currency,
@@ -239,7 +238,6 @@ const BridgeOrderComplete = () => {
           depositAddress={orderDetails.deposit_address}
         />
 
-        {/* Use ProgressSteps for consistent UI */}
         <ProgressSteps 
           currentStatus="DONE" 
           orderDetails={progressOrderDetails}
@@ -383,23 +381,13 @@ const BridgeOrderComplete = () => {
               </h3>
 
               <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">TxID</span>
-                  <div className="font-mono text-sm text-white flex items-center gap-2 truncate max-w-[200px]">
-                    {truncateTxId(fromTx?.id)}
-                    {fromTx?.id && (
-                      <button onClick={() => {
-                        navigator.clipboard.writeText(fromTx.id);
-                        toast({
-                          title: "Copied",
-                          description: "Transaction ID copied to clipboard"
-                        });
-                      }}>
-                        <Copy className="h-4 w-4 text-gray-400" />
-                      </button>
-                    )}
-                  </div>
-                </div>
+                <TransactionInfoItem 
+                  label="TxID"
+                  value={fromTx?.id || "N/A"}
+                  isTxId={true}
+                  copyable={Boolean(fromTx?.id)}
+                  network={apiOrderData?.from?.coin || orderDetails.from_currency}
+                />
 
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">View Receipt</span>
@@ -454,23 +442,13 @@ const BridgeOrderComplete = () => {
               </h3>
 
               <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">TxID</span>
-                  <div className="font-mono text-sm text-white flex items-center gap-2 truncate max-w-[200px]">
-                    {truncateTxId(toTx?.id)}
-                    {toTx?.id && (
-                      <button onClick={() => {
-                        navigator.clipboard.writeText(toTx.id);
-                        toast({
-                          title: "Copied",
-                          description: "Transaction ID copied to clipboard"
-                        });
-                      }}>
-                        <Copy className="h-4 w-4 text-gray-400" />
-                      </button>
-                    )}
-                  </div>
-                </div>
+                <TransactionInfoItem 
+                  label="TxID"
+                  value={toTx?.id || "N/A"}
+                  isTxId={true}
+                  copyable={Boolean(toTx?.id)}
+                  network={apiOrderData?.to?.coin || orderDetails.to_currency}
+                />
 
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">View Receipt</span>
