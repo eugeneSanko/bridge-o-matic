@@ -1,4 +1,3 @@
-
 import {
   Loader,
   Clock,
@@ -16,6 +15,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { TransactionInfoItem } from "./TransactionInfoItem";
 import { useMobile } from "@/hooks/use-mobile";
+import { getExplorerUrl, hasExplorerUrl } from "@/utils/explorerUtils";
 
 interface ProgressStepsProps {
   currentStatus?: string;
