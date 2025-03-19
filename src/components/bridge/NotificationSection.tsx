@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSearchParams } from "react-router-dom";
 import { logger } from "@/utils/logger";
+import { generateTransactionStatusUrl } from "@/utils/urlUtils";
 
 interface NotificationSectionProps {
   orderDetails?: {
@@ -68,8 +69,10 @@ export const NotificationSection = ({ orderDetails }: NotificationSectionProps) 
         throw new Error(ffResponse.msg || "Could not set up email notifications");
       }
 
-      // Now send our own welcome email with the transaction URL
+      // Now send our own welcome email with the transaction URL and tracking link
       if (orderDetails) {
+        const transactionStatusUrl = generateTransactionStatusUrl(orderId, token);
+        
         const { data: emailResponse, error: emailError } = await supabase.functions.invoke(
           "bridge-send-email",
           {
@@ -79,7 +82,8 @@ export const NotificationSection = ({ orderDetails }: NotificationSectionProps) 
               token,
               fromCurrency: orderDetails.fromCurrency,
               toCurrency: orderDetails.toCurrency,
-              amount: orderDetails.depositAmount
+              amount: orderDetails.depositAmount,
+              transactionUrl: transactionStatusUrl
             },
           }
         );

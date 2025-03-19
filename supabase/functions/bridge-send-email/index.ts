@@ -18,6 +18,7 @@ interface EmailRequest {
   fromCurrency: string;
   toCurrency: string;
   amount: string;
+  transactionUrl?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -27,7 +28,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, orderId, token, fromCurrency, toCurrency, amount }: EmailRequest = await req.json();
+    const { email, orderId, token, fromCurrency, toCurrency, amount, transactionUrl }: EmailRequest = await req.json();
 
     if (!email || !orderId || !token) {
       return new Response(
@@ -47,8 +48,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Sending email notification to ${email} for order ${orderId}`);
 
-    // Create the transaction status URL
-    const transactionUrl = `${baseUrl}/bridge/awaiting-deposit?orderId=${orderId}&token=${token}`;
+    // Create the transaction status URL if not provided
+    const trackingUrl = transactionUrl || `${baseUrl}/bridge/awaiting-deposit?orderId=${orderId}&token=${token}`;
     
     // Format the amount with commas for thousands
     const formattedAmount = parseFloat(amount).toLocaleString(undefined, {
@@ -75,9 +76,9 @@ const handler = async (req: Request): Promise<Response> => {
                 You'll receive notifications about important status updates.
               </p>
               
-              <p style="font-size: 16px; line-height: 1.5; margin-top: 20px;">
-                <a href="${transactionUrl}" style="background-color: #0FA0CE; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">View Transaction Status</a>
-              </p>
+              <div style="margin-top: 25px; text-align: center;">
+                <a href="${trackingUrl}" style="background-color: #0FA0CE; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">View Transaction Status</a>
+              </div>
             </div>
             
             <div style="flex: 1; text-align: center;">

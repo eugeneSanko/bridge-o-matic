@@ -4,6 +4,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // API Configuration from environment variables
 const API_KEY = Deno.env.get("FIXED_FLOAT_API_KEY");
 const API_SECRET = Deno.env.get("FIXED_FLOAT_API_SECRET");
+const REF_CODE = Deno.env.get("FIXED_FLOAT_REF_CODE") || "tradenly";
 
 // CORS headers
 const corsHeaders = {
@@ -62,13 +63,18 @@ serve(async (req) => {
       );
     }
     
-    // Prepare the API request body
+    // Set affiliation parameters
+    const affTax = orderType === "fixed" ? 1.0 : 0.5;  // 1% for fixed, 0.5% for float
+    
+    // Prepare the API request body with affiliation parameters
     const apiRequestBody = {
       fromCcy: fromCurrency,
       toCcy: toCurrency,
       amount: parseFloat(amount),
       direction: direction,
-      type: orderType
+      type: orderType,
+      refcode: REF_CODE,
+      afftax: affTax
     };
     
     const bodyString = JSON.stringify(apiRequestBody);
@@ -87,6 +93,7 @@ serve(async (req) => {
     const signatureHex = signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
     
     console.log(`Generated signature for API request: ${signatureHex}`);
+    console.log(`Using refcode: ${REF_CODE} and afftax: ${affTax}`);
     
     // Make the request to FixedFloat API
     const response = await fetch("https://ff.io/api/v2/price", {

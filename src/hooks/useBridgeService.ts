@@ -240,13 +240,19 @@ export function useBridgeService() {
     initialRate: string
   ): Promise<OrderResponse> => {
     try {
+      // Set affiliation parameters
+      const affTax = orderType === "fixed" ? 1.0 : 0.5;  // 1% for fixed, 0.5% for float
+      const refCode = "tradenly";  // Use the same refcode as in the price function
+      
       const body = {
         fromCcy: fromCurrency,
         toCcy: toCurrency,
         amount: amount,
         direction: "from",
         type: orderType,
-        toAddress: destination
+        toAddress: destination,
+        refcode: refCode,
+        afftax: affTax
       };
       
       bridgeLogger.info('Creating bridge order with parameters:', body);
