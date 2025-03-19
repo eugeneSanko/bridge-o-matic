@@ -4,7 +4,6 @@ import { useSearchParams } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
 import { useOrderStatusPolling } from "@/hooks/useOrderStatusPolling";
 import { useBridgeDeepLink } from "@/hooks/useBridgeDeepLink";
-import { SimulationHandler } from "@/components/bridge/SimulationHandler";
 import { OrderParameterValidator } from "@/components/bridge/OrderParameterValidator";
 import { ApiStatusMonitor } from "@/components/bridge/ApiStatusMonitor";
 import { BridgeStatusRenderer } from "@/components/bridge/BridgeStatusRenderer";
@@ -81,13 +80,6 @@ const BridgeAwaitingDeposit = () => {
         loading={loading}
         error={error}
         orderDetails={orderDetails}
-      />
-      
-      <SimulationHandler
-        simulateSuccess={simulateSuccess}
-        setSimulateSuccess={setSimulateSuccess}
-        originalOrderDetails={originalOrderDetails}
-        setOrderDetails={setOrderDetails}
       />
       
       <BridgeStatusRenderer

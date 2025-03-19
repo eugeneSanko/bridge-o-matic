@@ -1,3 +1,4 @@
+
 import { Bell } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,6 @@ export const NotificationSection = () => {
   const [email, setEmail] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   const handleSubscribe = async () => {
     if (!email || !email.includes("@")) {
@@ -43,16 +43,15 @@ export const NotificationSection = () => {
       );
 
       const { data, error } = await supabase.functions.invoke(
-        "bridge-set-email",
+        "bridge-send-notification",
         {
-          body: { id: orderId, token, email },
+          body: { orderId, token, email },
         }
       );
 
       if (error) {
         console.error("Edge function error:", error);
         setIsLoading(false);
-        setDebugInfo(error);
 
         toast({
           title: "Notification Error",
@@ -63,10 +62,6 @@ export const NotificationSection = () => {
       }
 
       console.log("Email notification response:", data);
-
-      if (data.debugInfo) {
-        setDebugInfo(data.debugInfo);
-      }
 
       if (data.code === 0) {
         setIsSubscribed(true);
@@ -125,11 +120,27 @@ export const NotificationSection = () => {
           </div>
         </div>
       ) : (
-        <div className="text-sm text-gray-400">
+        <div className="text-sm space-y-4">
           <p className="bg-secondary/20 p-3 rounded-lg">
             You will receive email notifications about your transaction status
             at <span className="font-semibold">{email}</span>.
           </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => {
+              // Copy the transaction URL to clipboard
+              const url = `${window.location.origin}/bridge/awaiting-deposit?orderId=${orderId}&token=${token}`;
+              navigator.clipboard.writeText(url);
+              toast({
+                title: "URL Copied",
+                description: "Transaction URL copied to clipboard",
+              });
+            }}
+          >
+            Copy Transaction URL
+          </Button>
         </div>
       )}
     </div>

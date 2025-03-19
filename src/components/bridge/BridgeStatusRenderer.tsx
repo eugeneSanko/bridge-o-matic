@@ -4,7 +4,6 @@ import { LoadingState } from "@/components/bridge/LoadingState";
 import { ErrorState } from "@/components/bridge/ErrorState";
 import { EmptyState } from "@/components/bridge/EmptyState";
 import { BridgeTransaction } from "@/components/bridge/BridgeTransaction";
-import { DebugInfoDisplay } from "@/components/bridge/DebugInfoDisplay";
 import { CompletedTransactionSaver } from "@/components/bridge/CompletedTransactionSaver";
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
@@ -31,7 +30,6 @@ export const BridgeStatusRenderer = ({
   error,
   orderDetails: initialOrderDetails,
   handleCopyAddress,
-  statusCheckDebugInfo,
   simulateSuccess,
   originalOrderDetails,
   token,
@@ -53,29 +51,11 @@ export const BridgeStatusRenderer = ({
   }
 
   if (error) {
-    return (
-      <>
-        <ErrorState error={error} />
-        <DebugInfoDisplay 
-          statusCheckDebugInfo={statusCheckDebugInfo} 
-          error={error}
-          orderDetails={null}
-        />
-      </>
-    );
+    return <ErrorState error={error} />;
   }
 
   if (!orderDetails) {
-    return (
-      <>
-        <EmptyState />
-        <DebugInfoDisplay 
-          statusCheckDebugInfo={statusCheckDebugInfo} 
-          error={null}
-          orderDetails={null}
-        />
-      </>
-    );
+    return <EmptyState />;
   }
 
   // Function to update order details (used by CompletedTransactionSaver)
@@ -203,12 +183,6 @@ export const BridgeStatusRenderer = ({
         onEmergencyRefund={handleEmergencyRefund}
       />
       
-      <DebugInfoDisplay 
-        statusCheckDebugInfo={statusCheckDebugInfo} 
-        error={null}
-        orderDetails={orderDetails}
-      />
-      
       <CompletedTransactionSaver
         orderDetails={orderDetails}
         simulateSuccess={simulateSuccess}
@@ -216,7 +190,7 @@ export const BridgeStatusRenderer = ({
         token={token}
         transactionSaved={transactionSaved}
         setTransactionSaved={setTransactionSaved}
-        statusCheckDebugInfo={statusCheckDebugInfo}
+        statusCheckDebugInfo={null}
         onOrderDetailsUpdate={handleOrderDetailsUpdate}
       />
     </>

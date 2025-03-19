@@ -1,7 +1,7 @@
 
-import { useEffect } from "react";
+// This component has been disabled as requested
+
 import { OrderDetails } from "@/hooks/useBridgeOrder";
-import { SimulationToggle } from "@/components/bridge/SimulationToggle";
 
 interface SimulationHandlerProps {
   simulateSuccess: boolean;
@@ -16,42 +16,6 @@ export const SimulationHandler = ({
   originalOrderDetails,
   setOrderDetails
 }: SimulationHandlerProps) => {
-  // Apply simulated success state if enabled
-  useEffect(() => {
-    if (!originalOrderDetails) return;
-    
-    if (simulateSuccess) {
-      const simulatedDetails = {
-        ...originalOrderDetails,
-        currentStatus: "completed",
-        rawApiResponse: {
-          ...originalOrderDetails.rawApiResponse,
-          status: "DONE"
-        }
-      };
-      setOrderDetails(simulatedDetails);
-      
-      console.log("Simulating DONE state:", {
-        originalStatus: originalOrderDetails.currentStatus,
-        originalApiStatus: originalOrderDetails.rawApiResponse?.status,
-        finalStatus: "completed",
-        finalApiStatus: "DONE",
-        simulatedDetails
-      });
-    } else {
-      setOrderDetails(originalOrderDetails);
-      
-      console.log("Using original state:", {
-        originalStatus: originalOrderDetails.currentStatus,
-        originalApiStatus: originalOrderDetails.rawApiResponse?.status
-      });
-    }
-  }, [originalOrderDetails, simulateSuccess, setOrderDetails]);
-
-  return (
-    <SimulationToggle
-      simulateSuccess={simulateSuccess}
-      setSimulateSuccess={setSimulateSuccess}
-    />
-  );
+  // Component disabled - return nothing
+  return null;
 };
