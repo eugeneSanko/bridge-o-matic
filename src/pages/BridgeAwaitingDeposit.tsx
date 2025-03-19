@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
@@ -12,28 +11,28 @@ const BridgeAwaitingDeposit = () => {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get("orderId");
   const token = searchParams.get("token") || "";
-  
+
   const [simulateSuccess, setSimulateSuccess] = useState(false);
   const [apiAttempted, setApiAttempted] = useState(false);
   const [transactionSaved, setTransactionSaved] = useState(false);
   const [statusCheckDebugInfo, setStatusCheckDebugInfo] = useState(null);
-  
+
   // Load order details from the bridge API
-  const { 
-    orderDetails: originalOrderDetails, 
-    loading, 
-    error, 
+  const {
+    orderDetails: originalOrderDetails,
+    loading,
+    error,
     handleCopyAddress,
-    setEmergencyActionTaken 
+    setEmergencyActionTaken,
   } = useBridgeOrder(
-    orderId, 
+    orderId,
     token,
     true, // Always try to fetch from API
-    true  // Force API check even if we have local data
+    true // Force API check even if we have local data
   );
-  
+
   const [orderDetails, setOrderDetails] = useState(originalOrderDetails);
-  
+
   // Process deep links for transaction status updates
   useBridgeDeepLink();
 
@@ -42,9 +41,9 @@ const BridgeAwaitingDeposit = () => {
     console.log("Transaction complete callback triggered", {
       details,
       apiResponse,
-      transactionSaved
+      transactionSaved,
     });
-    
+
     // The actual saving logic is now in the CompletedTransactionSaver component
     // This function is just for additional logging or future extensibility
   };
@@ -56,7 +55,7 @@ const BridgeAwaitingDeposit = () => {
     originalOrderDetails,
     setOrderDetails,
     onTransactionComplete: handleTransactionComplete,
-    setStatusCheckDebugInfo
+    setStatusCheckDebugInfo,
   });
 
   // Update orderDetails when originalOrderDetails changes
@@ -65,7 +64,7 @@ const BridgeAwaitingDeposit = () => {
       // Ensure token is passed to the component
       setOrderDetails({
         ...originalOrderDetails,
-        token: token
+        token: token,
       });
     }
   }, [originalOrderDetails, token]);
@@ -73,7 +72,7 @@ const BridgeAwaitingDeposit = () => {
   return (
     <div className="px-3 md:px-8 pt-4 pb-12 max-w-full overflow-x-hidden">
       <OrderParameterValidator orderId={orderId} token={token} />
-      
+
       <ApiStatusMonitor
         apiAttempted={apiAttempted}
         setApiAttempted={setApiAttempted}
@@ -81,7 +80,7 @@ const BridgeAwaitingDeposit = () => {
         error={error}
         orderDetails={orderDetails}
       />
-      
+
       <BridgeStatusRenderer
         loading={loading}
         error={error}

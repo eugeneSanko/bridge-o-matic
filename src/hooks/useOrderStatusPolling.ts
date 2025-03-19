@@ -147,11 +147,11 @@ export const useOrderStatusPolling = ({
 
           if (status === "DONE" && originalOrderDetails) {
             pollingLogger.info("Order is complete, showing notification");
-            toast({
-              title: "Transaction Complete",
-              description: `Your transaction has been completed successfully.`,
-              variant: "default",
-            });
+            // toast({
+            //   title: "Transaction Complete",
+            //   description: `Your transaction has been completed successfully.`,
+            //   variant: "default",
+            // });
 
             // Update order details with completed status
             const updatedDetails = {

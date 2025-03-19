@@ -16,6 +16,7 @@ import { motion } from "framer-motion";
 import { TransactionInfoItem } from "./TransactionInfoItem";
 import { useMobile } from "@/hooks/use-mobile";
 import { getExplorerUrl, hasExplorerUrl } from "@/utils/explorerUtils";
+import { Icon } from "@iconify/react";
 
 interface ProgressStepsProps {
   currentStatus?: string;
@@ -208,7 +209,7 @@ export const ProgressSteps = ({
         {steps.map((step, i) => {
           const Icon = step.icon;
           const isLastStep = i === steps.length - 1;
-          
+
           return (
             <motion.div
               key={i}
@@ -231,7 +232,11 @@ export const ProgressSteps = ({
                   : "text-gray-500"
               } ${animate ? "animate-pulse" : ""}`}
             >
-              <div className={`flex justify-center mb-2 md:mb-3 ${isMobile ? "" : "-ml-10"}`}>
+              <div
+                className={`flex justify-center mb-2 md:mb-3 ${
+                  isMobile ? "" : "-ml-10"
+                }`}
+              >
                 <Icon
                   className={`h-5 w-5 md:h-8 md:w-8 ${
                     step.active && step.icon === Loader
@@ -240,23 +245,39 @@ export const ProgressSteps = ({
                   }`}
                 />
               </div>
-              <div className={`text-xs md:text-sm font-medium ${isMobile ? "" : "-ml-10"} truncate`}>
-                {isMobile && step.label.length > 10 
-                  ? step.label.split(' ')[0] 
+              <div
+                className={`text-xs md:text-sm font-medium ${
+                  isMobile ? "" : "-ml-10"
+                } truncate`}
+              >
+                {isMobile && step.label.length > 10
+                  ? step.label.split(" ")[0]
                   : step.label}
               </div>
               {step.status === "failed" && (
-                <div className={`text-xs text-red-500 mt-1 ${isMobile ? "hidden" : "-ml-10"}`}>
+                <div
+                  className={`text-xs text-red-500 mt-1 ${
+                    isMobile ? "hidden" : "-ml-10"
+                  }`}
+                >
                   Transaction failed
                 </div>
               )}
               {step.status === "refunded" && (
-                <div className={`text-xs text-yellow-500 mt-1 ${isMobile ? "hidden" : "-ml-10"}`}>
+                <div
+                  className={`text-xs text-yellow-500 mt-1 ${
+                    isMobile ? "hidden" : "-ml-10"
+                  }`}
+                >
                   Funds refunded
                 </div>
               )}
               {step.status === "expired" && (
-                <div className={`text-xs text-red-500 mt-1 ${isMobile ? "hidden" : "-ml-10"}`}>
+                <div
+                  className={`text-xs text-red-500 mt-1 ${
+                    isMobile ? "hidden" : "-ml-10"
+                  }`}
+                >
                   Time window expired
                 </div>
               )}
@@ -280,9 +301,10 @@ export const ProgressSteps = ({
     const apiResponse = orderDetails?.rawApiResponse || {};
     const fromTx = apiResponse?.from?.tx || {};
     const toTx = apiResponse?.to?.tx || {};
-    
+
     // Extract network information for explorer links
-    const fromNetwork = apiResponse?.from?.network || apiResponse?.from?.coin || "";
+    const fromNetwork =
+      apiResponse?.from?.network || apiResponse?.from?.coin || "";
     const toNetwork = apiResponse?.to?.network || apiResponse?.to?.coin || "";
 
     return (
@@ -298,14 +320,20 @@ export const ProgressSteps = ({
               <div className="text-gray-400 text-xs md:text-sm">Order ID</div>
               <div className="text-[#f0b90b] font-mono font-semibold text-base md:text-xl flex items-center gap-2">
                 {apiResponse?.id || orderDetails?.orderId || "N/A"}
-                <Button variant="ghost" size="icon" className="h-5 w-5 md:h-6 md:w-6">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5 md:h-6 md:w-6"
+                >
                   <Copy className="h-3 w-3 md:h-4 md:w-4 text-gray-400" />
                 </Button>
               </div>
             </div>
 
             <div className="border-b border-white/10 pb-2 md:pb-3">
-              <div className="text-gray-400 text-xs md:text-sm">Order status</div>
+              <div className="text-gray-400 text-xs md:text-sm">
+                Order status
+              </div>
               <div className="text-green-500 font-medium text-base md:text-xl">
                 Completed
               </div>
@@ -314,28 +342,32 @@ export const ProgressSteps = ({
             <div className="border-b border-white/10 pb-2 md:pb-3">
               <div className="text-gray-400 text-xs md:text-sm">Order type</div>
               <div className="text-white text-lg">
-                {apiResponse?.type === "fixed"
-                  ? "Fixed rate"
-                  : "Float rate"}
+                {apiResponse?.type === "fixed" ? "Fixed rate" : "Float rate"}
               </div>
             </div>
 
             <div className="border-b border-white/10 pb-2 md:pb-3">
-              <div className="text-gray-400 text-xs md:text-sm">Creation Time</div>
+              <div className="text-gray-400 text-xs md:text-sm">
+                Creation Time
+              </div>
               <div className="text-white text-lg">
                 {formatTimestamp(apiResponse?.time?.reg)}
               </div>
             </div>
 
             <div className="border-b border-white/10 pb-2 md:pb-3">
-              <div className="text-gray-400 text-xs md:text-sm">Received Time</div>
+              <div className="text-gray-400 text-xs md:text-sm">
+                Received Time
+              </div>
               <div className="text-white text-lg">
                 {formatTimestamp(fromTx?.timeReg)}
               </div>
             </div>
 
             <div>
-              <div className="text-gray-400 text-xs md:text-sm">Completed Time</div>
+              <div className="text-gray-400 text-xs md:text-sm">
+                Completed Time
+              </div>
               <div className="text-white text-lg">
                 {formatTimestamp(apiResponse?.time?.finish)}
               </div>
@@ -345,47 +377,57 @@ export const ProgressSteps = ({
           {/* Confirmation Card (Right) */}
           <Card className="glass-card p-4 md:p-6 flex flex-col items-center justify-center relative overflow-hidden md:col-span-2">
             {/* Updated robot image on the left */}
-            <div className="hidden md:block absolute left-0 -bottom-14 opa-50">
+            <div className="hidden md:block absolute -left-9 md:-left-24 -bottom-14 opa-50">
               <img
                 src="https://tradenly.xyz/wp-content/uploads/2024/12/AlbedoBase_XL_Design_a_futuristic_space_robot_fighter_sleek_an_0-removebg-preview.png"
                 alt="Robot"
-                className="w-40 h-40 md:w-[15rem] md:h-[22rem] lg:w-[22rem] lg:h-[25rem] object-contain "
+                className="w-40 h-40 md:w-[15rem] md:h-[22rem] lg:w-[28rem] lg:h-[25rem] object-contain "
               />
             </div>
 
             {/* Content */}
-            <div className="relative z-10 text-center space-y-8 md:pl-48">
+            <div className="relative z-10 text-center space-y-8 md:pl-52">
               {/* Add padding-left to avoid text overlapping with the image */}
               <h2 className="text-3xl font-bold text-white flex items-center justify-center gap-2 md:justify-items-start">
-                {isRefunded 
-                  ? `Your ${refundCurrency || apiResponse?.from?.coin || orderDetails?.fromCurrency || "crypto"} was refunded` 
-                  : `Your ${apiResponse?.to?.coin || orderDetails?.toCurrency || "Ethereum"} was sent`}
-                <Check className={`h-6 w-6 ${isRefunded ? "text-blue-500" : "text-green-500"}`} />
+                {isRefunded
+                  ? `Your ${
+                      refundCurrency ||
+                      apiResponse?.from?.coin ||
+                      orderDetails?.fromCurrency ||
+                      "crypto"
+                    } was refunded`
+                  : `Your ${
+                      apiResponse?.to?.coin ||
+                      orderDetails?.toCurrency ||
+                      "Ethereum"
+                    } was sent`}
+                <Check
+                  className={`h-6 w-6 ${
+                    isRefunded ? "text-blue-500" : "text-green-500"
+                  }`}
+                />
               </h2>
-              <p className="text-gray-300 max-w-md mx-auto md:text-left">
-                {isRefunded 
+              <p className="text-gray-300 max-w-md mx-auto md:text-left md:ml-10">
+                {isRefunded
                   ? "Your refund has been processed. Thank you for using our service."
-                  : "If you enjoy your experience on FixedFloat, please leave a review at services below. We appreciate your support!"}
+                  : "If you enjoy your experience on Tradenly Bridge, please leave a review at services below. We appreciate your support!"}
               </p>
               {!isRefunded && (
                 <div className="flex gap-6 justify-center mt-4">
                   <a
-                    href="https://www.bestchange.com"
+                    href="https://x.com/Tradenly"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
                   >
-                    <div className="bg-[#9EA13F]/20 p-2 rounded">BC</div>
-                    <span>Bestchange</span>
-                  </a>
-                  <a
-                    href="https://www.trustpilot.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
-                  >
-                    <Star className="h-5 w-5 text-green-500" />
-                    <span>Trustpilot</span>
+                    <div className=" group p-4 rounded-2xl bg-black hover:bg-primary transition-colors duration-200 mb-3">
+                      <Icon
+                        icon="ri:twitter-x-fill"
+                        width="30"
+                        height="30"
+                        className="w-8 h-8 text-white transition-transform duration-300 group-hover:scale-125"
+                      />
+                    </div>
                   </a>
                 </div>
               )}
@@ -402,53 +444,64 @@ export const ProgressSteps = ({
             </h3>
 
             <div className="space-y-3">
-              <TransactionInfoItem 
-                label="TxID" 
-                value={fromTx?.id} 
+              <TransactionInfoItem
+                label="TxID"
+                value={fromTx?.id}
                 isTxId={true}
                 copyable={true}
                 network={fromNetwork}
               />
-              
+
               {fromTx?.id && hasExplorerUrl(fromTx.id, fromNetwork) ? (
-                <TransactionInfoItem 
-                  label="View Receipt" 
+                <TransactionInfoItem
+                  label="View Receipt"
                   value="View on Explorer"
                   isLink={true}
                   linkUrl={getExplorerUrl(fromTx.id, fromNetwork) || ""}
                 />
               ) : (
-                <TransactionInfoItem 
-                  label="View Receipt" 
-                  value="View on FF.io"
-                  isLink={true}
-                  linkUrl={`https://ff.io/order/${apiResponse?.id || orderDetails?.orderId || "N/A"}`}
-                />
+                // <TransactionInfoItem
+                //   label="View Receipt"
+                //   value="View on FF.io"
+                //   isLink={true}
+                //   linkUrl={`https://ff.io/order/${
+                //     apiResponse?.id || orderDetails?.orderId || "N/A"
+                //   }`}
+                // />
+                <></>
               )}
-              
-              <TransactionInfoItem 
-                label="Received Time" 
-                value={formatTimestamp(fromTx?.timeReg)} 
+
+              <TransactionInfoItem
+                label="Received Time"
+                value={formatTimestamp(fromTx?.timeReg)}
               />
-              
-              <TransactionInfoItem 
-                label="Block Time" 
+
+              <TransactionInfoItem
+                label="Block Time"
                 value={formatTimestamp(fromTx?.timeBlock)}
               />
-              
-              <TransactionInfoItem 
-                label="Confirmations" 
+
+              <TransactionInfoItem
+                label="Confirmations"
                 value={fromTx?.confirmations}
               />
-              
-              <TransactionInfoItem 
-                label="Amount" 
-                value={`${apiResponse?.from?.amount || orderDetails?.depositAmount || "N/A"} ${apiResponse?.from?.code || orderDetails?.fromCurrency || "N/A"}`}
+
+              <TransactionInfoItem
+                label="Amount"
+                value={`${
+                  apiResponse?.from?.amount ||
+                  orderDetails?.depositAmount ||
+                  "N/A"
+                } ${
+                  apiResponse?.from?.code || orderDetails?.fromCurrency || "N/A"
+                }`}
               />
-              
-              <TransactionInfoItem 
-                label="Fee" 
-                value={`${fromTx?.fee || "0"} ${fromTx?.ccyfee || apiResponse?.from?.code || "N/A"}`}
+
+              <TransactionInfoItem
+                label="Fee"
+                value={`${fromTx?.fee || "0"} ${
+                  fromTx?.ccyfee || apiResponse?.from?.code || "N/A"
+                }`}
               />
             </div>
           </Card>
@@ -460,53 +513,56 @@ export const ProgressSteps = ({
             </h3>
 
             <div className="space-y-3">
-              <TransactionInfoItem 
-                label="TxID" 
-                value={toTx?.id} 
+              <TransactionInfoItem
+                label="TxID"
+                value={toTx?.id}
                 isTxId={true}
                 copyable={true}
                 network={toNetwork}
               />
-              
+
               {toTx?.id && hasExplorerUrl(toTx.id, toNetwork) ? (
-                <TransactionInfoItem 
-                  label="View Receipt" 
+                <TransactionInfoItem
+                  label="View Receipt"
                   value="View on Explorer"
                   isLink={true}
                   linkUrl={getExplorerUrl(toTx.id, toNetwork) || ""}
                 />
               ) : (
-                <TransactionInfoItem 
-                  label="View Receipt" 
-                  value="View on FF.io"
-                  isLink={true}
-                  linkUrl={`https://ff.io/order/${apiResponse?.id || orderDetails?.orderId || "N/A"}`}
-                />
+                <></>
               )}
-              
-              <TransactionInfoItem 
-                label="Sending time" 
+
+              <TransactionInfoItem
+                label="Sending time"
                 value={formatTimestamp(toTx?.timeReg)}
               />
-              
-              <TransactionInfoItem 
-                label="Block Time" 
+
+              <TransactionInfoItem
+                label="Block Time"
                 value={formatTimestamp(toTx?.timeBlock)}
               />
-              
-              <TransactionInfoItem 
-                label="Confirmations" 
+
+              <TransactionInfoItem
+                label="Confirmations"
                 value={toTx?.confirmations}
               />
-              
-              <TransactionInfoItem 
-                label="Amount" 
-                value={`${apiResponse?.to?.amount || orderDetails?.receiveAmount || "N/A"} ${apiResponse?.to?.code || orderDetails?.toCurrency || "N/A"}`}
+
+              <TransactionInfoItem
+                label="Amount"
+                value={`${
+                  apiResponse?.to?.amount ||
+                  orderDetails?.receiveAmount ||
+                  "N/A"
+                } ${
+                  apiResponse?.to?.code || orderDetails?.toCurrency || "N/A"
+                }`}
               />
-              
-              <TransactionInfoItem 
-                label="Fee" 
-                value={`${toTx?.fee || "0"} ${toTx?.ccyfee || apiResponse?.to?.code || "N/A"}`}
+
+              <TransactionInfoItem
+                label="Fee"
+                value={`${toTx?.fee || "0"} ${
+                  toTx?.ccyfee || apiResponse?.to?.code || "N/A"
+                }`}
               />
             </div>
           </Card>

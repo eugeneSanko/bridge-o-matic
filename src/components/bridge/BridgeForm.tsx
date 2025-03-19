@@ -224,10 +224,10 @@ export const BridgeForm = () => {
     setIsSubmitting(true);
 
     try {
-      toast({
-        title: "Creating Order",
-        description: "Initializing your bridge transaction...",
-      });
+      // toast({
+      //   title: "Creating Order",
+      //   description: "Initializing your bridge transaction...",
+      // });
 
       const result = await createBridgeTransaction();
 
@@ -266,10 +266,10 @@ export const BridgeForm = () => {
           });
         }
       } else if (result && result.code === 0) {
-        toast({
-          title: "Order Created",
-          description: "Your bridge transaction has been successfully created!",
-        });
+        // toast({
+        //   title: "Order Created",
+        //   description: "Your bridge transaction has been successfully created!",
+        // });
 
         const orderId = result.data?.id || result.orderId;
         const orderToken = result.data?.token || result.orderToken;

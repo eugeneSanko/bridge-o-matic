@@ -403,10 +403,10 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
         throw new Error("Exchange rate has expired. Please try again.");
       }
 
-      toast({
-        title: "Creating Transaction",
-        description: "Initializing your bridge transaction...",
-      });
+      // toast({
+      //   title: "Creating Transaction",
+      //   description: "Initializing your bridge transaction...",
+      // });
 
       // Create order with updated parameters
       const result = await createOrder(
@@ -453,11 +453,11 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
         // Start monitoring the order status
         startStatusChecking(orderId);
 
-        toast({
-          title: "Transaction Created",
-          description:
-            "Your bridge transaction has been initiated successfully!",
-        });
+        // toast({
+        //   title: "Transaction Created",
+        //   description:
+        //     "Your bridge transaction has been initiated successfully!",
+        // });
 
         return result;
       }

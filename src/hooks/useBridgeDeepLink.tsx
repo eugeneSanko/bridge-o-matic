@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useDeepLink } from "@/hooks/useDeepLink";
 import { toast } from "@/hooks/use-toast";
@@ -21,14 +20,14 @@ export const useBridgeDeepLink = () => {
     if (params.has("status")) {
       const status = params.get("status");
       addLog(`Status from deep link: ${status}`);
-      
-      if (status === 'completed') {
-        console.log("Got completed status from deep link");
-        toast({
-          title: "Transaction Complete",
-          description: `Your transaction has been completed successfully.`,
-          variant: "default"
-        });
+
+      if (status === "completed") {
+        // console.log("Got completed status from deep link");
+        // toast({
+        //   title: "Transaction Complete",
+        //   description: `Your transaction has been completed successfully.`,
+        //   variant: "default"
+        // });
       }
     }
 

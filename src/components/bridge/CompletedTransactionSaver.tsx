@@ -127,10 +127,10 @@ export const CompletedTransactionSaver = ({
           } else {
             logger.info("Transaction saved successfully:", data);
             setTransactionSaved(true);
-            toast({
-              title: "Transaction Saved",
-              description: "Transaction details saved successfully",
-            });
+            // toast({
+            //   title: "Transaction Saved",
+            //   description: "Transaction details saved successfully",
+            // });
           }
         } catch (dbError) {
           logger.error("Database error saving transaction:", dbError);

@@ -1,4 +1,3 @@
-
 import { QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -57,7 +56,7 @@ export const QRCodeSection = ({
           url: "https://supabase-edge-function/bridge-qr",
           method: "POST",
           requestBody: requestBody,
-          requestBodyString: JSON.stringify(requestBody)
+          requestBodyString: JSON.stringify(requestBody),
         };
 
         const curlCommand = `curl -X POST "https://loqpepftcimqjkiinuwv.functions.supabase.co/bridge-qr" \\
@@ -103,7 +102,7 @@ export const QRCodeSection = ({
             error: {
               message: err instanceof Error ? err.message : "Unknown error",
               stack: err instanceof Error ? err.stack : null,
-            }
+            },
           });
         }
 
@@ -153,15 +152,15 @@ export const QRCodeSection = ({
         },
       ]);
 
-      setDebugInfo(prev => ({
+      setDebugInfo((prev) => ({
         ...prev,
         fallback: {
           method: "Local QR Generation",
           addressQrUrl,
           amountQrUrl,
           addressQrData,
-          amountQrData
-        }
+          amountQrData,
+        },
       }));
     };
 
@@ -194,18 +193,8 @@ export const QRCodeSection = ({
     <div className="col-span-5 md:col-span-3 glass-card p-4 md:p-6 rounded-xl">
       <div className="flex justify-between items-center mb-4">
         <div className="text-sm text-gray-400">Scan QR code</div>
-        {hasAddress && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-xs"
-            onClick={toggleDebug}
-          >
-            Debug
-          </Button>
-        )}
       </div>
-      
+
       {loading ? (
         <div className="bg-white p-4 rounded-lg flex-col mb-4 w-full flex items-center justify-center">
           <div className="animate-pulse">
@@ -264,7 +253,7 @@ export const QRCodeSection = ({
           </>
         )}
       </div>
-      
+
       {debugInfo && (
         <div className="mt-4">
           <DebugPanel debugInfo={debugInfo} isLoading={loading} />

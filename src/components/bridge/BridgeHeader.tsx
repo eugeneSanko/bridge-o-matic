@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 
 export const BridgeHeader = () => {
@@ -11,9 +10,10 @@ export const BridgeHeader = () => {
       </div>
 
       <div className="text-gray-400 mb-8 sm:mb-12 space-y-2">
-        <p>The exchange service is provided by FixedFloat.</p>
+        <p>The exchange service is provided by Tradenly and FixedFloat.</p>
         <p>
-          Creating an order confirms your agreement with the FixedFloat rules.
+          Creating an order confirms your agreement with the Tradenly and
+          FixedFloat rules.
         </p>
       </div>
     </>

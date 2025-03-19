@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { QrCode, Clipboard, AlertCircle } from "lucide-react";
@@ -84,9 +83,9 @@ export const DestinationAddressInput = ({
             style={borderStyle}
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex ">
-            <Button variant="ghost" size="icon" title="Scan QR code">
+            {/* <Button variant="ghost" size="icon" title="Scan QR code">
               <QrCode className="h-4 w-4" />
-            </Button>
+            </Button> */}
             <Button
               variant="ghost"
               size="icon"
