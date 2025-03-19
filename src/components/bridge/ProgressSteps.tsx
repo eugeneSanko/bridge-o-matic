@@ -280,6 +280,10 @@ export const ProgressSteps = ({
     const apiResponse = orderDetails?.rawApiResponse || {};
     const fromTx = apiResponse?.from?.tx || {};
     const toTx = apiResponse?.to?.tx || {};
+    
+    // Extract network information for explorer links
+    const fromNetwork = apiResponse?.from?.network || apiResponse?.from?.coin || "";
+    const toNetwork = apiResponse?.to?.network || apiResponse?.to?.coin || "";
 
     return (
       <div className="p-0 rounded-xl mb-4 md:mb-9 overflow-hidden">
@@ -403,14 +407,24 @@ export const ProgressSteps = ({
                 value={fromTx?.id} 
                 isTxId={true}
                 copyable={true}
+                network={fromNetwork}
               />
               
-              <TransactionInfoItem 
-                label="View Receipt" 
-                value="View on Explorer"
-                isLink={true}
-                linkUrl={`https://ff.io/order/${apiResponse?.id || orderDetails?.orderId || "N/A"}`}
-              />
+              {fromTx?.id && hasExplorerUrl(fromTx.id, fromNetwork) ? (
+                <TransactionInfoItem 
+                  label="View Receipt" 
+                  value="View on Explorer"
+                  isLink={true}
+                  linkUrl={getExplorerUrl(fromTx.id, fromNetwork) || ""}
+                />
+              ) : (
+                <TransactionInfoItem 
+                  label="View Receipt" 
+                  value="View on FF.io"
+                  isLink={true}
+                  linkUrl={`https://ff.io/order/${apiResponse?.id || orderDetails?.orderId || "N/A"}`}
+                />
+              )}
               
               <TransactionInfoItem 
                 label="Received Time" 
@@ -451,14 +465,24 @@ export const ProgressSteps = ({
                 value={toTx?.id} 
                 isTxId={true}
                 copyable={true}
+                network={toNetwork}
               />
               
-              <TransactionInfoItem 
-                label="View Receipt" 
-                value="View on Explorer"
-                isLink={true}
-                linkUrl={`https://ff.io/order/${apiResponse?.id || orderDetails?.orderId || "N/A"}`}
-              />
+              {toTx?.id && hasExplorerUrl(toTx.id, toNetwork) ? (
+                <TransactionInfoItem 
+                  label="View Receipt" 
+                  value="View on Explorer"
+                  isLink={true}
+                  linkUrl={getExplorerUrl(toTx.id, toNetwork) || ""}
+                />
+              ) : (
+                <TransactionInfoItem 
+                  label="View Receipt" 
+                  value="View on FF.io"
+                  isLink={true}
+                  linkUrl={`https://ff.io/order/${apiResponse?.id || orderDetails?.orderId || "N/A"}`}
+                />
+              )}
               
               <TransactionInfoItem 
                 label="Sending time" 
