@@ -2,7 +2,7 @@
 import { Copy, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { getExplorerUrl, hasExplorerUrl, getNetworkName } from "@/utils/explorerUtils";
+import { getExplorerUrl, hasExplorerUrl, getNetworkName, isNetworkAvailable } from "@/utils/explorerUtils";
 
 interface TransactionInfoItemProps {
   label: string;
@@ -11,7 +11,7 @@ interface TransactionInfoItemProps {
   isLink?: boolean;
   linkUrl?: string;
   copyable?: boolean;
-  network?: string; // Add network prop for explorer links
+  network?: string; // Network prop for explorer links
 }
 
 export const TransactionInfoItem = ({
@@ -48,14 +48,12 @@ export const TransactionInfoItem = ({
     : value || "N/A";
 
   // Check if we can show an explorer link for this transaction
-  const explorerUrl = isTxId && typeof value === 'string' && network 
-    ? getExplorerUrl(value.toString(), network) 
+  const hasExplorer = isTxId && typeof value === 'string' && network && hasExplorerUrl(value.toString(), network);
+  
+  // Get explorer URL if available
+  const explorerUrl = hasExplorer 
+    ? getExplorerUrl(value!.toString(), network) 
     : null;
-
-  // We'll show the explorer link if:
-  // 1. This is a transaction ID AND
-  // 2. We have a valid explorer URL for this network
-  const showExplorerLink = isTxId && explorerUrl !== null;
 
   // Get a display name for the network if available
   const networkDisplayName = network ? getNetworkName(network) : "";
@@ -84,7 +82,7 @@ export const TransactionInfoItem = ({
         )}
         
         {/* Add explorer link button if applicable */}
-        {showExplorerLink && (
+        {hasExplorer && explorerUrl && (
           <a
             href={explorerUrl}
             target="_blank"
