@@ -31,7 +31,7 @@ export const CompletedTransactionSaver = ({
   const orderId = searchParams.get("orderId");
   const [isCheckingDb, setIsCheckingDb] = useState(false);
 
-  // Add effect to check for expired status first before other effects run
+  // Effect to check for expired status first before other effects run
   useEffect(() => {
     // If the order is expired, immediately check the database
     if (orderDetails?.currentStatus === 'expired' || orderDetails?.rawApiResponse?.status === 'EXPIRED') {
@@ -167,7 +167,6 @@ export const CompletedTransactionSaver = ({
 
     const saveTransaction = async () => {
       try {
-        // Removed the toast for starting to save
         logger.info("Attempting to save completed transaction to database");
         logger.debug("Order details for saving:", JSON.stringify(orderDetails, null, 2));
 
@@ -191,7 +190,6 @@ export const CompletedTransactionSaver = ({
         if (existingTransaction && existingTransaction.length > 0) {
           logger.info("Transaction already exists in database, updating saved state");
           setTransactionSaved(true);
-          // Removed the toast for already saved
           return;
         }
 
@@ -255,7 +253,6 @@ export const CompletedTransactionSaver = ({
             if (error.message?.includes('duplicate key') || error.message?.includes('unique constraint')) {
               logger.info("Transaction already exists in database (constraint violation)");
               setTransactionSaved(true);
-              // Removed the toast for already saved (constraint violation)
             } else {
               logger.error("Database error details:", error);
               toast({
@@ -280,7 +277,6 @@ export const CompletedTransactionSaver = ({
                   variant: "destructive"
                 });
               }
-              // Removed success toast for transaction saved
             }
             
             setTransactionSaved(true);
@@ -310,7 +306,8 @@ export const CompletedTransactionSaver = ({
     setTransactionSaved,
     transactionSaved,
     token,
-    isCheckingDb
+    isCheckingDb,
+    onOrderDetailsUpdate
   ]);
 
   return null;
