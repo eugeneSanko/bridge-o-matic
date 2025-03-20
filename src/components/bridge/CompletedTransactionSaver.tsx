@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -16,6 +17,7 @@ interface CompletedTransactionSaverProps {
   onOrderDetailsUpdate: (updatedDetails: OrderDetailsType) => void;
   setCheckingDb: (checking: boolean) => void;
   hasCheckedExpiredOrderRef: React.MutableRefObject<string | null>;
+  setUiReady?: (ready: boolean) => void;
 }
 
 export const CompletedTransactionSaver = ({
@@ -28,7 +30,8 @@ export const CompletedTransactionSaver = ({
   statusCheckDebugInfo,
   onOrderDetailsUpdate,
   setCheckingDb,
-  hasCheckedExpiredOrderRef
+  hasCheckedExpiredOrderRef,
+  setUiReady
 }: CompletedTransactionSaverProps) => {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get("orderId");
@@ -177,18 +180,17 @@ export const CompletedTransactionSaver = ({
   ]);
   
   useEffect(() => {
-    // Only handle expired status if we haven't already checked this order
-    // This prevents triggering the check again after updating order details
-    const shouldCheckExpiredStatus = 
-      (orderDetails?.currentStatus === 'expired' || 
-       orderDetails?.rawApiResponse?.status === 'EXPIRED') && 
-      hasCheckedExpiredOrderRef.current === orderDetails.orderId;
+    // When order details change, and it's an expired order, check DB immediately
+    const isExpiredStatus = 
+      orderDetails?.currentStatus === 'expired' || 
+      orderDetails?.rawApiResponse?.status === 'EXPIRED';
       
-    if (shouldCheckExpiredStatus) {
-      logger.debug("Handling expired order check for", orderDetails.orderId);
+    if (isExpiredStatus && orderDetails?.orderId && 
+        hasCheckedExpiredOrderRef.current === orderDetails.orderId) {
+      logger.debug("Checking DB immediately for expired order", orderDetails.orderId);
       handleExpiredStatus();
     }
-  }, [orderDetails]);
+  }, [orderDetails?.orderId]);
 
   // Handle expired status by checking database for completed transaction
   const handleExpiredStatus = async () => {
@@ -197,6 +199,7 @@ export const CompletedTransactionSaver = ({
     if (!orderDetails || !orderDetails.orderId || !token) {
       logger.error("Cannot handle expired status: missing order details or token");
       setCheckingDb(false);
+      if (setUiReady) setUiReady(true);
       return false;
     }
 
@@ -218,6 +221,7 @@ export const CompletedTransactionSaver = ({
           variant: "destructive"
         });
         setCheckingDb(false);
+        if (setUiReady) setUiReady(true);
         return false;
       }
       
@@ -241,9 +245,11 @@ export const CompletedTransactionSaver = ({
           // Update immediately without delay to avoid UI flicker
           onOrderDetailsUpdate(updatedDetails);
           setCheckingDb(false);
+          if (setUiReady) setUiReady(true);
           return true;
         } else {
           setCheckingDb(false);
+          if (setUiReady) setUiReady(true);
         }
         
         // Return true to indicate the transaction was found and status was updated
@@ -254,6 +260,7 @@ export const CompletedTransactionSaver = ({
       
       // Clear the loading state immediately
       setCheckingDb(false);
+      if (setUiReady) setUiReady(true);
       
       return false;
     } catch (e) {
@@ -264,6 +271,7 @@ export const CompletedTransactionSaver = ({
         variant: "destructive"
       });
       setCheckingDb(false);
+      if (setUiReady) setUiReady(true);
       return false;
     }
   };
