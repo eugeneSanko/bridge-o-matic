@@ -293,14 +293,12 @@ export function useBridgeOrder(
     navigator.clipboard
       .writeText(text)
       .then(() => {
-        // Keep the copy toast notification
         toast({
           title: "Copied",
           description: "Address copied to clipboard",
         });
       })
       .catch(() => {
-        // Keep error toast for clipboard errors
         toast({
           title: "Error",
           description: "Failed to copy address",
