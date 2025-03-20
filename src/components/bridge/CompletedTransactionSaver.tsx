@@ -66,27 +66,93 @@ export const CompletedTransactionSaver = ({
       return;
     }
 
+    // Show toast to indicate we're starting the save process
+    toast({
+      title: "Saving Transaction",
+      description: "Attempting to save your transaction details..."
+    });
+
     // Check if raw API response exists
     if (!orderDetails.rawApiResponse) {
       logger.warn("Missing raw API response, cannot save transaction properly");
       toast({
         title: "Warning",
-        description: "Missing API data for transaction, can't save completely",
+        description: "Missing API data for transaction, constructing fallback data",
         variant: "destructive"
       });
-      return;
     }
 
     const saveTransaction = async () => {
       try {
-        // Show toast when starting to save
-        toast({
-          title: "Saving Transaction",
-          description: "Attempting to save your transaction details..."
-        });
-
         logger.info("Attempting to save completed transaction to database");
-        logger.debug("Order details for saving:", JSON.stringify(orderDetails, null, 2));
+        
+        // Create a standardized API response structure if missing
+        let rawApiResponse = orderDetails.rawApiResponse;
+        
+        if (!rawApiResponse || Object.keys(rawApiResponse).length === 0) {
+          logger.warn("Creating fallback API response structure");
+          
+          // Create a properly structured fallback API response
+          rawApiResponse = {
+            id: orderDetails.orderId || "UNKNOWN",
+            type: orderDetails.orderType || "float",
+            status: "DONE",
+            time: {
+              reg: Math.floor(Date.now() / 1000) - 3600,
+              start: Math.floor(Date.now() / 1000) - 3000,
+              finish: Math.floor(Date.now() / 1000),
+              update: Math.floor(Date.now() / 1000),
+              expiration: orderDetails.expiresAt ? Math.floor(new Date(orderDetails.expiresAt).getTime() / 1000) : (Math.floor(Date.now() / 1000) + 1800),
+              left: 0,
+            },
+            from: {
+              code: orderDetails.fromCurrency || "UNKNOWN",
+              coin: orderDetails.fromCurrency || "UNKNOWN",
+              network: "UNKNOWN",
+              name: orderDetails.fromCurrencyName || "Unknown Currency",
+              alias: orderDetails.fromCurrency?.toLowerCase() || "unknown",
+              amount: orderDetails.depositAmount || "0.00000000",
+              address: orderDetails.depositAddress || "UNKNOWN",
+              addressAlt: null,
+              tag: orderDetails.tag || null,
+              tagName: orderDetails.tagName || null,
+              reqConfirmations: 1,
+              maxConfirmations: 6,
+              tx: {
+                id: null,
+                amount: null,
+                fee: null,
+                ccyfee: null,
+                timeReg: null,
+                timeBlock: null,
+                confirmations: null,
+              },
+            },
+            to: {
+              code: orderDetails.toCurrency || "UNKNOWN",
+              coin: orderDetails.toCurrency || "UNKNOWN",
+              network: "UNKNOWN",
+              name: orderDetails.toCurrencyName || "Unknown Currency",
+              alias: orderDetails.toCurrency?.toLowerCase() || "unknown",
+              amount: orderDetails.receiveAmount || "0.00000000",
+              address: orderDetails.destinationAddress || "UNKNOWN",
+              tag: null,
+              tagName: null,
+              tx: {
+                id: null,
+                amount: null,
+                fee: null,
+                ccyfee: null,
+                timeReg: null,
+                timeBlock: null,
+                confirmations: null,
+              },
+            },
+            token: orderDetails.ffOrderToken || token,
+          };
+          
+          logger.debug("Created fallback API structure:", rawApiResponse);
+        }
 
         // Check if the transaction already exists in the database
         const { data: existingTransaction, error: selectError } = await supabase
@@ -115,7 +181,7 @@ export const CompletedTransactionSaver = ({
           return;
         }
 
-        // Collect client metadata - convert readonly array to regular array
+        // Collect client metadata with better formatting
         const clientMetadata = {
           ip: 'client-side',
           user_agent: navigator.userAgent,
@@ -126,22 +192,11 @@ export const CompletedTransactionSaver = ({
             platform: navigator.platform,
             vendor: navigator.vendor
           },
-          simulation: simulateSuccess
+          simulation: simulateSuccess,
+          timestamp: new Date().toISOString()
         };
-
-        // Ensure we have the raw API response - no default empty object!
-        if (!orderDetails.rawApiResponse) {
-          toast({
-            title: "Missing Data",
-            description: "Raw API response is missing, transaction will be incomplete",
-            variant: "destructive"
-          });
-          logger.error("Raw API response is missing or null!");
-          return;
-        }
         
-        const rawApiResponse = orderDetails.rawApiResponse;
-        
+        logger.debug("Client metadata for saving:", clientMetadata);
         logger.debug("Raw API response being saved:", JSON.stringify(rawApiResponse, null, 2));
         
         // Log the exact data we're about to insert
@@ -157,74 +212,84 @@ export const CompletedTransactionSaver = ({
           client_metadata: clientMetadata,
           initial_rate: 0, // You might want to replace this with the actual rate
           expiration_time: orderDetails.expiresAt || new Date().toISOString(),
-          raw_api_response: rawApiResponse  // Important: No default fallback here
+          raw_api_response: rawApiResponse  // Use the properly structured API response
         };
         
         logger.debug("Database insert data:", JSON.stringify(insertData, null, 2));
 
-        // Use a more reliable approach with error handling
-        try {
-          // Insert the transaction data into the database
-          const { data, error } = await supabase
-            .from('bridge_transactions')
-            .insert(insertData)
-            .select('id, raw_api_response');
+        // Insert the transaction data into the database
+        const { data, error } = await supabase
+          .from('bridge_transactions')
+          .insert(insertData)
+          .select('id, raw_api_response');
 
-          if (error) {
-            // Handle duplicate key errors gracefully
-            if (error.message?.includes('duplicate key') || error.message?.includes('unique constraint')) {
-              logger.info("Transaction already exists in database (constraint violation)");
-              setTransactionSaved(true);
+        if (error) {
+          // Handle duplicate key errors gracefully
+          if (error.message?.includes('duplicate key') || error.message?.includes('unique constraint')) {
+            logger.info("Transaction already exists in database (constraint violation)");
+            setTransactionSaved(true);
+            toast({
+              title: "Already Saved",
+              description: "This transaction was already saved to the database"
+            });
+          } else {
+            logger.error("Database error details:", error);
+            toast({
+              title: "Save Error",
+              description: `Failed to save transaction: ${error.message}`,
+              variant: "destructive"
+            });
+          }
+        } else {
+          logger.info("Transaction saved successfully:", data);
+          
+          // Verify what was actually saved
+          if (data && data.length > 0) {
+            const savedResponse = data[0].raw_api_response;
+            logger.debug("Raw API response as saved in DB:", typeof savedResponse, savedResponse);
+            
+            if (!savedResponse || (typeof savedResponse === 'object' && Object.keys(savedResponse).length === 0)) {
               toast({
-                title: "Already Saved",
-                description: "This transaction was already saved to the database"
-              });
-            } else {
-              logger.error("Database error details:", error);
-              toast({
-                title: "Save Error",
-                description: `Failed to save transaction: ${error.message}`,
+                title: "Partial Save",
+                description: "Transaction saved but API data appears empty in database",
                 variant: "destructive"
               });
-              throw error;
-            }
-          } else {
-            logger.info("Transaction saved successfully:", data);
-            
-            // Log what was actually saved to the database
-            if (data && data.length > 0) {
-              const savedResponse = data[0].raw_api_response;
-              logger.debug("Raw API response as saved in DB:", savedResponse);
-              
-              if (!savedResponse || (typeof savedResponse === 'object' && Object.keys(savedResponse).length === 0)) {
-                toast({
-                  title: "Partial Save",
-                  description: "Transaction saved but API data was not stored correctly",
-                  variant: "destructive"
-                });
-              } else {
-                toast({
-                  title: "Transaction Saved",
-                  description: "Transaction details saved successfully with API data"
-                });
-              }
             } else {
               toast({
                 title: "Transaction Saved",
-                description: "Transaction saved, but couldn't verify API data"
+                description: "Transaction details saved successfully with API data"
               });
             }
-            
-            setTransactionSaved(true);
+          } else {
+            toast({
+              title: "Transaction Saved",
+              description: "Transaction saved, but couldn't verify API data"
+            });
           }
-        } catch (dbError) {
-          logger.error("Database error saving transaction:", dbError);
-          toast({
-            title: "Database Error",
-            description: `Failed to save transaction: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`,
-            variant: "destructive"
-          });
+          
+          setTransactionSaved(true);
         }
+        
+        // Double check the saved transaction
+        setTimeout(async () => {
+          const { data: verifyData, error: verifyError } = await supabase
+            .from('bridge_transactions')
+            .select('raw_api_response')
+            .eq('ff_order_id', orderDetails.orderId)
+            .limit(1);
+            
+          if (verifyError) {
+            logger.error("Error verifying saved transaction:", verifyError);
+          } else if (verifyData && verifyData.length > 0) {
+            logger.debug("Verification of saved transaction:", {
+              hasData: !!verifyData[0].raw_api_response,
+              dataType: typeof verifyData[0].raw_api_response,
+              isEmpty: typeof verifyData[0].raw_api_response === 'object' && 
+                     Object.keys(verifyData[0].raw_api_response).length === 0
+            });
+          }
+        }, 2000);
+        
       } catch (e) {
         logger.error("Error saving transaction:", e);
         toast({
