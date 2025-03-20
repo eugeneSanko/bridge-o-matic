@@ -253,7 +253,12 @@ export const CompletedTransactionSaver = ({
       }
       
       logger.debug("Transaction not found in database, maintaining expired status");
-      setCheckingDb(false);
+      
+      // Important fix: Always ensure we clear the loading state regardless of the outcome
+      setTimeout(() => {
+        setCheckingDb(false);
+      }, 500);
+      
       return false;
     } catch (e) {
       logger.error("Error in handleExpiredStatus:", e);

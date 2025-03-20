@@ -43,6 +43,25 @@ export const BridgeStatusRenderer = ({
   // Track whether we've already checked this expired order
   const hasCheckedExpiredOrderRef = useRef<string | null>(null);
   
+  // Reset the loading state after a timeout to prevent infinite loading
+  useEffect(() => {
+    let timeoutId: number | null = null;
+    
+    if (checkingDbForExpiredOrder) {
+      // Safety timeout - if DB check takes too long, force reset the loading state
+      timeoutId = window.setTimeout(() => {
+        logger.warn("Database check timeout exceeded, forcing reset of loading state");
+        setCheckingDbForExpiredOrder(false);
+      }, 5000); // 5 second timeout as a safety measure
+    }
+    
+    return () => {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [checkingDbForExpiredOrder]);
+  
   useEffect(() => {
     setOrderDetails(initialOrderDetails);
     
@@ -60,6 +79,7 @@ export const BridgeStatusRenderer = ({
   
   // If we're in a loading state or checking DB for expired orders, show loading state
   if (loading || checkingDbForExpiredOrder) {
+    logger.debug("Rendering loading state - loading:", loading, "checking DB:", checkingDbForExpiredOrder);
     return <LoadingState />;
   }
 
@@ -167,6 +187,8 @@ export const BridgeStatusRenderer = ({
     handleCopyAddress(address);
   };
 
+  logger.debug("Rendering transaction details for status:", orderDetails.currentStatus);
+  
   return (
     <>
       <BridgeTransaction 
