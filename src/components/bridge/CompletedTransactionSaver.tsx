@@ -31,7 +31,7 @@ export const CompletedTransactionSaver = ({
   const orderId = searchParams.get("orderId");
   const [isCheckingDb, setIsCheckingDb] = useState(false);
 
-  // Effect to check for expired status first before other effects run
+  // Add effect to check for expired status first before other effects run
   useEffect(() => {
     // If the order is expired, immediately check the database
     if (orderDetails?.currentStatus === 'expired' || orderDetails?.rawApiResponse?.status === 'EXPIRED') {
@@ -167,6 +167,12 @@ export const CompletedTransactionSaver = ({
 
     const saveTransaction = async () => {
       try {
+        // Show toast when starting to save
+        toast({
+          title: "Saving Transaction",
+          description: "Attempting to save your transaction details..."
+        });
+
         logger.info("Attempting to save completed transaction to database");
         logger.debug("Order details for saving:", JSON.stringify(orderDetails, null, 2));
 
@@ -190,6 +196,10 @@ export const CompletedTransactionSaver = ({
         if (existingTransaction && existingTransaction.length > 0) {
           logger.info("Transaction already exists in database, updating saved state");
           setTransactionSaved(true);
+          toast({
+            title: "Already Saved",
+            description: "This transaction was already saved to the database"
+          });
           return;
         }
 
@@ -253,6 +263,10 @@ export const CompletedTransactionSaver = ({
             if (error.message?.includes('duplicate key') || error.message?.includes('unique constraint')) {
               logger.info("Transaction already exists in database (constraint violation)");
               setTransactionSaved(true);
+              toast({
+                title: "Already Saved",
+                description: "This transaction was already saved to the database"
+              });
             } else {
               logger.error("Database error details:", error);
               toast({
@@ -276,7 +290,17 @@ export const CompletedTransactionSaver = ({
                   description: "Transaction saved but API data was not stored correctly",
                   variant: "destructive"
                 });
+              } else {
+                toast({
+                  title: "Transaction Saved",
+                  description: "Transaction details saved successfully with API data"
+                });
               }
+            } else {
+              toast({
+                title: "Transaction Saved",
+                description: "Transaction saved, but couldn't verify API data"
+              });
             }
             
             setTransactionSaved(true);
@@ -306,8 +330,7 @@ export const CompletedTransactionSaver = ({
     setTransactionSaved,
     transactionSaved,
     token,
-    isCheckingDb,
-    onOrderDetailsUpdate
+    isCheckingDb
   ]);
 
   return null;

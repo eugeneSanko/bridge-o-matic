@@ -1,3 +1,4 @@
+
 import { OrderDetails } from "@/hooks/useBridgeOrder";
 import { LoadingState } from "@/components/bridge/LoadingState";
 import { ErrorState } from "@/components/bridge/ErrorState";
@@ -40,12 +41,7 @@ export const BridgeStatusRenderer = ({
 }: BridgeStatusRendererProps) => {
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(initialOrderDetails);
   const [uiReady, setUiReady] = useState(false);
-  const [isDbCheckComplete, setIsDbCheckComplete] = useState(false);
   
-  // Use this to prevent multiple DB checks
-  const [hasCheckedDb, setHasCheckedDb] = useState(false);
-  
-  // Effect for initial load and setting orderDetails
   useEffect(() => {
     logger.debug("BridgeStatusRenderer: initialOrderDetails updated", initialOrderDetails);
     if (initialOrderDetails) {
@@ -63,109 +59,18 @@ export const BridgeStatusRenderer = ({
         }
       }
     }
+    setOrderDetails(initialOrderDetails);
     
-    // For expired status, check DB before updating UI
-    if (initialOrderDetails?.currentStatus === 'expired' || initialOrderDetails?.rawApiResponse?.status === 'EXPIRED') {
-      logger.debug("BridgeStatusRenderer: Expired status detected, delaying UI update until DB check");
-      if (!hasCheckedDb) {
-        // Mark the UI as not ready while we check the database
-        setUiReady(false);
-        setIsDbCheckComplete(false);
-        // We'll set the order details after DB check completes
-        checkCompletedTransactionInDb();
-      } else {
-        // We've already checked DB, so we can update
-        setOrderDetails(initialOrderDetails);
-        setUiReady(true);
-        setIsDbCheckComplete(true);
-      }
-    } else {
-      // For non-expired statuses, update immediately
-      setOrderDetails(initialOrderDetails);
-      
-      // Mark UI as ready for non-DB check cases
+    // Mark UI as ready after a short delay when order details are loaded
+    const timer = setTimeout(() => {
       setUiReady(true);
-      setIsDbCheckComplete(true);
-    }
-  }, [initialOrderDetails, hasCheckedDb]);
-  
-  // Check database specifically for expired orders
-  const checkCompletedTransactionInDb = async () => {
-    if (!initialOrderDetails || !initialOrderDetails.orderId) {
-      setIsDbCheckComplete(true);
-      setUiReady(true);
-      return;
-    }
+    }, 100);
     
-    logger.debug("BridgeStatusRenderer: Checking database for expired order", initialOrderDetails.orderId);
-    setHasCheckedDb(true);
-    
-    try {
-      // Query the database to see if this transaction was already processed
-      const { data: results, error } = await supabase
-        .from('bridge_transactions')
-        .select('*')
-        .eq('ff_order_id', initialOrderDetails.orderId)
-        .limit(1);
-      
-      if (error) {
-        logger.error("Error checking for transaction:", error);
-        setIsDbCheckComplete(true);
-        setUiReady(true);
-        return;
-      }
-      
-      // Check if we found the transaction in the database
-      if (results && Array.isArray(results) && results.length > 0) {
-        logger.debug("Transaction found in database for expired order:", results);
-        
-        // If the transaction exists in the database and status is completed, update the order details
-        if (results[0].status === 'completed') {
-          logger.info("Found completed transaction in database for expired order, updating UI");
-          
-          // Get the raw API response from the database
-          const savedApiResponse = results[0].raw_api_response || {};
-          
-          // Create updated order details
-          const updatedDetails = {
-            ...initialOrderDetails,
-            currentStatus: "completed",
-            depositAddress: results[0].deposit_address || initialOrderDetails.depositAddress,
-            depositAmount: results[0].amount?.toString() || initialOrderDetails.depositAmount,
-            fromCurrency: results[0].from_currency || initialOrderDetails.fromCurrency,
-            toCurrency: results[0].to_currency || initialOrderDetails.toCurrency,
-            destinationAddress: results[0].destination_address || initialOrderDetails.destinationAddress,
-            rawApiResponse: savedApiResponse
-          };
-          
-          // Update the order details with the completed transaction
-          setOrderDetails(updatedDetails);
-          
-          // Mark transaction as saved since we found it in the database
-          setTransactionSaved(true);
-        } else {
-          // Transaction found but not completed, use the initial order details
-          setOrderDetails(initialOrderDetails);
-        }
-      } else {
-        // Transaction not found, use the initial order details
-        setOrderDetails(initialOrderDetails);
-      }
-      
-      // Mark DB check as complete and UI as ready
-      setIsDbCheckComplete(true);
-      setUiReady(true);
-    } catch (e) {
-      logger.error("Error checking database for expired order:", e);
-      // Ensure UI becomes ready even after error
-      setIsDbCheckComplete(true);
-      setUiReady(true);
-      setOrderDetails(initialOrderDetails);
-    }
-  };
+    return () => clearTimeout(timer);
+  }, [initialOrderDetails]);
   
   // Show loading state while the page is loading or UI is not ready
-  if (loading || !uiReady || !isDbCheckComplete) {
+  if (loading || !uiReady) {
     return <LoadingState />;
   }
 
