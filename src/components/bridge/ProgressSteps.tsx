@@ -1,3 +1,4 @@
+
 import {
   Loader,
   Clock,
@@ -17,6 +18,7 @@ import { TransactionInfoItem } from "./TransactionInfoItem";
 import { useMobile } from "@/hooks/use-mobile";
 import { getExplorerUrl, hasExplorerUrl } from "@/utils/explorerUtils";
 import { Icon } from "@iconify/react";
+import { toast } from "@/hooks/use-toast";
 
 interface ProgressStepsProps {
   currentStatus?: string;
@@ -59,6 +61,18 @@ export const ProgressSteps = ({
     console.log(`Normalized status: ${currentStatus} -> ${statusToUse}`);
     setNormalizedStatus(statusToUse);
   }, [currentStatus]);
+
+  // Function to copy order ID to clipboard
+  const handleCopyOrderId = (id: string) => {
+    if (!id) return;
+    
+    try {
+      navigator.clipboard.writeText(id);
+      console.log("Copied order ID to clipboard:", id);
+    } catch (error) {
+      console.error("Failed to copy order ID:", error);
+    }
+  };
 
   // Map FF.io API status to step index
   const getActiveStepIndex = (status: string): number => {
@@ -307,6 +321,9 @@ export const ProgressSteps = ({
       apiResponse?.from?.network || apiResponse?.from?.coin || "";
     const toNetwork = apiResponse?.to?.network || apiResponse?.to?.coin || "";
 
+    // Order ID to display and copy
+    const displayOrderId = apiResponse?.id || orderDetails?.orderId || "N/A";
+
     return (
       <div className="p-0 rounded-xl mb-4 md:mb-9 overflow-hidden">
         <div className="glass-card p-3 md:p-8 rounded-xl mb-4">
@@ -319,11 +336,12 @@ export const ProgressSteps = ({
             <div className="border-b border-white/10 pb-2 md:pb-3">
               <div className="text-gray-400 text-xs md:text-sm">Order ID</div>
               <div className="text-[#f0b90b] font-mono font-semibold text-base md:text-xl flex items-center gap-2">
-                {apiResponse?.id || orderDetails?.orderId || "N/A"}
+                {displayOrderId}
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-5 w-5 md:h-6 md:w-6"
+                  onClick={() => handleCopyOrderId(displayOrderId)}
                 >
                   <Copy className="h-3 w-3 md:h-4 md:w-4 text-gray-400" />
                 </Button>
@@ -460,14 +478,6 @@ export const ProgressSteps = ({
                   linkUrl={getExplorerUrl(fromTx.id, fromNetwork) || ""}
                 />
               ) : (
-                // <TransactionInfoItem
-                //   label="View Receipt"
-                //   value="View on FF.io"
-                //   isLink={true}
-                //   linkUrl={`https://ff.io/order/${
-                //     apiResponse?.id || orderDetails?.orderId || "N/A"
-                //   }`}
-                // />
                 <></>
               )}
 

@@ -167,12 +167,7 @@ export const CompletedTransactionSaver = ({
 
     const saveTransaction = async () => {
       try {
-        // Show toast when starting to save
-        toast({
-          title: "Saving Transaction",
-          description: "Attempting to save your transaction details..."
-        });
-
+        // Removed the toast for starting to save
         logger.info("Attempting to save completed transaction to database");
         logger.debug("Order details for saving:", JSON.stringify(orderDetails, null, 2));
 
@@ -196,10 +191,7 @@ export const CompletedTransactionSaver = ({
         if (existingTransaction && existingTransaction.length > 0) {
           logger.info("Transaction already exists in database, updating saved state");
           setTransactionSaved(true);
-          toast({
-            title: "Already Saved",
-            description: "This transaction was already saved to the database"
-          });
+          // Removed the toast for already saved
           return;
         }
 
@@ -263,10 +255,7 @@ export const CompletedTransactionSaver = ({
             if (error.message?.includes('duplicate key') || error.message?.includes('unique constraint')) {
               logger.info("Transaction already exists in database (constraint violation)");
               setTransactionSaved(true);
-              toast({
-                title: "Already Saved",
-                description: "This transaction was already saved to the database"
-              });
+              // Removed the toast for already saved (constraint violation)
             } else {
               logger.error("Database error details:", error);
               toast({
@@ -290,17 +279,8 @@ export const CompletedTransactionSaver = ({
                   description: "Transaction saved but API data was not stored correctly",
                   variant: "destructive"
                 });
-              } else {
-                toast({
-                  title: "Transaction Saved",
-                  description: "Transaction details saved successfully with API data"
-                });
               }
-            } else {
-              toast({
-                title: "Transaction Saved",
-                description: "Transaction saved, but couldn't verify API data"
-              });
+              // Removed success toast for transaction saved
             }
             
             setTransactionSaved(true);
