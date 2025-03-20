@@ -1,3 +1,4 @@
+
 import { OrderDetails } from "@/hooks/useBridgeOrder";
 import { LoadingState } from "@/components/bridge/LoadingState";
 import { ErrorState } from "@/components/bridge/ErrorState";
@@ -21,24 +22,29 @@ interface BridgeStatusRendererProps {
   transactionSaved: boolean;
   setTransactionSaved: (saved: boolean) => void;
   checkOrderStatus?: () => void;
+  checkDbForCompletedTransaction?: (orderId: string) => Promise<any>;
   setEmergencyActionTaken?: (taken: boolean) => void;
 }
 
 export const BridgeStatusRenderer = ({
-  loading,
+  loading: initialLoading,
   error,
   orderDetails: initialOrderDetails,
   handleCopyAddress,
+  statusCheckDebugInfo,
   simulateSuccess,
   originalOrderDetails,
   token,
   transactionSaved,
   setTransactionSaved,
   checkOrderStatus,
+  checkDbForCompletedTransaction,
   setEmergencyActionTaken
 }: BridgeStatusRendererProps) => {
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(initialOrderDetails);
   const [checkingDbForExpiredOrder, setCheckingDbForExpiredOrder] = useState(false);
+  const [loading, setLoading] = useState(initialLoading);
+  
   // Track whether we've already checked this expired order
   const hasCheckedExpiredOrderRef = useRef<string | null>(null);
   
@@ -51,6 +57,7 @@ export const BridgeStatusRenderer = ({
       timeoutId = window.setTimeout(() => {
         logger.warn("Database check timeout exceeded, forcing reset of loading state");
         setCheckingDbForExpiredOrder(false);
+        setLoading(false);
       }, 5000); // 5 second timeout as a safety measure
     }
     
@@ -61,25 +68,60 @@ export const BridgeStatusRenderer = ({
     };
   }, [checkingDbForExpiredOrder]);
   
+  // Handle new order details from parent component
   useEffect(() => {
     setOrderDetails(initialOrderDetails);
+    setLoading(initialLoading);
     
-    // Only set checking flag if this is a new expired order we haven't checked yet
-    if ((initialOrderDetails?.currentStatus === 'expired' || 
-        initialOrderDetails?.rawApiResponse?.status === 'EXPIRED') && 
-        (!hasCheckedExpiredOrderRef.current || 
-         hasCheckedExpiredOrderRef.current !== initialOrderDetails.orderId)) {
-      
+    // Only check database if:
+    // 1. This is an expired order
+    // 2. We haven't checked this exact order ID yet
+    // 3. We have a DB checking function available
+    const isExpiredOrder = initialOrderDetails?.currentStatus === 'expired' || 
+                          initialOrderDetails?.rawApiResponse?.status === 'EXPIRED';
+    
+    const shouldCheckDB = isExpiredOrder && 
+                         hasCheckedExpiredOrderRef.current !== initialOrderDetails?.orderId &&
+                         !!checkDbForCompletedTransaction;
+    
+    if (shouldCheckDB && initialOrderDetails) {
       logger.debug("Setting up DB check for expired order", initialOrderDetails.orderId);
       setCheckingDbForExpiredOrder(true);
       hasCheckedExpiredOrderRef.current = initialOrderDetails.orderId;
+      
+      // Start the database check when needed
+      const startDbCheck = async () => {
+        if (checkDbForCompletedTransaction && initialOrderDetails?.orderId) {
+          logger.info("Checking database for completed transaction for expired order");
+          const dbTransaction = await checkDbForCompletedTransaction(initialOrderDetails.orderId);
+          
+          if (dbTransaction) {
+            logger.info("Found completed transaction in database for expired order");
+            
+            // Create updated order details with data from the database
+            const updatedDetails: OrderDetails = {
+              ...initialOrderDetails,
+              currentStatus: "completed",
+              rawApiResponse: dbTransaction.raw_api_response || initialOrderDetails.rawApiResponse
+            };
+            
+            handleOrderDetailsUpdate(updatedDetails);
+          }
+          
+          // Always reset loading state after check completes
+          setCheckingDbForExpiredOrder(false);
+          setLoading(false);
+        }
+      };
+      
+      startDbCheck();
     }
-  }, [initialOrderDetails]);
+  }, [initialOrderDetails, initialLoading, checkDbForCompletedTransaction]);
   
   // If we're in a loading state or checking DB for expired orders, show loading state
   if (loading || checkingDbForExpiredOrder) {
     logger.debug("Rendering loading state - loading:", loading, "checking DB:", checkingDbForExpiredOrder);
-    return <LoadingState />;
+    return <LoadingState message={checkingDbForExpiredOrder ? "Checking transaction records in the database..." : "Verifying transaction status..."} />;
   }
 
   if (error) {
@@ -205,7 +247,7 @@ export const BridgeStatusRenderer = ({
         token={token}
         transactionSaved={transactionSaved}
         setTransactionSaved={setTransactionSaved}
-        statusCheckDebugInfo={null}
+        statusCheckDebugInfo={statusCheckDebugInfo}
         onOrderDetailsUpdate={handleOrderDetailsUpdate}
         setCheckingDb={setCheckingDbForExpiredOrder}
         hasCheckedExpiredOrderRef={hasCheckedExpiredOrderRef}

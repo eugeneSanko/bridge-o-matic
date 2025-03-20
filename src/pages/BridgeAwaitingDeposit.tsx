@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useBridgeOrder } from "@/hooks/useBridgeOrder";
@@ -16,6 +17,7 @@ const BridgeAwaitingDeposit = () => {
   const [apiAttempted, setApiAttempted] = useState(false);
   const [transactionSaved, setTransactionSaved] = useState(false);
   const [statusCheckDebugInfo, setStatusCheckDebugInfo] = useState(null);
+  const [dbCheckInProgress, setDbCheckInProgress] = useState(false);
 
   // Load order details from the bridge API
   const {
@@ -48,14 +50,29 @@ const BridgeAwaitingDeposit = () => {
     // This function is just for additional logging or future extensibility
   };
 
+  // Handle db check start and end
+  const handleDbCheckStart = () => {
+    setDbCheckInProgress(true);
+  };
+
+  const handleDbCheckComplete = () => {
+    setDbCheckInProgress(false);
+  };
+
   // Use custom hook for order status polling
-  const { statusCheckError, checkOrderStatus } = useOrderStatusPolling({
+  const { 
+    statusCheckError, 
+    checkOrderStatus,
+    checkDbForCompletedTransaction
+  } = useOrderStatusPolling({
     orderId,
     token,
     originalOrderDetails,
     setOrderDetails,
     onTransactionComplete: handleTransactionComplete,
     setStatusCheckDebugInfo,
+    onDatabaseCheckStart: handleDbCheckStart,
+    onDatabaseCheckComplete: handleDbCheckComplete
   });
 
   // Update orderDetails when originalOrderDetails changes
@@ -76,13 +93,13 @@ const BridgeAwaitingDeposit = () => {
       <ApiStatusMonitor
         apiAttempted={apiAttempted}
         setApiAttempted={setApiAttempted}
-        loading={loading}
+        loading={loading || dbCheckInProgress}
         error={error}
         orderDetails={orderDetails}
       />
 
       <BridgeStatusRenderer
-        loading={loading}
+        loading={loading || dbCheckInProgress}
         error={error}
         orderDetails={orderDetails}
         handleCopyAddress={handleCopyAddress}
@@ -93,6 +110,7 @@ const BridgeAwaitingDeposit = () => {
         transactionSaved={transactionSaved}
         setTransactionSaved={setTransactionSaved}
         checkOrderStatus={() => checkOrderStatus && checkOrderStatus(true)}
+        checkDbForCompletedTransaction={checkDbForCompletedTransaction}
         setEmergencyActionTaken={setEmergencyActionTaken}
       />
     </div>

@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { OrderDetails } from "@/hooks/useBridgeOrder";
@@ -27,6 +27,8 @@ interface UseOrderStatusPollingProps {
   setOrderDetails: (details: OrderDetails) => void;
   onTransactionComplete: (details: OrderDetails, apiResponse: any) => void;
   setStatusCheckDebugInfo?: (info: any) => void;
+  onDatabaseCheckStart?: () => void;
+  onDatabaseCheckComplete?: () => void;
 }
 
 export const useOrderStatusPolling = ({
@@ -36,6 +38,8 @@ export const useOrderStatusPolling = ({
   setOrderDetails,
   onTransactionComplete,
   setStatusCheckDebugInfo,
+  onDatabaseCheckStart,
+  onDatabaseCheckComplete,
 }: UseOrderStatusPollingProps) => {
   const [statusCheckDebugInfoInternal, setStatusCheckDebugInfoInternal] =
     useState<any>(null);
@@ -46,6 +50,7 @@ export const useOrderStatusPolling = ({
   const [manualStatusCheckAttempted, setManualStatusCheckAttempted] =
     useState(false);
   const [emergencyActionTaken, setEmergencyActionTaken] = useState(false);
+  const dbCheckInProgressRef = useRef(false);
 
   // Function to update debug info in both places
   const updateDebugInfo = (info: any) => {
@@ -79,6 +84,60 @@ export const useOrderStatusPolling = ({
     setPollingInterval(newInterval);
   }, [originalOrderDetails?.rawApiResponse?.status, emergencyActionTaken]);
 
+  // Function to check the database for completed transactions
+  const checkDbForCompletedTransaction = useCallback(async (orderId: string) => {
+    if (dbCheckInProgressRef.current) {
+      pollingLogger.debug("Database check already in progress, skipping");
+      return null;
+    }
+
+    if (onDatabaseCheckStart) {
+      onDatabaseCheckStart();
+    }
+    
+    dbCheckInProgressRef.current = true;
+    pollingLogger.info("Checking database for completed transaction:", orderId);
+    
+    try {
+      // Use a timeout to ensure the check doesn't hang indefinitely
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Database check timed out")), 8000);
+      });
+      
+      const dbCheckPromise = supabase
+        .from('bridge_transactions')
+        .select('*')
+        .eq('ff_order_id', orderId)
+        .limit(1);
+      
+      // Race the database query against the timeout
+      const { data: results, error } = await Promise.race([
+        dbCheckPromise,
+        timeoutPromise
+      ]) as any;
+      
+      if (error) {
+        pollingLogger.error("Error checking database:", error);
+        return null;
+      }
+      
+      if (results && results.length > 0) {
+        pollingLogger.info("Found transaction in database:", results[0]);
+        return results[0];
+      }
+      
+      return null;
+    } catch (error) {
+      pollingLogger.error("Exception during database check:", error);
+      return null;
+    } finally {
+      dbCheckInProgressRef.current = false;
+      if (onDatabaseCheckComplete) {
+        onDatabaseCheckComplete();
+      }
+    }
+  }, [onDatabaseCheckStart, onDatabaseCheckComplete]);
+
   // Function to check order status manually or via polling
   const checkOrderStatus = useCallback(
     async (force = false) => {
@@ -105,6 +164,28 @@ export const useOrderStatusPolling = ({
       }
 
       setLastPollTimestamp(now);
+
+      // Check database for EXPIRED status first to improve performance
+      if (force && originalOrderDetails?.rawApiResponse?.status === 'EXPIRED') {
+        pollingLogger.info("Order is EXPIRED, checking database for completed transaction first");
+        const dbTransaction = await checkDbForCompletedTransaction(orderId);
+        
+        if (dbTransaction) {
+          pollingLogger.info("Found completed transaction in database for expired order");
+          
+          // Create updated order details with data from the database
+          const updatedDetails: OrderDetails = {
+            ...originalOrderDetails,
+            currentStatus: "completed",
+            rawApiResponse: dbTransaction.raw_api_response || originalOrderDetails.rawApiResponse
+          };
+          
+          setOrderDetails(updatedDetails);
+          return;
+        } else {
+          pollingLogger.info("No completed transaction found in database, continuing with API check");
+        }
+      }
 
       try {
         pollingLogger.info(
@@ -188,6 +269,7 @@ export const useOrderStatusPolling = ({
       onTransactionComplete,
       updateDebugInfo,
       emergencyActionTaken,
+      checkDbForCompletedTransaction
     ]
   );
 
@@ -217,5 +299,6 @@ export const useOrderStatusPolling = ({
     statusCheckDebugInfo: statusCheckDebugInfoInternal,
     statusCheckError,
     checkOrderStatus,
+    checkDbForCompletedTransaction,
   };
 };
