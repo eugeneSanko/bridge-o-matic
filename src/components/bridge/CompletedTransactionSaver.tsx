@@ -59,6 +59,7 @@ export const CompletedTransactionSaver = ({
     const saveTransaction = async () => {
       try {
         logger.info("Attempting to save completed transaction to database");
+        logger.debug("Order details for saving:", JSON.stringify(orderDetails, null, 2));
 
         // Check if the transaction already exists in the database
         const { data: existingTransaction, error: selectError } = await supabase
@@ -97,6 +98,11 @@ export const CompletedTransactionSaver = ({
           simulation: simulateSuccess
         };
 
+        // Ensure we have the raw API response
+        const rawApiResponse = orderDetails.rawApiResponse || {};
+        
+        logger.debug("Raw API response being saved:", JSON.stringify(rawApiResponse, null, 2));
+
         // Use a more reliable approach with error handling
         try {
           // Insert the transaction data into the database
@@ -114,7 +120,7 @@ export const CompletedTransactionSaver = ({
               client_metadata: clientMetadata,
               initial_rate: 0, // You might want to replace this with the actual rate
               expiration_time: orderDetails.expiresAt || new Date().toISOString(),
-              raw_api_response: orderDetails.rawApiResponse
+              raw_api_response: rawApiResponse
             })
             .select('id');
 
@@ -198,10 +204,12 @@ export const CompletedTransactionSaver = ({
         if (results[0].status === 'completed') {
           logger.info("Found completed transaction in database, updating order details");
           
+          // Get the raw API response from the database
+          const savedApiResponse = results[0].raw_api_response || {};
+          logger.debug("Saved API response:", savedApiResponse);
+          
           // Reconstruct the order details from the database record
           if (onOrderDetailsUpdate) {
-            const rawApiResponse = results[0].raw_api_response || {};
-            
             const updatedDetails = {
               ...orderDetails,
               currentStatus: "completed",
@@ -210,9 +218,10 @@ export const CompletedTransactionSaver = ({
               fromCurrency: results[0].from_currency || orderDetails.fromCurrency,
               toCurrency: results[0].to_currency || orderDetails.toCurrency,
               destinationAddress: results[0].destination_address || orderDetails.destinationAddress,
-              rawApiResponse: rawApiResponse
+              rawApiResponse: savedApiResponse
             };
             
+            logger.debug("Updated order details:", updatedDetails);
             onOrderDetailsUpdate(updatedDetails);
           }
           

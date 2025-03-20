@@ -179,7 +179,7 @@ export const BridgeStatusRenderer = ({
         token={token}
         transactionSaved={transactionSaved}
         setTransactionSaved={setTransactionSaved}
-        statusCheckDebugInfo={null}
+        statusCheckDebugInfo={statusCheckDebugInfo}
         onOrderDetailsUpdate={handleOrderDetailsUpdate}
       />
     </>
