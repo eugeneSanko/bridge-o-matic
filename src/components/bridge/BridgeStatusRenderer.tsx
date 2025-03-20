@@ -47,6 +47,15 @@ export const BridgeStatusRenderer = ({
       logger.debug("BridgeStatusRenderer: API response exists?", !!initialOrderDetails.rawApiResponse);
       if (initialOrderDetails.rawApiResponse) {
         logger.debug("BridgeStatusRenderer: API response data", JSON.stringify(initialOrderDetails.rawApiResponse, null, 2));
+      } else {
+        logger.warn("BridgeStatusRenderer: Missing rawApiResponse in orderDetails!");
+        if (initialOrderDetails.currentStatus === "completed") {
+          toast({
+            title: "Warning",
+            description: "Transaction is complete but API data is missing",
+            variant: "destructive"
+          });
+        }
       }
     }
     setOrderDetails(initialOrderDetails);
@@ -66,6 +75,17 @@ export const BridgeStatusRenderer = ({
 
   const handleOrderDetailsUpdate = (updatedDetails: OrderDetails) => {
     logger.debug("Updating order details:", updatedDetails);
+    
+    // Verify the raw API response is present
+    if (!updatedDetails.rawApiResponse && updatedDetails.currentStatus === "completed") {
+      logger.warn("Updated order details is missing rawApiResponse but status is completed!");
+      toast({
+        title: "Data Warning",
+        description: "Updated order missing API data, may not save correctly",
+        variant: "destructive"
+      });
+    }
+    
     setOrderDetails(updatedDetails);
   };
 

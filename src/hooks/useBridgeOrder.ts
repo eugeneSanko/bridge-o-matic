@@ -130,6 +130,9 @@ export function useBridgeOrder(
         const fromCurrencyName = apiResponse.data.from?.name || "Unknown";
         const toCurrencyName = apiResponse.data.to?.name || "Unknown";
 
+        // Log the full API response before setting the order details
+        orderLogger.debug("Full API response to be saved:", JSON.stringify(apiResponse.data, null, 2));
+
         setOrderDetails({
           depositAddress: apiResponse.data.from.address,
           depositAmount: apiResponse.data.from.amount,
@@ -153,15 +156,12 @@ export function useBridgeOrder(
           receiveAmount: apiResponse.data.to.amount,
           fromCurrencyName: fromCurrencyName,
           toCurrencyName: toCurrencyName,
-          rawApiResponse: apiResponse.data,
+          rawApiResponse: apiResponse.data, // Store the entire API response
           token: token,
         });
 
         if (apiStatus === "EXPIRED") {
           orderLogger.info("Order status is EXPIRED, checking database for previously completed status");
-          
-          // We'll handle this in the CompletedTransactionSaver component
-          // Just set the status and continue, the component will update it if necessary
         }
 
         if (
