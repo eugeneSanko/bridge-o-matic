@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -239,11 +238,10 @@ export const CompletedTransactionSaver = ({
             rawApiResponse: dbTransaction.raw_api_response || orderDetails.rawApiResponse
           };
           
-          // Add a slight delay to avoid UI flicker
-          setTimeout(() => {
-            onOrderDetailsUpdate(updatedDetails);
-            setCheckingDb(false);
-          }, 500);
+          // Update immediately without delay to avoid UI flicker
+          onOrderDetailsUpdate(updatedDetails);
+          setCheckingDb(false);
+          return true;
         } else {
           setCheckingDb(false);
         }
@@ -254,10 +252,8 @@ export const CompletedTransactionSaver = ({
       
       logger.debug("Transaction not found in database, maintaining expired status");
       
-      // Important fix: Always ensure we clear the loading state regardless of the outcome
-      setTimeout(() => {
-        setCheckingDb(false);
-      }, 500);
+      // Clear the loading state immediately
+      setCheckingDb(false);
       
       return false;
     } catch (e) {

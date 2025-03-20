@@ -49,10 +49,11 @@ export const BridgeStatusRenderer = ({
     
     if (checkingDbForExpiredOrder) {
       // Safety timeout - if DB check takes too long, force reset the loading state
+      // Reduced from 5000ms to 2000ms for faster resolution
       timeoutId = window.setTimeout(() => {
         logger.warn("Database check timeout exceeded, forcing reset of loading state");
         setCheckingDbForExpiredOrder(false);
-      }, 5000); // 5 second timeout as a safety measure
+      }, 2000); // 2 second timeout as a safety measure
     }
     
     return () => {
