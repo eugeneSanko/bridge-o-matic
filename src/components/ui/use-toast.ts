@@ -1,3 +1,3 @@
 
-// Export the toast components from the shadcn implementation
-export * from "@/components/ui/toast";
+// Re-export from the hooks/use-toast implementation
+export * from "@/hooks/use-toast";
