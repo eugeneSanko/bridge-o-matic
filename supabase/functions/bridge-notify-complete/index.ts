@@ -111,23 +111,6 @@ serve(async (req) => {
     if (existingTx && existingTx.length > 0) {
       console.log(`Transaction with ff_order_id ${transaction.ff_order_id} already exists in bridge_transactions. Skipping save.`);
       
-      // Try to update the existing record with the raw API response if it exists
-      if (transaction.raw_api_response) {
-        const { error: updateError } = await supabase
-          .from('bridge_transactions')
-          .update({ 
-            status: 'completed',
-            raw_api_response: transaction.raw_api_response 
-          })
-          .eq('ff_order_id', transaction.ff_order_id);
-          
-        if (updateError) {
-          console.error("Error updating existing transaction with API response:", updateError);
-        } else {
-          console.log("Updated existing transaction with API response data");
-        }
-      }
-      
       // Return success even though we didn't save (idempotent operation)
       return new Response(
         JSON.stringify({
@@ -171,8 +154,7 @@ serve(async (req) => {
           destination_address: transaction.destination_address,
           status: 'completed',
           deposit_address: transaction.deposit_address,
-          client_metadata: clientMetadata,
-          raw_api_response: transaction.raw_api_response // Store the complete API response
+          client_metadata: clientMetadata
         })
         .select('*')
         .single();
