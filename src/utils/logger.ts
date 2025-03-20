@@ -4,7 +4,7 @@
  */
 
 // Enable/disable all logs using this flag
-const LOGGING_ENABLED = true; // Changed to true to capture logs
+const LOGGING_ENABLED = true;
 
 // Enable/disable debug logs based on environment
 const isDevMode = import.meta.env.DEV || false;
