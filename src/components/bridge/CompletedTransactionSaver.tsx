@@ -180,7 +180,7 @@ export const CompletedTransactionSaver = ({
     }
   }, [orderDetails]);
 
-  // This fixes the TypeScript error by properly checking if results.data is an array with length
+  // Handle expired status by checking database for completed transaction
   const handleExpiredStatus = async () => {
     logger.info("Handling expired status");
     
@@ -195,12 +195,17 @@ export const CompletedTransactionSaver = ({
       // Query the database to see if this transaction was already processed
       const { data: results, error } = await supabase
         .from('bridge_transactions')
-        .select('ff_order_id')
+        .select('*')  // Select all columns to get the raw_api_response
         .eq('ff_order_id', orderDetails.orderId)
         .limit(1);
       
       if (error) {
         logger.error("Error checking for transaction:", error);
+        toast({
+          title: "Database Error",
+          description: "Failed to check for transaction status",
+          variant: "destructive"
+        });
         return false;
       }
       
@@ -208,23 +213,35 @@ export const CompletedTransactionSaver = ({
       if (results && Array.isArray(results) && results.length > 0) {
         logger.debug("Transaction found in database:", results);
         
-        // If the transaction exists in the database, update the order details to mark it as completed
+        const dbTransaction = results[0];
+        
+        // If the transaction exists in the database, update the order details with raw API response
         if (onOrderDetailsUpdate) {
-          logger.info("Updating order details to show completed status");
-          onOrderDetailsUpdate({
+          logger.info("Updating order details with data from database");
+          
+          // Create updated order details with data from the database
+          const updatedDetails: OrderDetailsType = {
             ...orderDetails,
-            currentStatus: "completed"
-          });
+            currentStatus: "completed",
+            rawApiResponse: dbTransaction.raw_api_response || orderDetails.rawApiResponse
+          };
+          
+          onOrderDetailsUpdate(updatedDetails);
         }
         
         // Return true to indicate the transaction was found and status was updated
         return true;
       }
       
-      logger.debug("Transaction not found in database, will need to save it");
+      logger.debug("Transaction not found in database, maintaining expired status");
       return false;
     } catch (e) {
       logger.error("Error in handleExpiredStatus:", e);
+      toast({
+        title: "Error",
+        description: "Failed to check transaction status",
+        variant: "destructive"
+      });
       return false;
     }
   };
