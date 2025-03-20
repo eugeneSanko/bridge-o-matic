@@ -1,10 +1,8 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { logger } from "@/utils/logger";
 
-// Create a dedicated logger for this hook
 const orderLogger = logger;
 
 export interface OrderData {
@@ -49,7 +47,7 @@ export interface OrderDetails {
   fromCurrencyName?: string;
   toCurrencyName?: string;
   token?: string;
-  rawApiResponse?: any; // Store raw API response for debugging
+  rawApiResponse?: any;
 }
 
 export function useBridgeOrder(
@@ -155,7 +153,15 @@ export function useBridgeOrder(
           fromCurrencyName: fromCurrencyName,
           toCurrencyName: toCurrencyName,
           rawApiResponse: apiResponse.data,
+          token: token,
         });
+
+        if (apiStatus === "EXPIRED") {
+          orderLogger.info("Order status is EXPIRED, checking database for previously completed status");
+          
+          // We'll handle this in the CompletedTransactionSaver component
+          // Just set the status and continue, the component will update it if necessary
+        }
 
         if (
           (apiResponse.data.status === "DONE" || 

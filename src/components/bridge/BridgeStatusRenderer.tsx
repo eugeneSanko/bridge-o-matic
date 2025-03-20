@@ -1,4 +1,3 @@
-
 import { OrderDetails } from "@/hooks/useBridgeOrder";
 import { LoadingState } from "@/components/bridge/LoadingState";
 import { ErrorState } from "@/components/bridge/ErrorState";
@@ -6,8 +5,6 @@ import { EmptyState } from "@/components/bridge/EmptyState";
 import { BridgeTransaction } from "@/components/bridge/BridgeTransaction";
 import { CompletedTransactionSaver } from "@/components/bridge/CompletedTransactionSaver";
 import { useState, useEffect } from "react";
-import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
 
 interface BridgeStatusRendererProps {
@@ -38,10 +35,8 @@ export const BridgeStatusRenderer = ({
   checkOrderStatus,
   setEmergencyActionTaken
 }: BridgeStatusRendererProps) => {
-  // Add state to handle updated orderDetails after expired status check
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(initialOrderDetails);
   
-  // Update local orderDetails when initial orderDetails changes
   useEffect(() => {
     setOrderDetails(initialOrderDetails);
   }, [initialOrderDetails]);
@@ -58,13 +53,11 @@ export const BridgeStatusRenderer = ({
     return <EmptyState />;
   }
 
-  // Function to update order details (used by CompletedTransactionSaver)
   const handleOrderDetailsUpdate = (updatedDetails: OrderDetails) => {
     logger.debug("Updating order details:", updatedDetails);
     setOrderDetails(updatedDetails);
   };
 
-  // Handlers for emergency actions
   const handleEmergencyAction = async (choice: "EXCHANGE" | "REFUND", refundAddress?: string) => {
     if (!orderDetails || !orderDetails.ffOrderId || !token) {
       toast({
@@ -87,12 +80,10 @@ export const BridgeStatusRenderer = ({
         choice: choice,
       };
 
-      // Add refund address if provided and choice is REFUND
       if (choice === "REFUND" && refundAddress) {
         requestBody.address = refundAddress;
       }
 
-      // Call the emergency endpoint with the updated request body
       const { data, error } = await supabase.functions.invoke("bridge-emergency", {
         body: requestBody,
       });
@@ -110,11 +101,9 @@ export const BridgeStatusRenderer = ({
       }
 
       if (data && data.code === 0) {
-        // Trigger the custom event to notify that an emergency action was taken
         const emergencyEvent = new Event("emergency-action-triggered");
         window.dispatchEvent(emergencyEvent);
         
-        // Also call the setEmergencyActionTaken function if available
         if (setEmergencyActionTaken) {
           logger.debug("Setting emergency action taken flag");
           setEmergencyActionTaken(true);
@@ -127,7 +116,6 @@ export const BridgeStatusRenderer = ({
             : "Refund request has been processed",
         });
         
-        // Refresh order status to get updated information
         if (checkOrderStatus) {
           setTimeout(() => {
             checkOrderStatus();
@@ -150,7 +138,6 @@ export const BridgeStatusRenderer = ({
     }
   };
 
-  // Handlers for new actions
   const handleRetryCurrentPrice = () => {
     logger.debug("Retrying at current price");
     if (checkOrderStatus) {
@@ -169,7 +156,6 @@ export const BridgeStatusRenderer = ({
   };
 
   const handleAddressCopy = (address: string) => {
-    // Original copy address handler only - removed the toast notification
     handleCopyAddress(address);
   };
 

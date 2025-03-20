@@ -49,9 +49,10 @@ export const CompletedTransactionSaver = ({
       return;
     }
     
-    // Skip saving if the order status is not 'completed'
-    if (orderDetails.currentStatus !== 'completed') {
-      logger.debug(`Transaction status is ${orderDetails.currentStatus}, skipping save operation`);
+    // Only save if the order status is 'DONE' or 'completed'
+    const apiStatus = orderDetails.rawApiResponse?.status;
+    if (apiStatus !== 'DONE' && orderDetails.currentStatus !== 'completed') {
+      logger.debug(`Transaction status is ${orderDetails.currentStatus} (API: ${apiStatus}), skipping save operation`);
       return;
     }
 
@@ -108,11 +109,12 @@ export const CompletedTransactionSaver = ({
               to_currency: orderDetails.toCurrency,
               amount: parseFloat(orderDetails.depositAmount),
               destination_address: orderDetails.destinationAddress,
-              status: orderDetails.currentStatus,
+              status: 'completed',
               deposit_address: orderDetails.depositAddress,
               client_metadata: clientMetadata,
               initial_rate: 0, // You might want to replace this with the actual rate
               expiration_time: orderDetails.expiresAt || new Date().toISOString(),
+              raw_api_response: orderDetails.rawApiResponse
             })
             .select('id');
 
@@ -160,7 +162,7 @@ export const CompletedTransactionSaver = ({
   
   useEffect(() => {
     // If the order is expired, attempt to handle the expired status
-    if (orderDetails?.currentStatus === 'expired') {
+    if (orderDetails?.currentStatus === 'expired' || orderDetails?.rawApiResponse?.status === 'EXPIRED') {
       handleExpiredStatus();
     }
   }, [orderDetails]);
@@ -169,8 +171,8 @@ export const CompletedTransactionSaver = ({
   const handleExpiredStatus = async () => {
     logger.info("Handling expired status");
     
-    if (!orderDetails || !orderDetails.orderId || !token) {
-      logger.error("Cannot handle expired status: missing order details or token");
+    if (!orderDetails || !orderDetails.orderId) {
+      logger.error("Cannot handle expired status: missing order details or order ID");
       return false;
     }
 
@@ -180,7 +182,7 @@ export const CompletedTransactionSaver = ({
       // Query the database to see if this transaction was already processed
       const { data: results, error } = await supabase
         .from('bridge_transactions')
-        .select('ff_order_id')
+        .select('*')
         .eq('ff_order_id', orderDetails.orderId)
         .limit(1);
       
@@ -193,20 +195,37 @@ export const CompletedTransactionSaver = ({
       if (results && Array.isArray(results) && results.length > 0) {
         logger.debug("Transaction found in database:", results);
         
-        // If the transaction exists in the database, update the order details to mark it as completed
-        if (onOrderDetailsUpdate) {
-          logger.info("Updating order details to show completed status");
-          onOrderDetailsUpdate({
-            ...orderDetails,
-            currentStatus: "completed"
-          });
+        // If the transaction exists in the database and status is completed, update the order details
+        if (results[0].status === 'completed') {
+          logger.info("Found completed transaction in database, updating order details");
+          
+          // Reconstruct the order details from the database record
+          if (onOrderDetailsUpdate) {
+            const rawApiResponse = results[0].raw_api_response || {};
+            
+            const updatedDetails = {
+              ...orderDetails,
+              currentStatus: "completed",
+              depositAddress: results[0].deposit_address || orderDetails.depositAddress,
+              depositAmount: results[0].amount?.toString() || orderDetails.depositAmount,
+              fromCurrency: results[0].from_currency || orderDetails.fromCurrency,
+              toCurrency: results[0].to_currency || orderDetails.toCurrency,
+              destinationAddress: results[0].destination_address || orderDetails.destinationAddress,
+              rawApiResponse: rawApiResponse
+            };
+            
+            onOrderDetailsUpdate(updatedDetails);
+          }
+          
+          // Return true to indicate the transaction was found and status was updated
+          return true;
+        } else {
+          logger.debug("Transaction found in database but status is not completed:", results[0].status);
         }
-        
-        // Return true to indicate the transaction was found and status was updated
-        return true;
+      } else {
+        logger.debug("Transaction not found in database, will need to save it if it completes");
       }
       
-      logger.debug("Transaction not found in database, will need to save it");
       return false;
     } catch (e) {
       logger.error("Error in handleExpiredStatus:", e);
