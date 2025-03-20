@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,8 +29,96 @@ export const CompletedTransactionSaver = ({
 }: CompletedTransactionSaverProps) => {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get("orderId");
+  const [isCheckingDb, setIsCheckingDb] = useState(false);
+
+  // Add effect to check for expired status first before other effects run
+  useEffect(() => {
+    // If the order is expired, immediately check the database
+    if (orderDetails?.currentStatus === 'expired' || orderDetails?.rawApiResponse?.status === 'EXPIRED') {
+      checkCompletedTransactionInDb();
+    }
+  }, [orderDetails?.currentStatus, orderDetails?.rawApiResponse?.status]);
+
+  const checkCompletedTransactionInDb = async () => {
+    if (!orderDetails || !orderDetails.orderId) {
+      logger.error("Cannot check database: missing order details or order ID");
+      return false;
+    }
+
+    try {
+      // Set checking state to true
+      setIsCheckingDb(true);
+      logger.info("Checking if transaction exists in database for expired order", orderDetails.orderId);
+      
+      // Query the database to see if this transaction was already processed
+      const { data: results, error } = await supabase
+        .from('bridge_transactions')
+        .select('*')
+        .eq('ff_order_id', orderDetails.orderId)
+        .limit(1);
+      
+      if (error) {
+        logger.error("Error checking for transaction:", error);
+        setIsCheckingDb(false);
+        return false;
+      }
+      
+      // Check if we found the transaction in the database
+      if (results && Array.isArray(results) && results.length > 0) {
+        logger.debug("Transaction found in database:", results);
+        
+        // If the transaction exists in the database and status is completed, update the order details
+        if (results[0].status === 'completed') {
+          logger.info("Found completed transaction in database, updating order details");
+          
+          // Get the raw API response from the database
+          const savedApiResponse = results[0].raw_api_response || {};
+          logger.debug("Saved API response:", savedApiResponse);
+          
+          // Mark as transaction saved since we found it in the database
+          setTransactionSaved(true);
+          
+          // Reconstruct the order details from the database record
+          if (onOrderDetailsUpdate) {
+            const updatedDetails = {
+              ...orderDetails,
+              currentStatus: "completed",
+              depositAddress: results[0].deposit_address || orderDetails.depositAddress,
+              depositAmount: results[0].amount?.toString() || orderDetails.depositAmount,
+              fromCurrency: results[0].from_currency || orderDetails.fromCurrency,
+              toCurrency: results[0].to_currency || orderDetails.toCurrency,
+              destinationAddress: results[0].destination_address || orderDetails.destinationAddress,
+              rawApiResponse: savedApiResponse
+            };
+            
+            logger.debug("Updated order details from DB:", updatedDetails);
+            onOrderDetailsUpdate(updatedDetails);
+          }
+          
+          setIsCheckingDb(false);
+          return true;
+        } else {
+          logger.debug("Transaction found in database but status is not completed:", results[0].status);
+        }
+      } else {
+        logger.debug("Transaction not found in database, will need to save it if it completes");
+      }
+      
+      setIsCheckingDb(false);
+      return false;
+    } catch (e) {
+      logger.error("Error checking database:", e);
+      setIsCheckingDb(false);
+      return false;
+    }
+  };
 
   useEffect(() => {
+    // Skip if we're currently checking the database
+    if (isCheckingDb) {
+      return;
+    }
+
     // Log the current order details to help debug
     logger.debug("CompletedTransactionSaver: Current orderDetails", {
       orderId: orderDetails?.orderId,
@@ -241,83 +329,9 @@ export const CompletedTransactionSaver = ({
     simulateSuccess,
     setTransactionSaved,
     transactionSaved,
-    token
+    token,
+    isCheckingDb
   ]);
-  
-  useEffect(() => {
-    // If the order is expired, attempt to handle the expired status
-    if (orderDetails?.currentStatus === 'expired' || orderDetails?.rawApiResponse?.status === 'EXPIRED') {
-      handleExpiredStatus();
-    }
-  }, [orderDetails]);
-
-  const handleExpiredStatus = async () => {
-    logger.info("Handling expired status");
-    
-    if (!orderDetails || !orderDetails.orderId) {
-      logger.error("Cannot handle expired status: missing order details or order ID");
-      return false;
-    }
-
-    try {
-      logger.debug("Checking if transaction exists in database");
-      
-      // Query the database to see if this transaction was already processed
-      const { data: results, error } = await supabase
-        .from('bridge_transactions')
-        .select('*')
-        .eq('ff_order_id', orderDetails.orderId)
-        .limit(1);
-      
-      if (error) {
-        logger.error("Error checking for transaction:", error);
-        return false;
-      }
-      
-      // Check if we found the transaction in the database
-      if (results && Array.isArray(results) && results.length > 0) {
-        logger.debug("Transaction found in database:", results);
-        
-        // If the transaction exists in the database and status is completed, update the order details
-        if (results[0].status === 'completed') {
-          logger.info("Found completed transaction in database, updating order details");
-          
-          // Get the raw API response from the database
-          const savedApiResponse = results[0].raw_api_response || {};
-          logger.debug("Saved API response:", savedApiResponse);
-          
-          // Reconstruct the order details from the database record
-          if (onOrderDetailsUpdate) {
-            const updatedDetails = {
-              ...orderDetails,
-              currentStatus: "completed",
-              depositAddress: results[0].deposit_address || orderDetails.depositAddress,
-              depositAmount: results[0].amount?.toString() || orderDetails.depositAmount,
-              fromCurrency: results[0].from_currency || orderDetails.fromCurrency,
-              toCurrency: results[0].to_currency || orderDetails.toCurrency,
-              destinationAddress: results[0].destination_address || orderDetails.destinationAddress,
-              rawApiResponse: savedApiResponse
-            };
-            
-            logger.debug("Updated order details:", updatedDetails);
-            onOrderDetailsUpdate(updatedDetails);
-          }
-          
-          // Return true to indicate the transaction was found and status was updated
-          return true;
-        } else {
-          logger.debug("Transaction found in database but status is not completed:", results[0].status);
-        }
-      } else {
-        logger.debug("Transaction not found in database, will need to save it if it completes");
-      }
-      
-      return false;
-    } catch (e) {
-      logger.error("Error in handleExpiredStatus:", e);
-      return false;
-    }
-  };
 
   return null;
 };
