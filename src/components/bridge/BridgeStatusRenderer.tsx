@@ -1,3 +1,4 @@
+
 import { OrderDetails } from "@/hooks/useBridgeOrder";
 import { LoadingState } from "@/components/bridge/LoadingState";
 import { ErrorState } from "@/components/bridge/ErrorState";
@@ -5,9 +6,9 @@ import { EmptyState } from "@/components/bridge/EmptyState";
 import { BridgeTransaction } from "@/components/bridge/BridgeTransaction";
 import { CompletedTransactionSaver } from "@/components/bridge/CompletedTransactionSaver";
 import { useState, useEffect } from "react";
-import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface BridgeStatusRendererProps {
   loading: boolean;
@@ -35,11 +36,28 @@ export const BridgeStatusRenderer = ({
   transactionSaved,
   setTransactionSaved,
   checkOrderStatus,
-  setEmergencyActionTaken
+  setEmergencyActionTaken,
+  statusCheckDebugInfo
 }: BridgeStatusRendererProps) => {
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(initialOrderDetails);
   
   useEffect(() => {
+    logger.debug("BridgeStatusRenderer: initialOrderDetails updated", initialOrderDetails);
+    if (initialOrderDetails) {
+      logger.debug("BridgeStatusRenderer: API response exists?", !!initialOrderDetails.rawApiResponse);
+      if (initialOrderDetails.rawApiResponse) {
+        logger.debug("BridgeStatusRenderer: API response data", JSON.stringify(initialOrderDetails.rawApiResponse, null, 2));
+      } else {
+        logger.warn("BridgeStatusRenderer: Missing rawApiResponse in orderDetails!");
+        if (initialOrderDetails.currentStatus === "completed") {
+          toast({
+            title: "Warning",
+            description: "Transaction is complete but API data is missing",
+            variant: "destructive"
+          });
+        }
+      }
+    }
     setOrderDetails(initialOrderDetails);
   }, [initialOrderDetails]);
   
@@ -57,6 +75,17 @@ export const BridgeStatusRenderer = ({
 
   const handleOrderDetailsUpdate = (updatedDetails: OrderDetails) => {
     logger.debug("Updating order details:", updatedDetails);
+    
+    // Verify the raw API response is present
+    if (!updatedDetails.rawApiResponse && updatedDetails.currentStatus === "completed") {
+      logger.warn("Updated order details is missing rawApiResponse but status is completed!");
+      toast({
+        title: "Data Warning",
+        description: "Updated order missing API data, may not save correctly",
+        variant: "destructive"
+      });
+    }
+    
     setOrderDetails(updatedDetails);
   };
 
@@ -71,7 +100,10 @@ export const BridgeStatusRenderer = ({
     }
 
     try {
-      logger.info(`Processing ${choice.toLowerCase()} request...`);
+      toast({
+        title: "Processing",
+        description: `Processing ${choice === "EXCHANGE" ? "exchange" : "refund"} request...`,
+      });
 
       const requestBody: any = {
         id: orderDetails.ffOrderId,
@@ -107,6 +139,13 @@ export const BridgeStatusRenderer = ({
           logger.debug("Setting emergency action taken flag");
           setEmergencyActionTaken(true);
         }
+        
+        toast({
+          title: "Success",
+          description: choice === "EXCHANGE" 
+            ? "Exchange will continue at current market rate" 
+            : "Refund request has been processed",
+        });
         
         if (checkOrderStatus) {
           setTimeout(() => {
@@ -151,6 +190,13 @@ export const BridgeStatusRenderer = ({
     handleCopyAddress(address);
   };
 
+  logger.debug("BridgeStatusRenderer: Rendering with orderDetails", {
+    id: orderDetails.orderId,
+    status: orderDetails.currentStatus,
+    hasApiResponse: !!orderDetails.rawApiResponse,
+    responseKeys: orderDetails.rawApiResponse ? Object.keys(orderDetails.rawApiResponse) : []
+  });
+
   return (
     <>
       <BridgeTransaction 
@@ -168,7 +214,7 @@ export const BridgeStatusRenderer = ({
         token={token}
         transactionSaved={transactionSaved}
         setTransactionSaved={setTransactionSaved}
-        statusCheckDebugInfo={null}
+        statusCheckDebugInfo={statusCheckDebugInfo}
         onOrderDetailsUpdate={handleOrderDetailsUpdate}
       />
     </>
