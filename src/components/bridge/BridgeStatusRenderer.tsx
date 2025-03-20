@@ -1,3 +1,4 @@
+
 import { OrderDetails } from "@/hooks/useBridgeOrder";
 import { LoadingState } from "@/components/bridge/LoadingState";
 import { ErrorState } from "@/components/bridge/ErrorState";
@@ -6,6 +7,8 @@ import { BridgeTransaction } from "@/components/bridge/BridgeTransaction";
 import { CompletedTransactionSaver } from "@/components/bridge/CompletedTransactionSaver";
 import { useState, useEffect } from "react";
 import { logger } from "@/utils/logger";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface BridgeStatusRendererProps {
   loading: boolean;

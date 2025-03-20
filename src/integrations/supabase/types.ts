@@ -303,6 +303,7 @@ export type Database = {
           initial_rate: number | null
           rate_validated: boolean | null
           rate_validation_error: string | null
+          raw_api_response: Json | null
           status: string | null
           to_currency: string
           updated_at: string | null
@@ -324,6 +325,7 @@ export type Database = {
           initial_rate?: number | null
           rate_validated?: boolean | null
           rate_validation_error?: string | null
+          raw_api_response?: Json | null
           status?: string | null
           to_currency: string
           updated_at?: string | null
@@ -345,6 +347,7 @@ export type Database = {
           initial_rate?: number | null
           rate_validated?: boolean | null
           rate_validation_error?: string | null
+          raw_api_response?: Json | null
           status?: string | null
           to_currency?: string
           updated_at?: string | null

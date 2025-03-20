@@ -13,15 +13,21 @@ export const EmptyState = () => {
           </div>
         </div>
         <h2 className="text-xl font-bold mb-4">No Order Details Found</h2>
-        <p className="text-gray-300 mb-8">
+        <p className="text-gray-300 mb-6">
           We couldn't find any details for this order. It may have expired or never existed.
         </p>
-        <Button 
-          className="w-full bg-[#0FA0CE] hover:bg-[#0FA0CE]/90"
-          onClick={() => window.location.href = "/bridge"}
-        >
-          Return to Bridge
-        </Button>
+        <div className="space-y-3">
+          <Button 
+            className="w-full bg-[#0FA0CE] hover:bg-[#0FA0CE]/90"
+            onClick={() => window.location.href = "/bridge"}
+          >
+            Return to Bridge
+          </Button>
+          <p className="text-sm text-gray-400 text-center mt-4">
+            If you've completed a transaction previously, we store successful transactions 
+            in our database even after they expire. Your funds should still be safe.
+          </p>
+        </div>
       </div>
     </div>
   );

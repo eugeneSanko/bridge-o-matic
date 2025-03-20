@@ -167,7 +167,6 @@ export const CompletedTransactionSaver = ({
     }
   }, [orderDetails]);
 
-  // This fixes the TypeScript error by properly checking if results.data is an array with length
   const handleExpiredStatus = async () => {
     logger.info("Handling expired status");
     

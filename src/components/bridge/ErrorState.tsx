@@ -18,12 +18,18 @@ export const ErrorState = ({ error }: ErrorStateProps) => {
         </div>
         <h2 className="text-xl font-bold text-red-500 mb-4">Error</h2>
         <p className="text-gray-300 mb-6">{error}</p>
-        <Button 
-          className="w-full bg-[#0FA0CE] hover:bg-[#0FA0CE]/90"
-          onClick={() => window.location.href = "/bridge"}
-        >
-          Return to Bridge
-        </Button>
+        <div className="space-y-3">
+          <Button 
+            className="w-full bg-[#0FA0CE] hover:bg-[#0FA0CE]/90"
+            onClick={() => window.location.href = "/bridge"}
+          >
+            Return to Bridge
+          </Button>
+          <p className="text-sm text-gray-400 text-center mt-4">
+            If you were expecting transaction details, please check if your order is complete in your wallet.
+            Completed orders are stored in our database and can be retrieved even after expiration.
+          </p>
+        </div>
       </div>
     </div>
   );
