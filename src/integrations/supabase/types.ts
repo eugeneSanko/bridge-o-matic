@@ -303,6 +303,7 @@ export type Database = {
           initial_rate: number | null
           rate_validated: boolean | null
           rate_validation_error: string | null
+          raw_api_response: Json | null
           status: string | null
           to_currency: string
           updated_at: string | null
@@ -324,6 +325,7 @@ export type Database = {
           initial_rate?: number | null
           rate_validated?: boolean | null
           rate_validation_error?: string | null
+          raw_api_response?: Json | null
           status?: string | null
           to_currency: string
           updated_at?: string | null
@@ -345,6 +347,7 @@ export type Database = {
           initial_rate?: number | null
           rate_validated?: boolean | null
           rate_validation_error?: string | null
+          raw_api_response?: Json | null
           status?: string | null
           to_currency?: string
           updated_at?: string | null
@@ -1476,6 +1479,75 @@ export type Database = {
         }
         Relationships: []
       }
+      tradenly_v2_cardano_analysis_results: {
+        Row: {
+          analysis: Json | null
+          analysis_context: string | null
+          analysis_source: string | null
+          analysis_summary: string | null
+          asset_name: string | null
+          chain: string
+          confidence_score: number | null
+          created_at: string | null
+          fundamentals_score: number | null
+          id: string
+          market_activity_score: number | null
+          policy_id: string
+          project_name: string
+          risk_level: string | null
+          risk_rating_score: number | null
+          risk_score: number | null
+          social_media_url: string | null
+          social_sentiment_score: number | null
+          value_opportunity_score: number | null
+          wallet_address: string | null
+        }
+        Insert: {
+          analysis?: Json | null
+          analysis_context?: string | null
+          analysis_source?: string | null
+          analysis_summary?: string | null
+          asset_name?: string | null
+          chain?: string
+          confidence_score?: number | null
+          created_at?: string | null
+          fundamentals_score?: number | null
+          id?: string
+          market_activity_score?: number | null
+          policy_id: string
+          project_name: string
+          risk_level?: string | null
+          risk_rating_score?: number | null
+          risk_score?: number | null
+          social_media_url?: string | null
+          social_sentiment_score?: number | null
+          value_opportunity_score?: number | null
+          wallet_address?: string | null
+        }
+        Update: {
+          analysis?: Json | null
+          analysis_context?: string | null
+          analysis_source?: string | null
+          analysis_summary?: string | null
+          asset_name?: string | null
+          chain?: string
+          confidence_score?: number | null
+          created_at?: string | null
+          fundamentals_score?: number | null
+          id?: string
+          market_activity_score?: number | null
+          policy_id?: string
+          project_name?: string
+          risk_level?: string | null
+          risk_rating_score?: number | null
+          risk_score?: number | null
+          social_media_url?: string | null
+          social_sentiment_score?: number | null
+          value_opportunity_score?: number | null
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
       tradenly_v2_solana_analysis_results: {
         Row: {
           analysis: Json | null
@@ -1887,6 +1959,12 @@ export type Database = {
           status: string
         }[]
       }
+      format_cardano_analysis_json: {
+        Args: {
+          analysis: Json
+        }
+        Returns: Json
+      }
       get_token_analysis_status: {
         Args: {
           p_contract_address: string
@@ -1902,6 +1980,16 @@ export type Database = {
         Args: {
           p_contract_address: string
           p_chain: string
+        }
+        Returns: {
+          analysis_exists: boolean
+          created_at: string
+          is_recent: boolean
+        }[]
+      }
+      get_token_v2_cardano_analysis_status: {
+        Args: {
+          p_policy_id: string
         }
         Returns: {
           analysis_exists: boolean
