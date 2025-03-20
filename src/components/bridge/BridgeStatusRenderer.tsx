@@ -40,6 +40,7 @@ export const BridgeStatusRenderer = ({
   statusCheckDebugInfo
 }: BridgeStatusRendererProps) => {
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(initialOrderDetails);
+  const [uiReady, setUiReady] = useState(false);
   
   useEffect(() => {
     logger.debug("BridgeStatusRenderer: initialOrderDetails updated", initialOrderDetails);
@@ -59,9 +60,17 @@ export const BridgeStatusRenderer = ({
       }
     }
     setOrderDetails(initialOrderDetails);
+    
+    // Mark UI as ready after a short delay when order details are loaded
+    const timer = setTimeout(() => {
+      setUiReady(true);
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [initialOrderDetails]);
   
-  if (loading) {
+  // Show loading state while the page is loading or UI is not ready
+  if (loading || !uiReady) {
     return <LoadingState />;
   }
 
