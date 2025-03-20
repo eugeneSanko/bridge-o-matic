@@ -86,7 +86,11 @@ const BridgeAwaitingDeposit = () => {
 
   return (
     <div className="px-3 md:px-8 pt-4 pb-12 max-w-full overflow-x-hidden">
-      <OrderParameterValidator orderId={orderId} token={token} />
+      <OrderParameterValidator 
+        orderId={orderId} 
+        token={token} 
+        isLoading={loading || dbCheckInProgress} 
+      />
 
       <ApiStatusMonitor
         apiAttempted={apiAttempted}

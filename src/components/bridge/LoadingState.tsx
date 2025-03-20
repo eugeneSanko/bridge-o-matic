@@ -7,8 +7,8 @@ interface LoadingStateProps {
 }
 
 export const LoadingState = ({ 
-  message = "Checking transaction status...",
-  submessage = "This should only take a moment" 
+  message = "Processing your transaction...",
+  submessage = "This will only take a moment" 
 }: LoadingStateProps) => {
   return (
     <div className="min-h-screen pt-24 px-8 pb-24 flex items-center justify-center">
