@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { logger } from "@/utils/logger";
 
+// Create a dedicated logger for this hook
 const orderLogger = logger;
 
 export interface OrderData {
@@ -48,7 +49,7 @@ export interface OrderDetails {
   fromCurrencyName?: string;
   toCurrencyName?: string;
   token?: string;
-  rawApiResponse?: any;
+  rawApiResponse?: any; // Store raw API response for debugging
 }
 
 export function useBridgeOrder(
@@ -130,9 +131,6 @@ export function useBridgeOrder(
         const fromCurrencyName = apiResponse.data.from?.name || "Unknown";
         const toCurrencyName = apiResponse.data.to?.name || "Unknown";
 
-        // Log the full API response before setting the order details
-        orderLogger.debug("Full API response to be saved:", JSON.stringify(apiResponse.data, null, 2));
-
         setOrderDetails({
           depositAddress: apiResponse.data.from.address,
           depositAmount: apiResponse.data.from.amount,
@@ -156,13 +154,8 @@ export function useBridgeOrder(
           receiveAmount: apiResponse.data.to.amount,
           fromCurrencyName: fromCurrencyName,
           toCurrencyName: toCurrencyName,
-          rawApiResponse: apiResponse.data, // Store the entire API response
-          token: token,
+          rawApiResponse: apiResponse.data,
         });
-
-        if (apiStatus === "EXPIRED") {
-          orderLogger.info("Order status is EXPIRED, checking database for previously completed status");
-        }
 
         if (
           (apiResponse.data.status === "DONE" || 
