@@ -1,3 +1,4 @@
+
 import { OrderDetails } from "@/hooks/useBridgeOrder";
 import { LoadingState } from "@/components/bridge/LoadingState";
 import { ErrorState } from "@/components/bridge/ErrorState";
@@ -38,12 +39,20 @@ export const BridgeStatusRenderer = ({
   setEmergencyActionTaken
 }: BridgeStatusRendererProps) => {
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(initialOrderDetails);
+  const [checkingDbForExpiredOrder, setCheckingDbForExpiredOrder] = useState(false);
   
   useEffect(() => {
     setOrderDetails(initialOrderDetails);
+    
+    // When order details change and status is expired, set the checking flag
+    if (initialOrderDetails?.currentStatus === 'expired' || 
+        initialOrderDetails?.rawApiResponse?.status === 'EXPIRED') {
+      setCheckingDbForExpiredOrder(true);
+    }
   }, [initialOrderDetails]);
   
-  if (loading) {
+  // If we're in a loading state or checking DB for expired orders, show loading state
+  if (loading || checkingDbForExpiredOrder) {
     return <LoadingState />;
   }
 
@@ -170,6 +179,7 @@ export const BridgeStatusRenderer = ({
         setTransactionSaved={setTransactionSaved}
         statusCheckDebugInfo={null}
         onOrderDetailsUpdate={handleOrderDetailsUpdate}
+        setCheckingDb={setCheckingDbForExpiredOrder}
       />
     </>
   );
