@@ -158,6 +158,24 @@ serve(async (req) => {
       languages: [req.headers.get('accept-language') || 'en-US']
     };
     
+    // Only save the transaction if it has a valid raw_api_response
+    if (!transaction.raw_api_response) {
+      console.log("Skipping transaction save: missing raw_api_response");
+      return new Response(
+        JSON.stringify({
+          code: 400,
+          msg: "Transaction missing required raw_api_response",
+        }),
+        {
+          status: 400,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+    
     // Insert into bridge_transactions with error handling for constraint violations
     try {
       const { data: savedTx, error: saveTxError } = await supabase

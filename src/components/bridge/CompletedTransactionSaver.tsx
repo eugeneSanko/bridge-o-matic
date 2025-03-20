@@ -58,6 +58,12 @@ export const CompletedTransactionSaver = ({
       logger.debug(`Transaction status is ${orderDetails.currentStatus}, skipping save operation`);
       return;
     }
+    
+    // Skip saving if there's no raw API response
+    if (!orderDetails.rawApiResponse) {
+      logger.debug("Skipping transaction save: no raw API response available");
+      return;
+    }
 
     const saveTransaction = async () => {
       try {
@@ -120,7 +126,7 @@ export const CompletedTransactionSaver = ({
 
         // Use a more reliable approach with error handling
         try {
-          // Insert the transaction data into the database
+          // Insert the transaction data into the database - only for completed transactions
           const { data, error } = await supabase
             .from('bridge_transactions')
             .insert({
@@ -130,7 +136,7 @@ export const CompletedTransactionSaver = ({
               to_currency: orderDetails.toCurrency,
               amount: parseFloat(orderDetails.depositAmount),
               destination_address: orderDetails.destinationAddress,
-              status: orderDetails.currentStatus,
+              status: 'completed',
               deposit_address: orderDetails.depositAddress,
               client_metadata: clientMetadata,
               initial_rate: 0, // You might want to replace this with the actual rate
@@ -182,7 +188,7 @@ export const CompletedTransactionSaver = ({
     const shouldCheckExpiredStatus = 
       (orderDetails?.currentStatus === 'expired' || 
        orderDetails?.rawApiResponse?.status === 'EXPIRED') && 
-      hasCheckedExpiredOrderRef.current === orderDetails.orderId;
+      hasCheckedExpiredOrderRef.current !== orderDetails.orderId;
       
     if (shouldCheckExpiredStatus) {
       logger.debug("Handling expired order check for", orderDetails.orderId);
