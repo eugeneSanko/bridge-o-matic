@@ -122,7 +122,7 @@ export const BridgeTransaction = ({
   const toNetwork = orderDetails.toCurrency;
 
   return (
-    <div className="min-h-screen  pt-6 md:pt-24 px-3 md:px-8 pb-10 md:pb-24">
+    <div className="min-h-screen pt-6 md:pt-24 px-3 md:px-8 pb-10 md:pb-24">
       <div className="max-w-6xl mx-auto">
         <TransactionSummary
           fromCurrency={orderDetails.fromCurrency}

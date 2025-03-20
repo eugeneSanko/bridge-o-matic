@@ -1,4 +1,3 @@
-
 import { useBridge } from "@/contexts/BridgeContext";
 import { BridgeProvider } from "@/contexts/BridgeContext";
 import { BridgeHeader } from "@/components/bridge/BridgeHeader";
@@ -24,8 +23,8 @@ const BridgeContent = () => {
   }, [availableCurrencies]);
 
   return (
-    <div className="min-h-screen bg-[#111425] pt-16 sm:pt-24 px-4 sm:px-8 pb-16 sm:pb-24">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen  pt-16 sm:pt-24 px-4 sm:px-8 pb-16 sm:pb-24">
+      <div className="w-full">
         <BridgeHeader />
         <BridgeForm />
         <FAQSection />

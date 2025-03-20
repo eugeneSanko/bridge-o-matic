@@ -210,7 +210,7 @@ export const CurrencySelector = ({
 
       <div className="relative">
         <div
-          className={`h-[4.5rem] px-4 bg-[#181c2c] border border-[#252a3a] rounded-xl text-lg transition-all duration-200 flex justify-between font-medium overflow-hidden ${
+          className={`h-[4.5rem] px-4  border border-[#252a3a] rounded-xl text-lg transition-all duration-200 flex justify-between font-medium overflow-hidden ${
             !isReceiveSide ? "cursor-text" : ""
           }`}
           style={{ borderColor: borderColor || "#252a3a", borderWidth: "1px" }}
@@ -219,7 +219,7 @@ export const CurrencySelector = ({
             <div className="flex flex-col items-start min-w-0 flex-1 mr-2">
               {isReceiveSide ? (
                 <div className="flex items-center w-full">
-                  <span className="text-3xl font-semibold ">
+                  <span className=" text-2xl lg:text-3xl font-semibold ">
                     {shouldShowApproxSymbol && !isCalculating && (
                       <span className="text-gray-400 mr-1">≈</span>
                     )}
@@ -247,7 +247,7 @@ export const CurrencySelector = ({
                     onChange={(e) => handleAmountChange(e.target.value)}
                     onFocus={() => setIsAmountFocused(true)}
                     onBlur={() => setIsAmountFocused(false)}
-                    className="w-full h-full py-5 px-0 text-3xl font-semibold bg-transparent border-none focus:outline-none focus:ring-0"
+                    className="w-full h-full py-5 px-0 text-2xl xl:text-3xl font-semibold bg-transparent border-none focus:outline-none focus:ring-0"
                   />
                 </div>
               )}
@@ -289,7 +289,7 @@ export const CurrencySelector = ({
                 </SelectValue>
               </SelectTrigger>
 
-              <SelectContent className="border border-white/10 max-h-[300px] glass-card bg-[#181c2c] z-50">
+              <SelectContent className="border border-white/10 max-h-[300px] glass-card  z-50">
                 <div className="sticky top-0 px-2 py-2 bg-[#181c2c] backdrop-blur-md z-10">
                   <div className="relative">
                     <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

@@ -1,4 +1,3 @@
-
 import { ArrowRight, Copy } from "lucide-react";
 import { AddressPlaceholder } from "./AddressPlaceholder";
 import { cleanSymbol } from "@/utils/symbolUtils";
@@ -149,8 +148,10 @@ export const TransactionSummary = ({
               />
             </div>
             <div>
-              <div className="text-xl md:text-2xl lg:text-3xl font-bold mb-1 md:mb-2 md:text-right md:flex md:flex-row-reverse">
-                <div className="md:flex md:flex-row-reverse pl-1">{formatNumberString(amount)}</div>
+              <div className="text-xl md:text-2xl lg:text-3xl font-bold mb-1 md:mb-2 md:text-right flex md:flex-row-reverse">
+                <div className="md:flex md:flex-row-reverse pl-1">
+                  {formatNumberString(amount)}
+                </div>
                 {formatFromCurrencyDisplay()}
               </div>
               <div className="text-xs md:text-sm text-gray-400 font-mono flex items-center md:flex-row-reverse">

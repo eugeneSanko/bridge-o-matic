@@ -377,7 +377,7 @@ export const ProgressSteps = ({
           {/* Confirmation Card (Right) */}
           <Card className="glass-card p-4 md:p-6 flex flex-col items-center justify-center relative overflow-hidden md:col-span-2">
             {/* Updated robot image on the left */}
-            <div className="hidden md:block absolute -left-9 md:-left-24 -bottom-14 opa-50">
+            <div className="hidden md:block absolute -left-9 md:-left-32 -bottom-14 opa-50">
               <img
                 src="https://tradenly.xyz/wp-content/uploads/2024/12/AlbedoBase_XL_Design_a_futuristic_space_robot_fighter_sleek_an_0-removebg-preview.png"
                 alt="Robot"
@@ -410,7 +410,7 @@ export const ProgressSteps = ({
               <p className="text-gray-300 max-w-md mx-auto md:text-left md:ml-10">
                 {isRefunded
                   ? "Your refund has been processed. Thank you for using our service."
-                  : "If you enjoy your experience on Tradenly Bridge, please leave a review at services below. We appreciate your support!"}
+                  : "If you enjoyed your experience on Tradenly Bridge, please leave a review at services below. We appreciate your support!"}
               </p>
               {!isRefunded && (
                 <div className="flex gap-6 justify-center mt-4">
