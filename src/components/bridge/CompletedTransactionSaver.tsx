@@ -15,7 +15,6 @@ interface CompletedTransactionSaverProps {
   setTransactionSaved: (saved: boolean) => void;
   statusCheckDebugInfo: any | null;
   onOrderDetailsUpdate: (updatedDetails: OrderDetailsType) => void;
-  setCheckingDb: (checking: boolean) => void;
 }
 
 export const CompletedTransactionSaver = ({
@@ -26,8 +25,7 @@ export const CompletedTransactionSaver = ({
   transactionSaved,
   setTransactionSaved,
   statusCheckDebugInfo,
-  onOrderDetailsUpdate,
-  setCheckingDb
+  onOrderDetailsUpdate
 }: CompletedTransactionSaverProps) => {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get("orderId");
@@ -177,8 +175,7 @@ export const CompletedTransactionSaver = ({
   
   useEffect(() => {
     // If the order is expired, attempt to handle the expired status
-    if (orderDetails?.currentStatus === 'expired' || 
-        orderDetails?.rawApiResponse?.status === 'EXPIRED') {
+    if (orderDetails?.currentStatus === 'expired') {
       handleExpiredStatus();
     }
   }, [orderDetails]);
@@ -189,13 +186,11 @@ export const CompletedTransactionSaver = ({
     
     if (!orderDetails || !orderDetails.orderId || !token) {
       logger.error("Cannot handle expired status: missing order details or token");
-      setCheckingDb(false);
       return false;
     }
 
     try {
       logger.debug("Checking if transaction exists in database");
-      setCheckingDb(true);
       
       // Query the database to see if this transaction was already processed
       const { data: results, error } = await supabase
@@ -211,7 +206,6 @@ export const CompletedTransactionSaver = ({
           description: "Failed to check for transaction status",
           variant: "destructive"
         });
-        setCheckingDb(false);
         return false;
       }
       
@@ -232,13 +226,7 @@ export const CompletedTransactionSaver = ({
             rawApiResponse: dbTransaction.raw_api_response || orderDetails.rawApiResponse
           };
           
-          // Add a slight delay to avoid UI flicker
-          setTimeout(() => {
-            onOrderDetailsUpdate(updatedDetails);
-            setCheckingDb(false);
-          }, 500);
-        } else {
-          setCheckingDb(false);
+          onOrderDetailsUpdate(updatedDetails);
         }
         
         // Return true to indicate the transaction was found and status was updated
@@ -246,7 +234,6 @@ export const CompletedTransactionSaver = ({
       }
       
       logger.debug("Transaction not found in database, maintaining expired status");
-      setCheckingDb(false);
       return false;
     } catch (e) {
       logger.error("Error in handleExpiredStatus:", e);
@@ -255,7 +242,6 @@ export const CompletedTransactionSaver = ({
         description: "Failed to check transaction status",
         variant: "destructive"
       });
-      setCheckingDb(false);
       return false;
     }
   };
