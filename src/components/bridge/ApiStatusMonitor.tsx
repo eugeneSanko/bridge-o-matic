@@ -22,7 +22,7 @@ export const ApiStatusMonitor = ({
     if (!apiAttempted && (loading || error || orderDetails)) {
       setApiAttempted(true);
       
-      if (error) {
+      if (error && !loading) {
         console.error("API error detected:", error);
         toast({
           title: "Connection Error",
