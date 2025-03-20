@@ -78,6 +78,24 @@ export const CompletedTransactionSaver = ({
 
         if (existingTransaction && existingTransaction.length > 0) {
           logger.info("Transaction already exists in database, updating saved state");
+          
+          // Update the existing transaction with the latest API response
+          if (orderDetails.rawApiResponse) {
+            const { error: updateError } = await supabase
+              .from('bridge_transactions')
+              .update({ 
+                status: 'completed',
+                raw_api_response: orderDetails.rawApiResponse 
+              })
+              .eq('ff_order_id', orderDetails.orderId);
+              
+            if (updateError) {
+              logger.error("Error updating transaction with API response:", updateError);
+            } else {
+              logger.info("Updated existing transaction with API response data");
+            }
+          }
+          
           setTransactionSaved(true);
           return;
         }
@@ -113,6 +131,7 @@ export const CompletedTransactionSaver = ({
               client_metadata: clientMetadata,
               initial_rate: 0, // You might want to replace this with the actual rate
               expiration_time: orderDetails.expiresAt || new Date().toISOString(),
+              raw_api_response: orderDetails.rawApiResponse // Store the complete API response
             })
             .select('id');
 
@@ -127,10 +146,6 @@ export const CompletedTransactionSaver = ({
           } else {
             logger.info("Transaction saved successfully:", data);
             setTransactionSaved(true);
-            // toast({
-            //   title: "Transaction Saved",
-            //   description: "Transaction details saved successfully",
-            // });
           }
         } catch (dbError) {
           logger.error("Database error saving transaction:", dbError);
