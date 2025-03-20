@@ -23,6 +23,7 @@ interface OrderData {
   expiration_time: string;
   from_currency_name?: string;
   to_currency_name?: string;
+  type?: "fixed" | "float";
 }
 
 interface ApiOrderData {
@@ -596,4 +597,3 @@ const BridgeOrderComplete = () => {
 };
 
 export default BridgeOrderComplete;
-

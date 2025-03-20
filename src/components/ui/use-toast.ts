@@ -1,4 +1,3 @@
 
-import { useToast, toast } from "@/hooks/use-toast";
-
-export { useToast, toast };
+// Export the toast components from the shadcn implementation
+export * from "@/components/ui/toast";
