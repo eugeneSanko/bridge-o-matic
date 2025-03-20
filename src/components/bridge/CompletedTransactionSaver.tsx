@@ -31,6 +31,16 @@ export const CompletedTransactionSaver = ({
   const orderId = searchParams.get("orderId");
 
   useEffect(() => {
+    // Log the current order details to help debug
+    logger.debug("CompletedTransactionSaver: Current orderDetails", {
+      orderId: orderDetails?.orderId,
+      status: orderDetails?.currentStatus,
+      apiStatus: orderDetails?.rawApiResponse?.status,
+      transactionSaved,
+      hasApiResponse: !!orderDetails?.rawApiResponse,
+      responseKeys: orderDetails?.rawApiResponse ? Object.keys(orderDetails.rawApiResponse) : []
+    });
+    
     // Skip saving if simulateSuccess is true
     if (simulateSuccess) {
       logger.debug("Skipping transaction save due to simulateSuccess flag");
@@ -102,27 +112,32 @@ export const CompletedTransactionSaver = ({
         const rawApiResponse = orderDetails.rawApiResponse || {};
         
         logger.debug("Raw API response being saved:", JSON.stringify(rawApiResponse, null, 2));
+        
+        // Log the exact data we're about to insert
+        const insertData = {
+          ff_order_id: orderDetails.orderId,
+          ff_order_token: orderDetails.ffOrderToken || token,
+          from_currency: orderDetails.fromCurrency,
+          to_currency: orderDetails.toCurrency,
+          amount: parseFloat(orderDetails.depositAmount) || 0,
+          destination_address: orderDetails.destinationAddress,
+          status: 'completed',
+          deposit_address: orderDetails.depositAddress,
+          client_metadata: clientMetadata,
+          initial_rate: 0, // You might want to replace this with the actual rate
+          expiration_time: orderDetails.expiresAt || new Date().toISOString(),
+          raw_api_response: rawApiResponse
+        };
+        
+        logger.debug("Database insert data:", JSON.stringify(insertData, null, 2));
 
         // Use a more reliable approach with error handling
         try {
           // Insert the transaction data into the database
           const { data, error } = await supabase
             .from('bridge_transactions')
-            .insert({
-              ff_order_id: orderDetails.orderId,
-              ff_order_token: orderDetails.ffOrderToken,
-              from_currency: orderDetails.fromCurrency,
-              to_currency: orderDetails.toCurrency,
-              amount: parseFloat(orderDetails.depositAmount),
-              destination_address: orderDetails.destinationAddress,
-              status: 'completed',
-              deposit_address: orderDetails.depositAddress,
-              client_metadata: clientMetadata,
-              initial_rate: 0, // You might want to replace this with the actual rate
-              expiration_time: orderDetails.expiresAt || new Date().toISOString(),
-              raw_api_response: rawApiResponse
-            })
-            .select('id');
+            .insert(insertData)
+            .select('id, raw_api_response');
 
           if (error) {
             // Handle duplicate key errors gracefully
@@ -130,10 +145,17 @@ export const CompletedTransactionSaver = ({
               logger.info("Transaction already exists in database (constraint violation)");
               setTransactionSaved(true);
             } else {
+              logger.error("Database error details:", error);
               throw error;
             }
           } else {
             logger.info("Transaction saved successfully:", data);
+            
+            // Log what was actually saved to the database
+            if (data && data.length > 0) {
+              logger.debug("Raw API response as saved in DB:", data[0].raw_api_response);
+            }
+            
             setTransactionSaved(true);
             // toast({
             //   title: "Transaction Saved",
@@ -163,7 +185,8 @@ export const CompletedTransactionSaver = ({
     orderDetails,
     simulateSuccess,
     setTransactionSaved,
-    transactionSaved
+    transactionSaved,
+    token
   ]);
   
   useEffect(() => {

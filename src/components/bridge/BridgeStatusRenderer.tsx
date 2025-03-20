@@ -42,6 +42,13 @@ export const BridgeStatusRenderer = ({
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(initialOrderDetails);
   
   useEffect(() => {
+    logger.debug("BridgeStatusRenderer: initialOrderDetails updated", initialOrderDetails);
+    if (initialOrderDetails) {
+      logger.debug("BridgeStatusRenderer: API response exists?", !!initialOrderDetails.rawApiResponse);
+      if (initialOrderDetails.rawApiResponse) {
+        logger.debug("BridgeStatusRenderer: API response data", JSON.stringify(initialOrderDetails.rawApiResponse, null, 2));
+      }
+    }
     setOrderDetails(initialOrderDetails);
   }, [initialOrderDetails]);
   
@@ -162,6 +169,13 @@ export const BridgeStatusRenderer = ({
   const handleAddressCopy = (address: string) => {
     handleCopyAddress(address);
   };
+
+  logger.debug("BridgeStatusRenderer: Rendering with orderDetails", {
+    id: orderDetails.orderId,
+    status: orderDetails.currentStatus,
+    hasApiResponse: !!orderDetails.rawApiResponse,
+    responseKeys: orderDetails.rawApiResponse ? Object.keys(orderDetails.rawApiResponse) : []
+  });
 
   return (
     <>
