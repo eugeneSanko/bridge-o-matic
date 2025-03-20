@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -72,88 +71,42 @@ export const CompletedTransactionSaver = ({
       description: "Attempting to save your transaction details..."
     });
 
-    // Check if raw API response exists
-    if (!orderDetails.rawApiResponse) {
-      logger.warn("Missing raw API response, cannot save transaction properly");
-      toast({
-        title: "Warning",
-        description: "Missing API data for transaction, constructing fallback data",
-        variant: "destructive"
-      });
-    }
-
     const saveTransaction = async () => {
       try {
         logger.info("Attempting to save completed transaction to database");
         
-        // Create a standardized API response structure if missing
-        let rawApiResponse = orderDetails.rawApiResponse;
+        // Preserve the original raw API response without modification
+        const rawApiResponse = orderDetails.rawApiResponse;
         
-        if (!rawApiResponse || Object.keys(rawApiResponse).length === 0) {
-          logger.warn("Creating fallback API response structure");
-          
-          // Create a properly structured fallback API response
-          rawApiResponse = {
-            id: orderDetails.orderId || "UNKNOWN",
-            type: orderDetails.orderType || "float",
-            status: "DONE",
-            time: {
-              reg: Math.floor(Date.now() / 1000) - 3600,
-              start: Math.floor(Date.now() / 1000) - 3000,
-              finish: Math.floor(Date.now() / 1000),
-              update: Math.floor(Date.now() / 1000),
-              expiration: orderDetails.expiresAt ? Math.floor(new Date(orderDetails.expiresAt).getTime() / 1000) : (Math.floor(Date.now() / 1000) + 1800),
-              left: 0,
-            },
-            from: {
-              code: orderDetails.fromCurrency || "UNKNOWN",
-              coin: orderDetails.fromCurrency || "UNKNOWN",
-              network: "UNKNOWN",
-              name: orderDetails.fromCurrencyName || "Unknown Currency",
-              alias: orderDetails.fromCurrency?.toLowerCase() || "unknown",
-              amount: orderDetails.depositAmount || "0.00000000",
-              address: orderDetails.depositAddress || "UNKNOWN",
-              addressAlt: null,
-              tag: orderDetails.tag || null,
-              tagName: orderDetails.tagName || null,
-              reqConfirmations: 1,
-              maxConfirmations: 6,
-              tx: {
-                id: null,
-                amount: null,
-                fee: null,
-                ccyfee: null,
-                timeReg: null,
-                timeBlock: null,
-                confirmations: null,
-              },
-            },
-            to: {
-              code: orderDetails.toCurrency || "UNKNOWN",
-              coin: orderDetails.toCurrency || "UNKNOWN",
-              network: "UNKNOWN",
-              name: orderDetails.toCurrencyName || "Unknown Currency",
-              alias: orderDetails.toCurrency?.toLowerCase() || "unknown",
-              amount: orderDetails.receiveAmount || "0.00000000",
-              address: orderDetails.destinationAddress || "UNKNOWN",
-              tag: null,
-              tagName: null,
-              tx: {
-                id: null,
-                amount: null,
-                fee: null,
-                ccyfee: null,
-                timeReg: null,
-                timeBlock: null,
-                confirmations: null,
-              },
-            },
-            token: orderDetails.ffOrderToken || token,
-          };
-          
-          logger.debug("Created fallback API structure:", rawApiResponse);
+        // If we don't have rawApiResponse data, show warning
+        if (!rawApiResponse) {
+          logger.warn("No raw API response available for transaction");
+          toast({
+            title: "Warning",
+            description: "Missing API data for transaction",
+            variant: "destructive"
+          });
+          return;
         }
-
+        
+        // Collect client metadata
+        const clientMetadata = {
+          ip: 'client-side',
+          user_agent: navigator.userAgent,
+          languages: Array.from(navigator.languages || [navigator.language]),
+          device: {
+            width: window.innerWidth,
+            height: window.innerHeight,
+            platform: navigator.platform,
+            vendor: navigator.vendor
+          },
+          simulation: simulateSuccess,
+          timestamp: new Date().toISOString()
+        };
+        
+        logger.debug("Client metadata for saving:", clientMetadata);
+        logger.debug("Raw API response being saved:", JSON.stringify(rawApiResponse, null, 2));
+        
         // Check if the transaction already exists in the database
         const { data: existingTransaction, error: selectError } = await supabase
           .from('bridge_transactions')
@@ -180,24 +133,6 @@ export const CompletedTransactionSaver = ({
           });
           return;
         }
-
-        // Collect client metadata with better formatting
-        const clientMetadata = {
-          ip: 'client-side',
-          user_agent: navigator.userAgent,
-          languages: Array.from(navigator.languages || [navigator.language]),
-          device: {
-            width: window.innerWidth,
-            height: window.innerHeight,
-            platform: navigator.platform,
-            vendor: navigator.vendor
-          },
-          simulation: simulateSuccess,
-          timestamp: new Date().toISOString()
-        };
-        
-        logger.debug("Client metadata for saving:", clientMetadata);
-        logger.debug("Raw API response being saved:", JSON.stringify(rawApiResponse, null, 2));
         
         // Log the exact data we're about to insert
         const insertData = {
@@ -212,7 +147,7 @@ export const CompletedTransactionSaver = ({
           client_metadata: clientMetadata,
           initial_rate: 0, // You might want to replace this with the actual rate
           expiration_time: orderDetails.expiresAt || new Date().toISOString(),
-          raw_api_response: rawApiResponse  // Use the properly structured API response
+          raw_api_response: rawApiResponse  // Save the complete API response without modification
         };
         
         logger.debug("Database insert data:", JSON.stringify(insertData, null, 2));
@@ -287,6 +222,13 @@ export const CompletedTransactionSaver = ({
               isEmpty: typeof verifyData[0].raw_api_response === 'object' && 
                      Object.keys(verifyData[0].raw_api_response).length === 0
             });
+            
+            // If verification shows that API data is present, log success
+            if (verifyData[0].raw_api_response && 
+                typeof verifyData[0].raw_api_response === 'object' && 
+                Object.keys(verifyData[0].raw_api_response).length > 0) {
+              logger.debug("API DATA SAVED SUCCESSFULLY!");
+            }
           }
         }, 2000);
         
