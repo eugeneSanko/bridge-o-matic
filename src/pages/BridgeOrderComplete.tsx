@@ -239,6 +239,11 @@ const BridgeOrderComplete = () => {
     fromCurrencyName: orderDetails.from_currency_name,
     toCurrencyName: orderDetails.to_currency_name,
     orderId: orderDetails.ff_order_id,
+    orderType: orderDetails.type as "fixed" | "float",
+    ffOrderId: orderDetails.ff_order_id,
+    ffOrderToken: orderDetails.ff_order_token,
+    expiresAt: null,
+    timeRemaining: null
   };
 
   return (
@@ -591,3 +596,4 @@ const BridgeOrderComplete = () => {
 };
 
 export default BridgeOrderComplete;
+
