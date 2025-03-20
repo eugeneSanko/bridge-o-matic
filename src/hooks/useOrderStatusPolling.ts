@@ -8,16 +8,16 @@ import { logger } from "@/utils/logger";
 // Create a dedicated logger for this hook
 const pollingLogger = logger;
 
-// Polling intervals in milliseconds for different order statuses
+// Reduced polling intervals in milliseconds for different order statuses
 const POLLING_INTERVALS = {
-  DEFAULT: 15000, // Default: 15 seconds
-  NEW: 10000, // Awaiting deposit: 10 seconds
-  PENDING: 10000, // Received, waiting for confirmations: 10 seconds
-  EXCHANGE: 20000, // Exchange in progress: 20 seconds
-  WITHDRAW: 20000, // Sending funds: 20 seconds
-  DONE: 30000, // Completed: continue polling but less frequently
-  EXPIRED: 15000, // Changed from null to 15000 to enable polling
-  EMERGENCY: 15000, // Changed from null to 15000 to enable polling
+  DEFAULT: 8000,  // Default: 8 seconds (reduced from 15s)
+  NEW: 5000,      // Awaiting deposit: 5 seconds (reduced from 10s)
+  PENDING: 5000,  // Received, waiting for confirmations: 5 seconds (reduced from 10s)
+  EXCHANGE: 8000, // Exchange in progress: 8 seconds (reduced from 20s)
+  WITHDRAW: 8000, // Sending funds: 8 seconds (reduced from 20s)
+  DONE: 15000,    // Completed: 15 seconds (reduced from 30s)
+  EXPIRED: 8000,  // Expired: 8 seconds (reduced from 15s)
+  EMERGENCY: 8000, // Emergency: 8 seconds (reduced from 15s)
 };
 
 interface UseOrderStatusPollingProps {
@@ -51,6 +51,7 @@ export const useOrderStatusPolling = ({
     useState(false);
   const [emergencyActionTaken, setEmergencyActionTaken] = useState(false);
   const dbCheckInProgressRef = useRef(false);
+  const lastCheckedStatusRef = useRef<string | null>(null);
 
   // Function to update debug info in both places
   const updateDebugInfo = (info: any) => {
@@ -84,7 +85,7 @@ export const useOrderStatusPolling = ({
     setPollingInterval(newInterval);
   }, [originalOrderDetails?.rawApiResponse?.status, emergencyActionTaken]);
 
-  // Function to check the database for completed transactions
+  // Function to check the database for completed transactions - with improved timeout
   const checkDbForCompletedTransaction = useCallback(async (orderId: string) => {
     if (dbCheckInProgressRef.current) {
       pollingLogger.debug("Database check already in progress, skipping");
@@ -99,9 +100,9 @@ export const useOrderStatusPolling = ({
     pollingLogger.info("Checking database for completed transaction:", orderId);
     
     try {
-      // Use a timeout to ensure the check doesn't hang indefinitely
+      // Use a shorter timeout to ensure the check doesn't hang indefinitely (reduced from 8s to 3s)
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Database check timed out")), 8000);
+        setTimeout(() => reject(new Error("Database check timed out")), 3000);
       });
       
       const dbCheckPromise = supabase
@@ -138,7 +139,7 @@ export const useOrderStatusPolling = ({
     }
   }, [onDatabaseCheckStart, onDatabaseCheckComplete]);
 
-  // Function to check order status manually or via polling
+  // Function to check order status manually or via polling - with anti-flicker protection
   const checkOrderStatus = useCallback(
     async (force = false) => {
       if (!orderId || !token) {
@@ -166,7 +167,7 @@ export const useOrderStatusPolling = ({
       setLastPollTimestamp(now);
 
       // Check database for EXPIRED status first to improve performance
-      if (force && originalOrderDetails?.rawApiResponse?.status === 'EXPIRED') {
+      if (originalOrderDetails?.rawApiResponse?.status === 'EXPIRED') {
         pollingLogger.info("Order is EXPIRED, checking database for completed transaction first");
         const dbTransaction = await checkDbForCompletedTransaction(orderId);
         
@@ -224,16 +225,16 @@ export const useOrderStatusPolling = ({
 
         if (data.code === 0 && data.data) {
           const status = data.data.status;
-          pollingLogger.info(`Order status from API: ${status}`);
+          
+          // Avoid flicker by checking if status has meaningfully changed
+          const statusChanged = lastCheckedStatusRef.current !== status;
+          lastCheckedStatusRef.current = status;
+          
+          pollingLogger.info(`Order status from API: ${status}, changed: ${statusChanged}`);
 
-          if (status === "DONE" && originalOrderDetails) {
+          if (status === "DONE" && originalOrderDetails && statusChanged) {
             pollingLogger.info("Order is complete, showing notification");
-            // toast({
-            //   title: "Transaction Complete",
-            //   description: `Your transaction has been completed successfully.`,
-            //   variant: "default",
-            // });
-
+            
             // Update order details with completed status
             const updatedDetails = {
               ...originalOrderDetails,
@@ -247,6 +248,17 @@ export const useOrderStatusPolling = ({
 
             // Call the completion handler with the full API response
             onTransactionComplete(updatedDetails, data);
+          } else if (statusChanged) {
+            // Only update if status actually changed to prevent flicker
+            if (originalOrderDetails) {
+              const updatedDetails = {
+                ...originalOrderDetails,
+                rawApiResponse: {
+                  ...data.data,
+                },
+              };
+              setOrderDetails(updatedDetails);
+            }
           }
         } else {
           pollingLogger.error("API returned an error:", data);

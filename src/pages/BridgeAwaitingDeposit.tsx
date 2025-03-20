@@ -45,9 +45,7 @@ const BridgeAwaitingDeposit = () => {
       apiResponse,
       transactionSaved,
     });
-
-    // The actual saving logic is now in the CompletedTransactionSaver component
-    // This function is just for additional logging or future extensibility
+    // The saving logic is now in CompletedTransactionSaver
   };
 
   // Handle db check start and end

@@ -178,8 +178,7 @@ export const CompletedTransactionSaver = ({
   ]);
   
   useEffect(() => {
-    // Only handle expired status if we haven't already checked this order
-    // This prevents triggering the check again after updating order details
+    // Avoid triggering multiple checks for the same order
     const shouldCheckExpiredStatus = 
       (orderDetails?.currentStatus === 'expired' || 
        orderDetails?.rawApiResponse?.status === 'EXPIRED') && 
@@ -191,7 +190,7 @@ export const CompletedTransactionSaver = ({
     }
   }, [orderDetails]);
 
-  // Handle expired status by checking database for completed transaction
+  // Handle expired status by checking database for completed transaction - with shorter timeouts
   const handleExpiredStatus = async () => {
     logger.info("Handling expired status");
     
@@ -204,12 +203,23 @@ export const CompletedTransactionSaver = ({
     try {
       logger.debug("Checking if transaction exists in database");
       
-      // Query the database to see if this transaction was already processed
-      const { data: results, error } = await supabase
+      // Set a timeout for the database query to ensure it doesn't hang
+      const queryPromise = supabase
         .from('bridge_transactions')
-        .select('*')  // Select all columns to get the raw_api_response
+        .select('*')
         .eq('ff_order_id', orderDetails.orderId)
         .limit(1);
+        
+      // Create a timeout that rejects after 2 seconds (reduced from ~5s)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Database query timeout")), 2000);
+      });
+      
+      // Race the query against the timeout
+      const { data: results, error } = await Promise.race([
+        queryPromise,
+        timeoutPromise
+      ]) as any;
       
       if (error) {
         logger.error("Error checking for transaction:", error);
@@ -239,11 +249,11 @@ export const CompletedTransactionSaver = ({
             rawApiResponse: dbTransaction.raw_api_response || orderDetails.rawApiResponse
           };
           
-          // Add a slight delay to avoid UI flicker
+          // Add a slight delay to avoid UI flicker (reduced from 500ms to 200ms)
           setTimeout(() => {
             onOrderDetailsUpdate(updatedDetails);
             setCheckingDb(false);
-          }, 500);
+          }, 200);
         } else {
           setCheckingDb(false);
         }
@@ -254,10 +264,10 @@ export const CompletedTransactionSaver = ({
       
       logger.debug("Transaction not found in database, maintaining expired status");
       
-      // Important fix: Always ensure we clear the loading state regardless of the outcome
+      // Clear the loading state with a shorter delay (reduced from 500ms to 200ms)
       setTimeout(() => {
         setCheckingDb(false);
-      }, 500);
+      }, 200);
       
       return false;
     } catch (e) {
