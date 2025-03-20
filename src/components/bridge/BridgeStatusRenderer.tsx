@@ -1,14 +1,13 @@
-
 import { OrderDetails } from "@/hooks/useBridgeOrder";
 import { LoadingState } from "@/components/bridge/LoadingState";
 import { ErrorState } from "@/components/bridge/ErrorState";
 import { EmptyState } from "@/components/bridge/EmptyState";
 import { BridgeTransaction } from "@/components/bridge/BridgeTransaction";
 import { CompletedTransactionSaver } from "@/components/bridge/CompletedTransactionSaver";
-import { useState, useEffect } from "react";
-import { logger } from "@/utils/logger";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/utils/logger";
 
 interface BridgeStatusRendererProps {
   loading: boolean;
@@ -36,41 +35,64 @@ export const BridgeStatusRenderer = ({
   transactionSaved,
   setTransactionSaved,
   checkOrderStatus,
-  setEmergencyActionTaken,
-  statusCheckDebugInfo
+  setEmergencyActionTaken
 }: BridgeStatusRendererProps) => {
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(initialOrderDetails);
+  const [checkingDbForExpiredOrder, setCheckingDbForExpiredOrder] = useState(false);
   const [uiReady, setUiReady] = useState(false);
+  // Track whether we've already checked this expired order
+  const hasCheckedExpiredOrderRef = useRef<string | null>(null);
+  
+  // Reset the loading state after a timeout to prevent infinite loading
+  useEffect(() => {
+    let timeoutId: number | null = null;
+    
+    if (checkingDbForExpiredOrder) {
+      // Safety timeout - if DB check takes too long, force reset the loading state
+      // Reduced from 5000ms to 2000ms for faster resolution
+      timeoutId = window.setTimeout(() => {
+        logger.warn("Database check timeout exceeded, forcing reset of loading state");
+        setCheckingDbForExpiredOrder(false);
+        setUiReady(true);
+      }, 2000); // 2 second timeout as a safety measure
+    }
+    
+    return () => {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [checkingDbForExpiredOrder]);
   
   useEffect(() => {
-    logger.debug("BridgeStatusRenderer: initialOrderDetails updated", initialOrderDetails);
-    if (initialOrderDetails) {
-      logger.debug("BridgeStatusRenderer: API response exists?", !!initialOrderDetails.rawApiResponse);
-      if (initialOrderDetails.rawApiResponse) {
-        logger.debug("BridgeStatusRenderer: API response data", JSON.stringify(initialOrderDetails.rawApiResponse, null, 2));
-      } else {
-        logger.warn("BridgeStatusRenderer: Missing rawApiResponse in orderDetails!");
-        if (initialOrderDetails.currentStatus === "completed") {
-          toast({
-            title: "Warning",
-            description: "Transaction is complete but API data is missing",
-            variant: "destructive"
-          });
-        }
-      }
+    // Check if this is an expired order that needs DB verification
+    const isExpiredStatus = initialOrderDetails?.currentStatus === 'expired' || 
+                            initialOrderDetails?.rawApiResponse?.status === 'EXPIRED';
+    
+    // Only set checking flag if this is a new expired order we haven't checked yet
+    if (isExpiredStatus && 
+        (!hasCheckedExpiredOrderRef.current || 
+         hasCheckedExpiredOrderRef.current !== initialOrderDetails?.orderId)) {
+      
+      logger.debug("Setting up DB check for expired order", initialOrderDetails?.orderId);
+      setCheckingDbForExpiredOrder(true);
+      setUiReady(false);
+      hasCheckedExpiredOrderRef.current = initialOrderDetails?.orderId;
+      
+      // Hold off on setting orderDetails until after DB check
+      return;
     }
+    
+    // For non-expired statuses or already checked orders, update immediately
     setOrderDetails(initialOrderDetails);
-    
-    // Mark UI as ready after a short delay when order details are loaded
-    const timer = setTimeout(() => {
+    if (!checkingDbForExpiredOrder) {
       setUiReady(true);
-    }, 100);
-    
-    return () => clearTimeout(timer);
+    }
   }, [initialOrderDetails]);
   
-  // Show loading state while the page is loading or UI is not ready
-  if (loading || !uiReady) {
+  // If we're in a loading state or checking DB for expired orders, show loading state
+  if (loading || checkingDbForExpiredOrder || !uiReady) {
+    logger.debug("Rendering loading state - loading:", loading, "checking DB:", checkingDbForExpiredOrder, "uiReady:", uiReady);
     return <LoadingState />;
   }
 
@@ -84,18 +106,8 @@ export const BridgeStatusRenderer = ({
 
   const handleOrderDetailsUpdate = (updatedDetails: OrderDetails) => {
     logger.debug("Updating order details:", updatedDetails);
-    
-    // Verify the raw API response is present
-    if (!updatedDetails.rawApiResponse && updatedDetails.currentStatus === "completed") {
-      logger.warn("Updated order details is missing rawApiResponse but status is completed!");
-      toast({
-        title: "Data Warning",
-        description: "Updated order missing API data, may not save correctly",
-        variant: "destructive"
-      });
-    }
-    
     setOrderDetails(updatedDetails);
+    setUiReady(true);
   };
 
   const handleEmergencyAction = async (choice: "EXCHANGE" | "REFUND", refundAddress?: string) => {
@@ -109,10 +121,7 @@ export const BridgeStatusRenderer = ({
     }
 
     try {
-      toast({
-        title: "Processing",
-        description: `Processing ${choice === "EXCHANGE" ? "exchange" : "refund"} request...`,
-      });
+      logger.info(`Processing ${choice.toLowerCase()} request...`);
 
       const requestBody: any = {
         id: orderDetails.ffOrderId,
@@ -148,13 +157,6 @@ export const BridgeStatusRenderer = ({
           logger.debug("Setting emergency action taken flag");
           setEmergencyActionTaken(true);
         }
-        
-        toast({
-          title: "Success",
-          description: choice === "EXCHANGE" 
-            ? "Exchange will continue at current market rate" 
-            : "Refund request has been processed",
-        });
         
         if (checkOrderStatus) {
           setTimeout(() => {
@@ -199,13 +201,8 @@ export const BridgeStatusRenderer = ({
     handleCopyAddress(address);
   };
 
-  logger.debug("BridgeStatusRenderer: Rendering with orderDetails", {
-    id: orderDetails.orderId,
-    status: orderDetails.currentStatus,
-    hasApiResponse: !!orderDetails.rawApiResponse,
-    responseKeys: orderDetails.rawApiResponse ? Object.keys(orderDetails.rawApiResponse) : []
-  });
-
+  logger.debug("Rendering transaction details for status:", orderDetails.currentStatus);
+  
   return (
     <>
       <BridgeTransaction 
@@ -223,8 +220,11 @@ export const BridgeStatusRenderer = ({
         token={token}
         transactionSaved={transactionSaved}
         setTransactionSaved={setTransactionSaved}
-        statusCheckDebugInfo={statusCheckDebugInfo}
+        statusCheckDebugInfo={null}
         onOrderDetailsUpdate={handleOrderDetailsUpdate}
+        setCheckingDb={setCheckingDbForExpiredOrder}
+        hasCheckedExpiredOrderRef={hasCheckedExpiredOrderRef}
+        setUiReady={setUiReady}
       />
     </>
   );

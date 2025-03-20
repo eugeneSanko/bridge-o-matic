@@ -298,23 +298,9 @@ const BridgeOrderComplete = () => {
               <h3 className="text-sm font-medium text-gray-400 mb-2">
                 Order ID
               </h3>
-              <div className="flex items-center justify-between">
-                <p className="font-mono text-sm break-all">
-                  {apiOrderData?.id || orderDetails.ff_order_id}
-                </p>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(apiOrderData?.id || orderDetails.ff_order_id);
-                    toast({
-                      title: "Copied",
-                      description: "Order ID copied to clipboard",
-                    });
-                  }}
-                  className="ml-2 p-1 rounded-md hover:bg-gray-700 transition-colors"
-                >
-                  <Copy className="h-4 w-4 text-gray-400" />
-                </button>
-              </div>
+              <p className="font-mono text-sm break-all">
+                {apiOrderData?.id || orderDetails.ff_order_id}
+              </p>
             </div>
 
             <div className="glass-card bg-secondary/20 p-6 rounded-lg">
@@ -337,18 +323,6 @@ const BridgeOrderComplete = () => {
                 <div className="text-gray-400 text-sm">Order ID</div>
                 <div className="text-[#f0b90b] font-mono font-semibold text-xl flex items-center gap-2">
                   {apiOrderData?.id || orderDetails.ff_order_id}
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(apiOrderData?.id || orderDetails.ff_order_id);
-                      toast({
-                        title: "Copied",
-                        description: "Order ID copied to clipboard",
-                      });
-                    }}
-                    className="p-1 rounded-md hover:bg-gray-700 transition-colors"
-                  >
-                    <Copy className="h-4 w-4 text-gray-400" />
-                  </button>
                 </div>
               </div>
 
@@ -617,4 +591,3 @@ const BridgeOrderComplete = () => {
 };
 
 export default BridgeOrderComplete;
-

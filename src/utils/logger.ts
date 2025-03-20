@@ -4,7 +4,7 @@
  */
 
 // Enable/disable all logs using this flag
-const LOGGING_ENABLED = true;
+const LOGGING_ENABLED = false; 
 
 // Enable/disable debug logs based on environment
 const isDevMode = import.meta.env.DEV || false;
@@ -16,21 +16,21 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 // Logger configuration
 const loggerConfig = {
   enabled: LOGGING_ENABLED,
-  debugEnabled: isDebugEnabled || true, // Force debug logs on for troubleshooting
+  debugEnabled: isDebugEnabled,
   prefix: '[Bridge]',
 };
 
-// Original console methods
-const originalConsole = {
-  log: console.log,
-  info: console.info,
-  warn: console.warn,
-  error: console.error,
-  debug: console.debug
-};
-
-// Only override if logging is disabled
+// Override console methods to prevent any direct console logs
 if (!LOGGING_ENABLED) {
+  // Store original console methods
+  const originalConsole = {
+    log: console.log,
+    info: console.info,
+    warn: console.warn,
+    error: console.error,
+    debug: console.debug
+  };
+
   // Override with empty functions when logging is disabled
   console.log = () => {};
   console.info = () => {};
