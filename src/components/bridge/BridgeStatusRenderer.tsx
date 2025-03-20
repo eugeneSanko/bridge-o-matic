@@ -36,7 +36,8 @@ export const BridgeStatusRenderer = ({
   transactionSaved,
   setTransactionSaved,
   checkOrderStatus,
-  setEmergencyActionTaken
+  setEmergencyActionTaken,
+  statusCheckDebugInfo
 }: BridgeStatusRendererProps) => {
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(initialOrderDetails);
   
