@@ -16,6 +16,7 @@ interface CompletedTransactionSaverProps {
   statusCheckDebugInfo: any | null;
   onOrderDetailsUpdate: (updatedDetails: OrderDetailsType) => void;
   setCheckingDb: (checking: boolean) => void;
+  hasCheckedExpiredOrderRef: React.MutableRefObject<string | null>;
 }
 
 export const CompletedTransactionSaver = ({
@@ -27,7 +28,8 @@ export const CompletedTransactionSaver = ({
   setTransactionSaved,
   statusCheckDebugInfo,
   onOrderDetailsUpdate,
-  setCheckingDb
+  setCheckingDb,
+  hasCheckedExpiredOrderRef
 }: CompletedTransactionSaverProps) => {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get("orderId");
@@ -176,9 +178,15 @@ export const CompletedTransactionSaver = ({
   ]);
   
   useEffect(() => {
-    // If the order is expired, attempt to handle the expired status
-    if (orderDetails?.currentStatus === 'expired' || 
-        orderDetails?.rawApiResponse?.status === 'EXPIRED') {
+    // Only handle expired status if we haven't already checked this order
+    // This prevents triggering the check again after updating order details
+    const shouldCheckExpiredStatus = 
+      (orderDetails?.currentStatus === 'expired' || 
+       orderDetails?.rawApiResponse?.status === 'EXPIRED') && 
+      hasCheckedExpiredOrderRef.current === orderDetails.orderId;
+      
+    if (shouldCheckExpiredStatus) {
+      logger.debug("Handling expired order check for", orderDetails.orderId);
       handleExpiredStatus();
     }
   }, [orderDetails]);
@@ -195,7 +203,6 @@ export const CompletedTransactionSaver = ({
 
     try {
       logger.debug("Checking if transaction exists in database");
-      setCheckingDb(true);
       
       // Query the database to see if this transaction was already processed
       const { data: results, error } = await supabase

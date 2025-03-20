@@ -5,7 +5,7 @@ import { ErrorState } from "@/components/bridge/ErrorState";
 import { EmptyState } from "@/components/bridge/EmptyState";
 import { BridgeTransaction } from "@/components/bridge/BridgeTransaction";
 import { CompletedTransactionSaver } from "@/components/bridge/CompletedTransactionSaver";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
@@ -40,14 +40,21 @@ export const BridgeStatusRenderer = ({
 }: BridgeStatusRendererProps) => {
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(initialOrderDetails);
   const [checkingDbForExpiredOrder, setCheckingDbForExpiredOrder] = useState(false);
+  // Track whether we've already checked this expired order
+  const hasCheckedExpiredOrderRef = useRef<string | null>(null);
   
   useEffect(() => {
     setOrderDetails(initialOrderDetails);
     
-    // When order details change and status is expired, set the checking flag
-    if (initialOrderDetails?.currentStatus === 'expired' || 
-        initialOrderDetails?.rawApiResponse?.status === 'EXPIRED') {
+    // Only set checking flag if this is a new expired order we haven't checked yet
+    if ((initialOrderDetails?.currentStatus === 'expired' || 
+        initialOrderDetails?.rawApiResponse?.status === 'EXPIRED') && 
+        (!hasCheckedExpiredOrderRef.current || 
+         hasCheckedExpiredOrderRef.current !== initialOrderDetails.orderId)) {
+      
+      logger.debug("Setting up DB check for expired order", initialOrderDetails.orderId);
       setCheckingDbForExpiredOrder(true);
+      hasCheckedExpiredOrderRef.current = initialOrderDetails.orderId;
     }
   }, [initialOrderDetails]);
   
@@ -180,6 +187,7 @@ export const BridgeStatusRenderer = ({
         statusCheckDebugInfo={null}
         onOrderDetailsUpdate={handleOrderDetailsUpdate}
         setCheckingDb={setCheckingDbForExpiredOrder}
+        hasCheckedExpiredOrderRef={hasCheckedExpiredOrderRef}
       />
     </>
   );
