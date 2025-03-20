@@ -17,6 +17,7 @@ import { TransactionInfoItem } from "./TransactionInfoItem";
 import { useMobile } from "@/hooks/use-mobile";
 import { getExplorerUrl, hasExplorerUrl } from "@/utils/explorerUtils";
 import { Icon } from "@iconify/react";
+import { copyToClipboard } from "@/utils/copyToClipboard";
 
 interface ProgressStepsProps {
   currentStatus?: string;
@@ -151,6 +152,11 @@ export const ProgressSteps = ({
   const formatTimestamp = (timestamp: number | undefined): string => {
     if (!timestamp) return "N/A";
     return new Date(timestamp * 1000).toLocaleString();
+  };
+
+  // Handle copying order ID
+  const handleCopyOrderId = (text: string) => {
+    copyToClipboard(text, true);
   };
 
   // Check if we're in a completed state either from API or app status
@@ -324,6 +330,7 @@ export const ProgressSteps = ({
                   variant="ghost"
                   size="icon"
                   className="h-5 w-5 md:h-6 md:w-6"
+                  onClick={() => handleCopyOrderId(apiResponse?.id || orderDetails?.orderId || "")}
                 >
                   <Copy className="h-3 w-3 md:h-4 md:w-4 text-gray-400" />
                 </Button>
@@ -460,14 +467,6 @@ export const ProgressSteps = ({
                   linkUrl={getExplorerUrl(fromTx.id, fromNetwork) || ""}
                 />
               ) : (
-                // <TransactionInfoItem
-                //   label="View Receipt"
-                //   value="View on FF.io"
-                //   isLink={true}
-                //   linkUrl={`https://ff.io/order/${
-                //     apiResponse?.id || orderDetails?.orderId || "N/A"
-                //   }`}
-                // />
                 <></>
               )}
 
